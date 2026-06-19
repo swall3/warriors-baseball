@@ -63,10 +63,20 @@ export default function HomePage() {
 
       {/* HERO */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* Background gradient */}
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at 50% 40%, rgba(139,26,46,0.18) 0%, rgba(10,10,10,0.95) 70%), linear-gradient(180deg, #0a0a0a 0%, #111 50%, #0a0a0a 100%)"
-        }} />
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-bg.jpg"
+            alt=""
+            fill
+            className="object-cover object-center"
+            priority
+            style={{ opacity: 0.55 }}
+          />
+          <div className="absolute inset-0" style={{
+            background: "linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(10,10,10,0.4) 40%, rgba(10,10,10,0.85) 100%)"
+          }} />
+        </div>
 
         {/* Decorative spear lines */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -134,7 +144,18 @@ export default function HomePage() {
       <div className="tribal-divider" />
 
       {/* ABOUT */}
-      <section id="about" className="py-24 px-6 max-w-6xl mx-auto">
+      <section id="about" className="py-24 px-6 relative overflow-hidden">
+        {/* Glove image — subtle texture in the background */}
+        <div className="absolute inset-0 pointer-events-none">
+          <Image
+            src="/images/glove-dirt.jpg"
+            alt=""
+            fill
+            className="object-cover object-center"
+            style={{ opacity: 0.08 }}
+          />
+        </div>
+        <div className="max-w-6xl mx-auto relative z-10">
         <div className="text-center mb-16">
           <p className="text-[#8b1a2e] text-sm font-bold uppercase tracking-[0.3em] mb-3">Who We Are</p>
           <h2 className="text-4xl md:text-5xl font-black uppercase tracking-wide text-white mb-4"
@@ -190,6 +211,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        </div>{/* /max-w-6xl */}
       </section>
 
       {/* TRIBAL DIVIDER */}
@@ -197,9 +219,18 @@ export default function HomePage() {
 
       {/* TRYOUTS INFO */}
       <section id="tryouts" className="py-24 px-6 relative overflow-hidden">
-        <div className="absolute inset-0" style={{
-          background: "radial-gradient(ellipse at 50% 50%, rgba(139,26,46,0.08) 0%, transparent 70%)"
-        }} />
+        <div className="absolute inset-0">
+          <Image
+            src="/images/action-hero.jpg"
+            alt=""
+            fill
+            className="object-cover object-center"
+            style={{ opacity: 0.12 }}
+          />
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse at 50% 50%, rgba(139,26,46,0.08) 0%, rgba(10,10,10,0.88) 70%)"
+          }} />
+        </div>
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <p className="text-[#8b1a2e] text-sm font-bold uppercase tracking-[0.3em] mb-3">Open Registration</p>
