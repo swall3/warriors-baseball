@@ -1,0 +1,16 @@
+{
+  "name": "Warriors Baseball",
+  "short_name": "Warriors",
+  "description": "East Cherokee Warriors Baseball",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#8b1a2e",
+  "icons": [
+    {
+      "src": "/images/warriors/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
