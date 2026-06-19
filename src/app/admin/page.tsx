@@ -79,7 +79,7 @@ export default function AdminPage() {
       <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-6">
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
-            <Image src="/images/warriors/logo.jpg" alt="Warriors" width={180} height={60} className="object-contain h-16 w-auto mx-auto mb-6" />
+            <Image src="/images/warriors/mascot.png" alt="Warriors" width={100} height={100} className="object-contain h-20 w-auto mx-auto mb-4" />
             <h1 className="text-2xl font-black uppercase tracking-widest text-white"
               style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
               Admin Access
@@ -124,7 +124,7 @@ export default function AdminPage() {
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <Image src="/images/warriors/logo.jpg" alt="Warriors" width={140} height={45} className="object-contain h-10 w-auto mb-3" />
+          <Image src="/images/warriors/mascot.png" alt="Warriors" width={60} height={60} className="object-contain h-12 w-auto mb-3" />
           <h1 className="text-2xl font-black uppercase tracking-widest text-white"
             style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
             Tryout Signups

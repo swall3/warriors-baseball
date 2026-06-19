@@ -79,28 +79,34 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          {/* Logo */}
-          <div className="mb-8 flex justify-center animate-fade-in-up">
+          {/* Mascot */}
+          <div className="mb-6 flex justify-center animate-fade-in-up">
             <Image
-              src="/images/warriors/logo.jpg"
-              alt="Warriors Baseball"
-              width={600}
-              height={200}
-              className="object-contain max-w-full"
-              style={{ filter: "drop-shadow(0 0 40px rgba(139,26,46,0.5))" }}
+              src="/images/warriors/mascot.png"
+              alt="East Cherokee Warriors"
+              width={320}
+              height={320}
+              className="object-contain"
+              style={{ filter: "drop-shadow(0 0 60px rgba(139,26,46,0.7)) drop-shadow(0 0 20px rgba(139,26,46,0.4))" }}
+              priority
             />
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black uppercase tracking-widest mb-4 warrior-glow"
-            style={{ fontFamily: "Impact, Arial Black, sans-serif", color: "#f5f5f5" }}>
-            East Cherokee
-          </h1>
-          <p className="text-shimmer text-2xl md:text-3xl font-bold uppercase tracking-[0.3em] mb-8">
-            Warriors Baseball
-          </p>
+          {/* Spear wordmark */}
+          <div className="mb-6 flex justify-center">
+            <Image
+              src="/images/warriors/logo.jpg"
+              alt="Warriors"
+              width={480}
+              height={160}
+              className="object-contain max-w-full opacity-90"
+              style={{ filter: "drop-shadow(0 0 20px rgba(139,26,46,0.4))" }}
+            />
+          </div>
+
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
             Elite youth baseball. Built on discipline, teamwork, and the warrior spirit.<br />
-            <span className="text-gray-300 font-semibold">Tryouts this Monday — spots are limited.</span>
+            <span className="text-gray-200 font-semibold">Tryouts this Monday — spots are limited.</span>
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -430,7 +436,7 @@ export default function HomePage() {
 
       {/* FOOTER */}
       <footer className="py-12 px-6 text-center" style={{ borderTop: "1px solid rgba(139,26,46,0.2)" }}>
-        <Image src="/images/warriors/logo.jpg" alt="Warriors" width={160} height={50} className="object-contain h-12 w-auto mx-auto mb-4 opacity-70" />
+        <Image src="/images/warriors/mascot.png" alt="Warriors" width={80} height={80} className="object-contain h-16 w-auto mx-auto mb-4 opacity-60" />
         <p className="text-gray-600 text-sm uppercase tracking-widest">
           East Cherokee Warriors Baseball · {new Date().getFullYear()}
         </p>
