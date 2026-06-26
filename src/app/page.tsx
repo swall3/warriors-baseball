@@ -3,22 +3,57 @@
 import { useState } from "react";
 import Image from "next/image";
 
+const TRYOUT_DATE     = "Monday, June 22, 2026";
+const TRYOUT_TIME     = "6:00 PM – 8:00 PM";
+const TRYOUT_LOCATION = "East Cherokee Recreation Complex";
+const TRYOUT_ADDRESS  = "123 Field Rd, Canton, GA 30114";
+const COACH_EMAIL     = "warriors8u@gmail.com";
+const COACH_PHONE     = "(678) 555-0000";
+
+const PILLARS = [
+  {
+    icon: "🎯",
+    title: "Elite Training",
+    body: "Coached by experienced leaders who develop players at every level. We train hard so games feel easy.",
+  },
+  {
+    icon: "🏆",
+    title: "Competitive Play",
+    body: "Tournament baseball against the best teams in the region. We compete at the highest local level.",
+  },
+  {
+    icon: "🤝",
+    title: "Brotherhood",
+    body: "More than a team. We build character, leadership, and bonds that last long after the final out.",
+  },
+];
+
+const BRING = [
+  "Baseball glove",
+  "Athletic cleats (turf or grass)",
+  "Batting helmet (if you have one)",
+  "Water bottle",
+  "Your best attitude",
+];
+
+const EXPECT = [
+  "Fielding evaluation",
+  "Hitting assessment",
+  "Throwing / arm strength",
+  "Baserunning speed",
+  "Coachability & attitude",
+];
+
 export default function HomePage() {
   const [form, setForm] = useState({
-    playerName: "",
-    age: "",
-    parentName: "",
-    phone: "",
-    email: "",
-    position: "",
-    experience: "",
-    notes: "",
+    playerName: "", age: "", parentName: "", phone: "",
+    email: "", position: "", experience: "", notes: "",
   });
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,311 +79,211 @@ export default function HomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a]">
-      {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4"
-        style={{ background: "rgba(10,10,10,0.92)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(139,26,46,0.3)" }}>
-        <div className="flex items-center gap-3">
-          <Image src="/images/warriors/logo.jpg" alt="Warriors" width={120} height={40} className="object-contain h-10 w-auto" />
+    <div className="min-h-screen bg-white text-gray-900">
+
+      {/* ── NAV ── */}
+      <nav className="fixed top-0 inset-x-0 z-50 bg-[#0f2044]/95 backdrop-blur-md">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Image src="/images/warriors/mascot.png" alt="Warriors" width={36} height={36} className="object-contain" />
+            <div className="leading-none">
+              <p className="text-white font-bold text-sm tracking-wide">WARRIORS</p>
+              <p className="text-[#c9a84c] text-[10px] font-medium tracking-widest">EAST CHEROKEE · 8U</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <a href="#about"   className="hidden md:block text-white/70 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">About</a>
+            <a href="#tryouts" className="hidden md:block text-white/70 hover:text-white text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
+            <a href="#signup"  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-2 rounded-lg transition-colors">
+              Sign Up
+            </a>
+          </div>
         </div>
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium tracking-widest uppercase text-gray-400">
-          <a href="#about" className="hover:text-white transition-colors">About</a>
-          <a href="#tryouts" className="hover:text-white transition-colors">Tryouts</a>
-          <a href="#signup" className="btn-warrior px-5 py-2 rounded text-white text-xs">Sign Up</a>
-        </div>
-        <a href="#signup" className="md:hidden btn-warrior px-4 py-2 rounded text-white text-xs font-bold tracking-wide">
-          TRYOUTS
-        </a>
       </nav>
 
-      {/* HERO */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* Background image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/hero-bg.jpg"
-            alt=""
-            fill
-            className="object-cover object-center"
-            priority
-            style={{ opacity: 0.55 }}
-          />
-          <div className="absolute inset-0" style={{
-            background: "linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(10,10,10,0.4) 40%, rgba(10,10,10,0.85) 100%)"
-          }} />
-        </div>
+      {/* ── HERO ── */}
+      <section className="bg-[#0f2044] min-h-screen flex items-center pt-16 relative overflow-hidden">
+        {/* subtle texture */}
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
+        {/* crimson glow bottom */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full opacity-20"
+          style={{ background: "radial-gradient(circle, #8b1a2e 0%, transparent 70%)", filter: "blur(60px)" }} />
 
-        {/* Decorative spear lines */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-1/2 left-0 right-0 h-px opacity-10" style={{ background: "linear-gradient(90deg, transparent, #8b1a2e, #c9a84c, #8b1a2e, transparent)" }} />
-          <div className="absolute top-1/2 left-0 right-0 h-px opacity-5 mt-2" style={{ background: "linear-gradient(90deg, transparent, #8b1a2e, transparent)" }} />
-          {/* Grid overlay */}
-          <div className="absolute inset-0 opacity-[0.03]" style={{
-            backgroundImage: "repeating-linear-gradient(0deg, #fff 0, #fff 1px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, #fff 0, #fff 1px, transparent 1px, transparent 60px)"
-          }} />
-        </div>
-
-        <div className="relative z-10 text-center px-6 max-w-5xl mx-auto">
-          {/* Mascot */}
-          <div className="mb-6 flex justify-center animate-fade-in-up">
-            <Image
-              src="/images/warriors/mascot.png"
-              alt="East Cherokee Warriors"
-              width={320}
-              height={320}
-              className="object-contain"
-              style={{ filter: "drop-shadow(0 0 60px rgba(139,26,46,0.7)) drop-shadow(0 0 20px rgba(139,26,46,0.4))" }}
-              priority
-            />
+        <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+          {/* text */}
+          <div>
+            <div className="inline-flex items-center gap-2 bg-[#8b1a2e]/20 border border-[#8b1a2e]/40 text-[#c9a84c] text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-6">
+              ⚾ Tryouts Open — Limited Spots
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black text-white leading-[0.95] tracking-tight mb-6">
+              East Cherokee<br />
+              <span className="text-[#c9a84c]">Warriors</span><br />
+              <span className="text-white/40 text-3xl md:text-4xl font-bold">8U Travel Baseball</span>
+            </h1>
+            <p className="text-white/60 text-lg leading-relaxed mb-8 max-w-md">
+              Built on discipline, grit, and the warrior spirit. Join one of North Georgia&apos;s elite youth programs.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href="#signup"
+                className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors text-center">
+                Register for Tryouts →
+              </a>
+              <a href="#tryouts"
+                className="border border-white/20 hover:border-white/40 text-white/80 hover:text-white font-semibold text-sm px-8 py-4 rounded-xl transition-colors text-center">
+                Tryout Details
+              </a>
+            </div>
           </div>
 
-          {/* Spear wordmark */}
-          <div className="mb-6 flex justify-center">
-            <Image
-              src="/images/warriors/logo.jpg"
-              alt="Warriors"
-              width={480}
-              height={160}
-              className="object-contain max-w-full opacity-90"
-              style={{ filter: "drop-shadow(0 0 20px rgba(139,26,46,0.4))" }}
-            />
-          </div>
-
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
-            Elite youth baseball. Built on discipline, teamwork, and the warrior spirit.<br />
-            <span className="text-gray-200 font-semibold">Tryouts this Monday — spots are limited.</span>
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="#signup"
-              className="btn-warrior px-10 py-4 rounded-lg text-white font-black uppercase tracking-widest text-lg"
-              style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-              ⚔ Register for Tryouts
-            </a>
-            <a href="#about"
-              className="px-10 py-4 rounded-lg font-bold uppercase tracking-widest text-gray-300 hover:text-white transition-colors text-base"
-              style={{ border: "1px solid rgba(160,160,160,0.3)" }}>
-              Learn More
-            </a>
+          {/* mascot */}
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full opacity-30"
+                style={{ background: "radial-gradient(circle, #8b1a2e 0%, transparent 70%)", filter: "blur(40px)", transform: "scale(1.3)" }} />
+              <Image
+                src="/images/warriors/mascot.png"
+                alt="East Cherokee Warriors mascot"
+                width={380}
+                height={380}
+                className="object-contain relative z-10 drop-shadow-2xl"
+                priority
+              />
+            </div>
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-600 text-xs tracking-widest uppercase animate-bounce">
-          <span>Scroll</span>
-          <span>▼</span>
-        </div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest animate-bounce">▼</div>
       </section>
 
-      {/* TRIBAL DIVIDER */}
-      <div className="tribal-divider" />
+      {/* ── ABOUT ── */}
+      <section id="about" className="py-24 px-6 bg-[#f7f8fa]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-3">Who We Are</p>
+            <h2 className="text-4xl md:text-5xl font-black text-[#0f2044] tracking-tight">The Warrior Way</h2>
+            <div className="w-16 h-1 bg-[#c9a84c] mx-auto mt-4 rounded-full" />
+          </div>
 
-      {/* ABOUT */}
-      <section id="about" className="py-24 px-6 relative overflow-hidden">
-        {/* Glove image — subtle texture in the background */}
-        <div className="absolute inset-0 pointer-events-none">
-          <Image
-            src="/images/glove-dirt.jpg"
-            alt=""
-            fill
-            className="object-cover object-center"
-            style={{ opacity: 0.08 }}
-          />
-        </div>
-        <div className="max-w-6xl mx-auto relative z-10">
-        <div className="text-center mb-16">
-          <p className="text-[#8b1a2e] text-sm font-bold uppercase tracking-[0.3em] mb-3">Who We Are</p>
-          <h2 className="text-4xl md:text-5xl font-black uppercase tracking-wide text-white mb-4"
-            style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-            The Warrior Way
-          </h2>
-          <div className="tribal-divider max-w-xs mx-auto mt-4" />
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: "⚔",
-              title: "Elite Training",
-              body: "Coached by experienced leaders who develop players at every level. We train hard so games are easy.",
-            },
-            {
-              icon: "🏆",
-              title: "Competitive Play",
-              body: "Tournament baseball against top teams. We compete at the highest local and regional levels.",
-            },
-            {
-              icon: "🤝",
-              title: "Brotherhood",
-              body: "More than a team. We build character, leadership, and bonds that last a lifetime.",
-            },
-          ].map((card) => (
-            <div key={card.title} className="warrior-card rounded-xl p-8 text-center group hover:border-[#8b1a2e] transition-colors">
-              <div className="text-5xl mb-4">{card.icon}</div>
-              <h3 className="text-xl font-black uppercase tracking-wider text-white mb-3"
-                style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-                {card.title}
-              </h3>
-              <p className="text-gray-400 leading-relaxed">{card.body}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Stats row */}
-        <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            { stat: "8U", label: "Age Group" },
-            { stat: "100%", label: "Heart" },
-            { stat: "⚔", label: "Warrior Spirit" },
-            { stat: "MON", label: "Tryout Day" },
-          ].map((item) => (
-            <div key={item.label} className="text-center p-6 warrior-card rounded-xl">
-              <div className="text-4xl font-black text-[#c9a84c] mb-2"
-                style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-                {item.stat}
+          <div className="grid md:grid-cols-3 gap-6">
+            {PILLARS.map(p => (
+              <div key={p.title} className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition-all duration-200">
+                <div className="w-12 h-12 bg-[#0f2044]/5 rounded-xl flex items-center justify-center text-2xl mb-5">
+                  {p.icon}
+                </div>
+                <h3 className="text-lg font-bold text-[#0f2044] mb-2">{p.title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{p.body}</p>
               </div>
-              <div className="text-xs uppercase tracking-widest text-gray-500">{item.label}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-        </div>{/* /max-w-6xl */}
       </section>
 
-      {/* TRIBAL DIVIDER */}
-      <div className="tribal-divider" />
-
-      {/* TRYOUTS INFO */}
-      <section id="tryouts" className="py-24 px-6 relative overflow-hidden">
-        <div className="absolute inset-0">
-          <Image
-            src="/images/action-hero.jpg"
-            alt=""
-            fill
-            className="object-cover object-center"
-            style={{ opacity: 0.12 }}
-          />
-          <div className="absolute inset-0" style={{
-            background: "radial-gradient(ellipse at 50% 50%, rgba(139,26,46,0.08) 0%, rgba(10,10,10,0.88) 70%)"
-          }} />
-        </div>
-        <div className="max-w-4xl mx-auto relative z-10">
-          <div className="text-center mb-12">
-            <p className="text-[#8b1a2e] text-sm font-bold uppercase tracking-[0.3em] mb-3">Open Registration</p>
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-wide text-white mb-4"
-              style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-              Tryouts Monday
-            </h2>
-            <div className="tribal-divider max-w-xs mx-auto mt-4 mb-8" />
-            <p className="text-gray-400 text-lg max-w-xl mx-auto">
-              We&apos;re building something special. If your player has the drive, we want to see them.
-              All skill levels welcome — we&apos;ll find the right fit.
+      {/* ── TRYOUTS ── */}
+      <section id="tryouts" className="py-24 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-3">Open Registration</p>
+            <h2 className="text-4xl md:text-5xl font-black text-[#0f2044] tracking-tight">Tryout Details</h2>
+            <div className="w-16 h-1 bg-[#c9a84c] mx-auto mt-4 rounded-full mb-6" />
+            <p className="text-gray-500 max-w-md mx-auto">
+              All skill levels welcome — we&apos;ll find the right fit for every player who brings the effort.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
-            <div className="warrior-card rounded-xl p-8">
-              <h3 className="text-lg font-black uppercase tracking-wider text-[#c9a84c] mb-4">What to Bring</h3>
-              <ul className="spear-list space-y-2 text-gray-300 list-none">
-                <li>Baseball glove</li>
-                <li>Athletic cleats (turf or grass)</li>
-                <li>Batting helmet (if you have one)</li>
-                <li>Water bottle</li>
-                <li>Your best attitude</li>
+          {/* Event cards */}
+          <div className="grid md:grid-cols-3 gap-5 mb-10">
+            {[
+              { label: "Date",     value: TRYOUT_DATE,     sub: null },
+              { label: "Time",     value: TRYOUT_TIME,     sub: null },
+              { label: "Location", value: TRYOUT_LOCATION, sub: TRYOUT_ADDRESS },
+            ].map(item => (
+              <div key={item.label} className="bg-[#0f2044] rounded-2xl p-6 text-center">
+                <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-widest mb-2">{item.label}</p>
+                <p className="text-white font-bold text-base leading-snug">{item.value}</p>
+                {item.sub && <p className="text-white/50 text-sm mt-1">{item.sub}</p>}
+              </div>
+            ))}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-10">
+            <div className="bg-[#f7f8fa] rounded-2xl p-7 border border-gray-100">
+              <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#8b1a2e] mb-5">What to Bring</h3>
+              <ul className="space-y-3">
+                {BRING.map(item => (
+                  <li key={item} className="flex items-center gap-3 text-gray-700 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
-            <div className="warrior-card rounded-xl p-8">
-              <h3 className="text-lg font-black uppercase tracking-wider text-[#c9a84c] mb-4">What to Expect</h3>
-              <ul className="spear-list space-y-2 text-gray-300 list-none">
-                <li>Fielding evaluation</li>
-                <li>Hitting assessment</li>
-                <li>Throwing/arm strength</li>
-                <li>Baserunning speed</li>
-                <li>Coachability & attitude</li>
+            <div className="bg-[#f7f8fa] rounded-2xl p-7 border border-gray-100">
+              <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-[#8b1a2e] mb-5">What to Expect</h3>
+              <ul className="space-y-3">
+                {EXPECT.map(item => (
+                  <li key={item} className="flex items-center gap-3 text-gray-700 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />
+                    {item}
+                  </li>
+                ))}
               </ul>
             </div>
+          </div>
+
+          <div className="text-center">
+            <a href="#signup"
+              className="inline-block bg-[#8b1a2e] hover:bg-[#a82037] text-white font-black text-sm uppercase tracking-wider px-10 py-4 rounded-xl transition-colors">
+              Register Now →
+            </a>
           </div>
         </div>
       </section>
 
-      {/* TRIBAL DIVIDER */}
-      <div className="tribal-divider" />
-
-      {/* SIGNUP FORM */}
-      <section id="signup" className="py-24 px-6">
+      {/* ── SIGN UP ── */}
+      <section id="signup" className="py-24 px-6 bg-[#f7f8fa]">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <p className="text-[#8b1a2e] text-sm font-bold uppercase tracking-[0.3em] mb-3">Monday Tryouts</p>
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-wide text-white mb-4"
-              style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-              Register Now
-            </h2>
-            <div className="tribal-divider max-w-xs mx-auto mt-4 mb-6" />
-            <p className="text-gray-400">Fill out the form below to secure your spot. Spots are limited.</p>
+          <div className="text-center mb-10">
+            <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-3">Secure Your Spot</p>
+            <h2 className="text-4xl md:text-5xl font-black text-[#0f2044] tracking-tight">Register</h2>
+            <div className="w-16 h-1 bg-[#c9a84c] mx-auto mt-4 rounded-full mb-4" />
+            <p className="text-gray-500 text-sm">Fill out the form below. Roster is limited.</p>
           </div>
 
           {status === "success" ? (
-            <div className="warrior-card rounded-xl p-12 text-center">
-              <div className="text-6xl mb-6">⚔</div>
-              <h3 className="text-3xl font-black uppercase tracking-wider text-white mb-3"
-                style={{ fontFamily: "Impact, Arial Black, sans-serif" }}>
-                You&apos;re Registered!
-              </h3>
-              <p className="text-gray-400 text-lg">
-                We&apos;ll be in touch with tryout details. Get ready — the Warriors are waiting.
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+              <div className="w-14 h-14 mx-auto mb-6 rounded-full bg-green-50 flex items-center justify-center text-2xl">
+                ✅
+              </div>
+              <h3 className="text-2xl font-black text-[#0f2044] mb-2">You&apos;re Registered!</h3>
+              <p className="text-gray-500 mb-2">We&apos;ll be in touch with details. Get ready — the Warriors are waiting.</p>
+              <p className="text-gray-400 text-sm mb-8">
+                Questions? <a href={`mailto:${COACH_EMAIL}`} className="text-[#8b1a2e] hover:underline font-medium">{COACH_EMAIL}</a>
               </p>
-              <button
-                onClick={() => setStatus("idle")}
-                className="mt-8 btn-warrior px-8 py-3 rounded-lg text-white font-bold uppercase tracking-widest text-sm"
-              >
+              <button onClick={() => setStatus("idle")}
+                className="bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold px-8 py-3 rounded-xl transition-colors text-sm">
                 Register Another Player
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="warrior-card rounded-xl p-8 space-y-5">
-              {/* Player Info */}
+            <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-5">
+
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                  Player Name *
-                </label>
-                <input
-                  type="text"
-                  name="playerName"
-                  value={form.playerName}
-                  onChange={handleChange}
-                  required
-                  placeholder="First Last"
-                  className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                />
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Player Name *</label>
+                <input type="text" name="playerName" value={form.playerName} onChange={handleChange} required placeholder="First Last" className="field" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                    Player Age *
-                  </label>
-                  <select
-                    name="age"
-                    value={form.age}
-                    onChange={handleChange}
-                    required
-                    className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                  >
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Age *</label>
+                  <select name="age" value={form.age} onChange={handleChange} required className="field">
                     <option value="">Select age</option>
-                    {[6, 7, 8, 9, 10, 11, 12, 13, 14].map((a) => (
-                      <option key={a} value={a}>{a} years old</option>
-                    ))}
+                    {[6, 7, 8, 9].map(a => <option key={a} value={a}>{a} years old</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                    Primary Position
-                  </label>
-                  <select
-                    name="position"
-                    value={form.position}
-                    onChange={handleChange}
-                    className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                  >
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Position</label>
+                  <select name="position" value={form.position} onChange={handleChange} className="field">
                     <option value="">Any / Unknown</option>
                     <option value="Pitcher">Pitcher</option>
                     <option value="Catcher">Catcher</option>
@@ -362,15 +297,8 @@ export default function HomePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                  Years of Experience
-                </label>
-                <select
-                  name="experience"
-                  value={form.experience}
-                  onChange={handleChange}
-                  className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                >
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Years of Experience</label>
+                <select name="experience" value={form.experience} onChange={handleChange} className="field">
                   <option value="">Select experience</option>
                   <option value="First year">First year</option>
                   <option value="1-2 years">1–2 years</option>
@@ -379,102 +307,64 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* Parent Info */}
-              <div className="tribal-divider" />
+              <div className="border-t border-gray-100 pt-2" />
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                  Parent / Guardian Name *
-                </label>
-                <input
-                  type="text"
-                  name="parentName"
-                  value={form.parentName}
-                  onChange={handleChange}
-                  required
-                  placeholder="First Last"
-                  className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                />
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Parent / Guardian Name *</label>
+                <input type="text" name="parentName" value={form.parentName} onChange={handleChange} required placeholder="First Last" className="field" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                    Phone *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={form.phone}
-                    onChange={handleChange}
-                    required
-                    placeholder="(555) 000-0000"
-                    className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Phone *</label>
+                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} required placeholder="(555) 000-0000" className="field" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
-                    required
-                    placeholder="email@example.com"
-                    className="warrior-input w-full px-4 py-3 rounded-lg text-sm"
-                  />
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Email *</label>
+                  <input type="email" name="email" value={form.email} onChange={handleChange} required placeholder="email@example.com" className="field" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-[#c9a84c] mb-2">
-                  Anything else we should know?
-                </label>
-                <textarea
-                  name="notes"
-                  value={form.notes}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Previous team, special skills, questions..."
-                  className="warrior-input w-full px-4 py-3 rounded-lg text-sm resize-none"
-                />
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">Anything else?</label>
+                <textarea name="notes" value={form.notes} onChange={handleChange} rows={3} placeholder="Previous team, questions, etc." className="field" />
               </div>
 
               {status === "error" && (
-                <div className="rounded-lg px-4 py-3 text-sm text-red-300 bg-red-900/20 border border-red-800/40">
+                <div className="rounded-xl px-4 py-3 text-sm text-red-700 bg-red-50 border border-red-200">
                   {errorMsg || "Something went wrong. Please try again."}
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={status === "loading"}
-                className="btn-warrior w-full py-4 rounded-lg text-white font-black uppercase tracking-widest text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ fontFamily: "Impact, Arial Black, sans-serif" }}
-              >
-                {status === "loading" ? "Submitting..." : "⚔ Secure My Spot"}
+              <button type="submit" disabled={status === "loading"}
+                className="w-full bg-[#8b1a2e] hover:bg-[#a82037] disabled:opacity-50 text-white font-black text-sm uppercase tracking-wider py-4 rounded-xl transition-colors">
+                {status === "loading" ? "Submitting…" : "Secure My Spot →"}
               </button>
 
-              <p className="text-center text-xs text-gray-600">
-                Your info is only shared with the Warriors coaching staff.
-              </p>
+              <p className="text-center text-xs text-gray-400">Your info is only shared with the Warriors coaching staff.</p>
             </form>
           )}
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="py-12 px-6 text-center" style={{ borderTop: "1px solid rgba(139,26,46,0.2)" }}>
-        <Image src="/images/warriors/mascot.png" alt="Warriors" width={80} height={80} className="object-contain h-16 w-auto mx-auto mb-4 opacity-60" />
-        <p className="text-gray-600 text-sm uppercase tracking-widest">
-          East Cherokee Warriors Baseball · {new Date().getFullYear()}
-        </p>
-        <p className="text-gray-700 text-xs mt-2">
-          Built with warrior spirit. Questions? Contact your coaching staff.
-        </p>
+      {/* ── FOOTER ── */}
+      <footer className="bg-[#0f2044] py-12 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <Image src="/images/warriors/mascot.png" alt="Warriors" width={40} height={40} className="object-contain opacity-80" />
+            <div>
+              <p className="text-white font-bold text-sm">East Cherokee Warriors</p>
+              <p className="text-white/40 text-xs">8U Travel Baseball · {new Date().getFullYear()}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-6 text-sm">
+            <a href={`mailto:${COACH_EMAIL}`} className="text-[#c9a84c] hover:underline">{COACH_EMAIL}</a>
+            <span className="text-white/20">|</span>
+            <a href={`tel:${COACH_PHONE}`} className="text-white/50 hover:text-white transition-colors">{COACH_PHONE}</a>
+          </div>
+        </div>
       </footer>
-    </main>
+
+    </div>
   );
 }
