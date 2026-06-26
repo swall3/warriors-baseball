@@ -1,54 +1,27 @@
-/* Display face for the WARRIORS wordmark only — Inter handles everything else */
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import "tailwindcss";
 
-:root {
-  --navy:   #0f2044;
-  --navy-2: #1a3160;
-  --crimson: #8b1a2e;
-  --crimson-2: #a82037;
-  --gold:   #c9a84c;
-  --offwhite: #f7f8fa;
-}
-
-* { box-sizing: border-box; padding: 0; margin: 0; }
 html { scroll-behavior: smooth; }
 
 html, body {
   max-width: 100vw;
   overflow-x: hidden;
-  font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #fff;
+  color: #111;
 }
 
-/* ── Display wordmark ── */
 .font-display {
-  font-family: 'Anton', 'Inter', system-ui, sans-serif;
+  font-family: 'Anton', Impact, sans-serif;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
 }
 
-/* ── Diagonal section breaks (Tailwind can't express clip-path cleanly inline in v4) ── */
-.clip-bottom-slope {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 92%);
-}
-.clip-top-slope {
-  clip-path: polygon(0 8%, 100% 0, 100% 100%, 0 100%);
-}
-
-/* ── CTA glow ── */
-.cta-crimson {
-  box-shadow: 0 10px 30px -8px rgba(139, 26, 46, 0.65), 0 2px 6px rgba(0,0,0,0.2);
-}
-.cta-crimson:hover {
-  box-shadow: 0 16px 40px -8px rgba(168, 32, 55, 0.8), 0 2px 6px rgba(0,0,0,0.2);
-}
-
-/* ── Inputs ── */
 .field {
   width: 100%;
-  padding: 0.8rem 1rem;
-  border: 1.5px solid #d8dbe0;
-  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e2e5ea;
+  border-radius: 0.6rem;
   font-size: 1rem;
   background: #fff;
   color: #111;
@@ -56,15 +29,9 @@ html, body {
 }
 .field:focus {
   outline: none;
-  border-color: var(--navy);
-  box-shadow: 0 0 0 3px rgba(15, 32, 68, 0.12);
+  border-color: #0f2044;
+  box-shadow: 0 0 0 3px rgba(15,32,68,0.1);
 }
-.field::placeholder { color: #9ca3af; }
-
+.field::placeholder { color: #b0b7c3; }
 select.field { cursor: pointer; }
 textarea.field { resize: none; }
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: var(--navy); border-radius: 3px; }
