@@ -27,7 +27,11 @@ export default function AdminPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/signups?pw=${encodeURIComponent(password)}`);
+      const res = await fetch("/api/signups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
       if (res.status === 401) {
         setError("Wrong password");
         setAuthed(false);

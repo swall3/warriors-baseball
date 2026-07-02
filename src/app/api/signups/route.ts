@@ -8,13 +8,14 @@ function getSupabase() {
   return createClient(url, key);
 }
 
-export async function GET(req: NextRequest) {
-  const pw = req.nextUrl.searchParams.get("pw");
-  if (!pw || pw !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { password } = body ?? {};
+    if (!password || password !== process.env.ADMIN_PASSWORD) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from("tryout_signups")

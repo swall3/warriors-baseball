@@ -3,10 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 
-const TRYOUT_DATE     = "Monday, June 22, 2026";
-const TRYOUT_TIME     = "6:00 PM – 8:00 PM";
-const TRYOUT_LOCATION = "East Cherokee Recreation Complex";
-const TRYOUT_ADDRESS  = "123 Field Rd, Canton, GA 30114";
+const TRYOUTS_OPEN    = false; // flip to true when next season opens
 const COACH_EMAIL     = "warriors8u@gmail.com";
 const COACH_PHONE     = "(678) 555-0000";
 
@@ -89,15 +86,25 @@ export default function HomePage() {
             8U Travel Baseball. Built on discipline, grit, and the warrior spirit.
           </p>
           <div className="flex flex-wrap gap-3">
-            <a href="#signup"
-              className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
-              style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.6)" }}>
-              Register for Tryouts →
-            </a>
-            <a href="#tryouts"
-              className="border border-white/30 hover:border-white/60 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-colors">
-              Tryout Details
-            </a>
+            {TRYOUTS_OPEN ? (
+              <>
+                <a href="#signup"
+                  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
+                  style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.6)" }}>
+                  Register for Tryouts →
+                </a>
+                <a href="#tryouts"
+                  className="border border-white/30 hover:border-white/60 text-white font-semibold text-sm px-8 py-4 rounded-xl transition-colors">
+                  Tryout Details
+                </a>
+              </>
+            ) : (
+              <a href={`mailto:${COACH_EMAIL}`}
+                className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
+                style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.6)" }}>
+                Contact Coaching Staff →
+              </a>
+            )}
           </div>
           <div className="flex items-center gap-4 mt-10 text-white/40 text-xs font-bold uppercase tracking-widest">
             <span>8U</span><span>·</span><span>Travel Ball</span><span>·</span><span>Canton, GA</span><span>·</span><span>2026</span>
@@ -153,62 +160,78 @@ export default function HomePage() {
       <section id="tryouts" className="py-24 px-6 bg-gray-50 border-t border-gray-100">
         <div className="max-w-6xl mx-auto">
           <div className="mb-12">
-            <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-2">Open Registration</p>
-            <h2 className="font-display text-5xl text-[#0f2044]">TRYOUT DETAILS</h2>
+            <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-2">
+              {TRYOUTS_OPEN ? "Open Registration" : "2026 Season"}
+            </p>
+            <h2 className="font-display text-5xl text-[#0f2044]">
+              {TRYOUTS_OPEN ? "TRYOUT DETAILS" : "ROSTER SET"}
+            </h2>
             <p className="text-gray-500 mt-3 text-base max-w-lg">
-              All skill levels welcome — we&apos;ll find the right fit for every player who brings the effort.
+              {TRYOUTS_OPEN
+                ? "All skill levels welcome — we'll find the right fit for every player who brings the effort."
+                : "The 2026 Warriors roster is complete. Reach out to be on the list when 2027 tryouts open."}
             </p>
           </div>
 
-          {/* Date / Time / Location */}
-          <div className="grid md:grid-cols-3 gap-5 mb-10">
-            {[
-              { label: "Date",     value: TRYOUT_DATE,     sub: null },
-              { label: "Time",     value: TRYOUT_TIME,     sub: null },
-              { label: "Location", value: TRYOUT_LOCATION, sub: TRYOUT_ADDRESS },
-            ].map(item => (
-              <div key={item.label} className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-                <p className="text-[#8b1a2e] text-[11px] font-bold uppercase tracking-[0.2em] mb-2">{item.label}</p>
-                <p className="text-[#0f2044] font-bold text-lg leading-snug">{item.value}</p>
-                {item.sub && <p className="text-gray-400 text-sm mt-1">{item.sub}</p>}
+          {TRYOUTS_OPEN ? (
+            <>
+              {/* Bring / Expect */}
+              <div className="grid md:grid-cols-2 gap-6 mb-10">
+                <div className="bg-white rounded-2xl border border-gray-200 p-7 shadow-sm">
+                  <h3 className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.25em] mb-5">What to Bring</h3>
+                  <ul className="space-y-3">
+                    {["Baseball glove","Athletic cleats (turf or grass)","Batting helmet (if you have one)","Water bottle","Your best attitude"].map(i => (
+                      <li key={i} className="flex items-center gap-3 text-gray-600 text-[15px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />{i}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-7 shadow-sm">
+                  <h3 className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.25em] mb-5">What to Expect</h3>
+                  <ul className="space-y-3">
+                    {["Fielding evaluation","Hitting assessment","Throwing / arm strength","Baserunning speed","Coachability & attitude"].map(i => (
+                      <li key={i} className="flex items-center gap-3 text-gray-600 text-[15px]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />{i}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            ))}
-          </div>
-
-          {/* Bring / Expect */}
-          <div className="grid md:grid-cols-2 gap-6 mb-10">
-            <div className="bg-white rounded-2xl border border-gray-200 p-7 shadow-sm">
-              <h3 className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.25em] mb-5">What to Bring</h3>
-              <ul className="space-y-3">
-                {["Baseball glove","Athletic cleats (turf or grass)","Batting helmet (if you have one)","Water bottle","Your best attitude"].map(i => (
-                  <li key={i} className="flex items-center gap-3 text-gray-600 text-[15px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />{i}
-                  </li>
-                ))}
-              </ul>
+              <a href="#signup"
+                className="inline-block bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
+                Register Now →
+              </a>
+            </>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-200 p-8 max-w-lg">
+              <p className="text-gray-600 text-[15px] leading-relaxed mb-6">
+                Interested in the 2027 season? Email the coaching staff and we&apos;ll add you to the notification list when tryouts open.
+              </p>
+              <a href={`mailto:${COACH_EMAIL}?subject=2027 Warriors Interest`}
+                className="inline-block bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
+                Email Coaching Staff →
+              </a>
             </div>
-            <div className="bg-white rounded-2xl border border-gray-200 p-7 shadow-sm">
-              <h3 className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.25em] mb-5">What to Expect</h3>
-              <ul className="space-y-3">
-                {["Fielding evaluation","Hitting assessment","Throwing / arm strength","Baserunning speed","Coachability & attitude"].map(i => (
-                  <li key={i} className="flex items-center gap-3 text-gray-600 text-[15px]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#8b1a2e] shrink-0" />{i}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <a href="#signup"
-            className="inline-block bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
-            Register Now →
-          </a>
+          )}
         </div>
       </section>
 
       {/* SIGNUP — white, centered */}
       <section id="signup" className="py-24 px-6 bg-white border-t border-gray-100">
         <div className="max-w-xl mx-auto">
+          {!TRYOUTS_OPEN ? (
+            <div className="text-center">
+              <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-2">2026 Season</p>
+              <h2 className="font-display text-5xl text-[#0f2044] mb-4">TRYOUTS CLOSED</h2>
+              <p className="text-gray-500 text-base mb-8">The Warriors roster is full for 2026. Check back for 2027 tryout announcements.</p>
+              <a href={`mailto:${COACH_EMAIL}?subject=2027 Warriors Interest`}
+                className="inline-block bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
+                Get 2027 Notifications →
+              </a>
+            </div>
+          ) : (
+            <>
           <div className="mb-10">
             <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-2">Secure Your Spot</p>
             <h2 className="font-display text-5xl text-[#0f2044]">REGISTER</h2>
@@ -285,6 +308,8 @@ export default function HomePage() {
               </button>
               <p className="text-center text-xs text-gray-400 pt-1">Your info is only shared with the Warriors coaching staff.</p>
             </form>
+          )}
+            </>
           )}
         </div>
       </section>
