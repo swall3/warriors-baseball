@@ -208,6 +208,7 @@ export default function PositionPage() {
 
         <div className="relative mb-3">
           <Diamond
+            key={`${position}-${current}`}
             runners={s.runners}
             ballZone={s.ballZone}
             targetZone={s.targetZone}

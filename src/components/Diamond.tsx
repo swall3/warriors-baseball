@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 export type PositionKey = "LF" | "CF" | "RF" | "P" | "1B" | "2B" | "SS" | "3B" | "C";
 export type TapState = "correct" | "wrong" | null;
 
@@ -61,6 +63,29 @@ export function Diamond({
   onTap?: (zone: string) => void;
   interactive?: boolean;
 }) {
+  // Brief "ball in flight" beat before the ball-zone marker settles in —
+  // makes each scenario feel like something just happened, not a static diagram.
+  const [landed, setLanded] = useState(tapState !== null);
+  useEffect(() => {
+    if (tapState !== null) { setLanded(true); return; }
+    setLanded(false);
+    const t = setTimeout(() => setLanded(true), 520);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ballZone, targetZone]);
+
+  const ballPos = ballZone ? FIELD_POS[ballZone as PositionKey] : undefined;
+  let hitPath: string | undefined;
+  if (ballPos && !landed) {
+    const homeX = BASES.home.x, homeY = BASES.home.y;
+    const dx = ballPos.x - homeX, dy = ballPos.y - homeY;
+    const dist = Math.hypot(dx, dy) || 1;
+    const bow = Math.min(dist * 0.28, 46);
+    const ctrlX = (homeX + ballPos.x) / 2 - (dy / dist) * bow;
+    const ctrlY = (homeY + ballPos.y) / 2 + (dx / dist) * bow;
+    hitPath = `M ${homeX},${homeY} Q ${ctrlX},${ctrlY} ${ballPos.x},${ballPos.y}`;
+  }
+
   return (
     <svg
       viewBox="0 0 400 390"
@@ -188,7 +213,7 @@ export function Diamond({
         let textFill     = "white";
         let glowFilter: string | undefined;
 
-        if (isBall && tapState === null) {
+        if (isBall && tapState === null && landed) {
           circleFill   = "#e8b800";
           circleStroke = "#ffd60a";
           textFill     = "#0f2044";
@@ -211,7 +236,7 @@ export function Diamond({
         return (
           <g key={key}>
             {/* Animated ball-zone ring */}
-            {isBall && tapState === null && (
+            {isBall && tapState === null && landed && (
               <circle
                 cx={pos.x} cy={pos.y} r={28}
                 fill="#ffd60a"
@@ -222,7 +247,7 @@ export function Diamond({
             )}
 
             {/* BALL label pill under the ball zone */}
-            {isBall && (
+            {isBall && landed && (
               <g style={{ pointerEvents: "none" }}>
                 <rect
                   x={pos.x - 21} y={pos.y + 24}
@@ -298,6 +323,20 @@ export function Diamond({
           </g>
         );
       })}
+
+      {/* ── Ball-in-flight: travels from home to the play, then "lands" ── */}
+      {hitPath && ballPos && (
+        <g style={{ pointerEvents: "none" }}>
+          <circle r={5} fill="#fdf6e3" stroke="#8a5a20" strokeWidth={1.2}>
+            <animateMotion path={hitPath} dur="0.5s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.6 1" keyTimes="0;1" />
+            <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.92;1" dur="0.5s" fill="freeze" />
+          </circle>
+          <circle cx={ballPos.x} cy={ballPos.y} r={2} fill="none" stroke="#ffd60a" strokeWidth={3} opacity={0}>
+            <animate attributeName="r" values="2;24" begin="0.42s" dur="0.35s" fill="freeze" />
+            <animate attributeName="opacity" values="0.9;0" begin="0.42s" dur="0.35s" fill="freeze" />
+          </circle>
+        </g>
+      )}
 
       {/* Runner legend */}
       {(runners.first || runners.second || runners.third) && (

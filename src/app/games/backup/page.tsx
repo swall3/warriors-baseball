@@ -265,6 +265,7 @@ export default function BackupPage() {
         {/* Diamond area — relative so praise text can float over it */}
         <div className="relative mb-3">
           <Diamond
+            key={`${roundType}-${current}`}
             runners={s.runners}
             ballZone={s.ballZone}
             targetZone={s.targetZone}
