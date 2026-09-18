@@ -40,6 +40,7 @@ export default function BackupPage() {
   const [praiseKey, setPraiseKey]     = useState(0);
   const [praiseText, setPraiseText]   = useState("");
   const [praiseVisible, setPraiseVisible] = useState(false);
+  const [pointsGain, setPointsGain]   = useState(0);
   const [shakeKey, setShakeKey] = useState(0);
   const [missed, setMissed] = useState<BackupScenario[]>([]);
   const [roundType, setRoundType] = useState<"full" | "rewind">("full");
@@ -111,6 +112,7 @@ export default function BackupPage() {
       setScore(scoreRef.current);
       setPoints(pointsRef.current);
       setStreak(newStreak);
+      setPointsGain(earned);
       // Floating praise
       const msg = PRAISE[Math.min(newStreak - 1, PRAISE.length - 1)];
       setPraiseText(msg);
@@ -226,25 +228,27 @@ export default function BackupPage() {
               🔥 {streak}
             </div>
           ) : null}
-          <div className="flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[#c9a84c] font-extrabold text-sm border-[1.5px]"
+          <div className="relative flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[#c9a84c] font-extrabold text-sm border-[1.5px]"
                style={{ background: "rgba(201,168,76,0.15)", borderColor: "rgba(201,168,76,0.35)" }}>
             ⚡ {points.toLocaleString()}
+            {praiseVisible && (
+              <span
+                key={`gain-${praiseKey}`}
+                className="absolute -top-4 right-1 text-[#ffe28a] font-display text-sm animate-float-up pointer-events-none"
+              >
+                +{pointsGain}
+              </span>
+            )}
           </div>
           <div className="text-white/40 text-[13px] font-bold shrink-0">{current + 1}/{total}</div>
         </div>
 
-        {/* Segmented progress bar */}
-        <div className="flex gap-[3px] mb-4">
-          {scenarios.map((_, i) => {
-            const isDone = i < current || (i === current && tapState !== null);
-            const isCurrent = i === current && tapState === null;
-            return (
-              <div key={i} className="flex-1 h-1.5 rounded-full overflow-hidden bg-white/10">
-                {isDone && <div className="h-full w-full bg-[#c9a84c] rounded-full" />}
-                {isCurrent && <div className="h-full w-3/5 bg-[#c9a84c] rounded-full animate-pulse" />}
-              </div>
-            );
-          })}
+        {/* Progress bar — a single continuous fill reads better than 36 tiny dots */}
+        <div className="h-1.5 rounded-full overflow-hidden bg-white/10 mb-4">
+          <div
+            className="h-full bg-[#c9a84c] rounded-full transition-[width] duration-300 ease-out"
+            style={{ width: `${((current + (tapState !== null ? 1 : 0)) / total) * 100}%` }}
+          />
         </div>
 
         {/* Situation chip */}

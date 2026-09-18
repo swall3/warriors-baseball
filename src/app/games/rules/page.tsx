@@ -47,6 +47,7 @@ export default function RulesQuizPage() {
   const [praiseVisible, setPraiseVisible] = useState(false);
   const [wrongKey, setWrongKey]   = useState(0);
   const [wrongIdx, setWrongIdx]   = useState<number | null>(null);
+  const [pointsGain, setPointsGain] = useState(0);
 
   const scoreRef  = useRef(0);
   const pointsRef = useRef(0);
@@ -89,6 +90,7 @@ export default function RulesQuizPage() {
       setScore(scoreRef.current);
       setPoints(pointsRef.current);
       setStreak(newStreak);
+      setPointsGain(earned);
       const msg = PRAISE[Math.min(newStreak - 1, PRAISE.length - 1)];
       setPraiseText(msg);
       setPraiseKey(k => k + 1);
@@ -192,9 +194,17 @@ export default function RulesQuizPage() {
               🔥 {streak}
             </div>
           ) : null}
-          <div className="flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[#c9a84c] font-extrabold text-sm border-[1.5px]"
+          <div className="relative flex items-center gap-1 rounded-full px-3.5 py-1.5 text-[#c9a84c] font-extrabold text-sm border-[1.5px]"
                style={{ background: "rgba(201,168,76,0.15)", borderColor: "rgba(201,168,76,0.35)" }}>
             ⚡ {points.toLocaleString()}
+            {praiseVisible && (
+              <span
+                key={`gain-${praiseKey}`}
+                className="absolute -top-4 right-1 text-[#ffe28a] font-display text-sm animate-float-up pointer-events-none"
+              >
+                +{pointsGain}
+              </span>
+            )}
           </div>
           <div className="text-white/40 text-[13px] font-bold shrink-0">{current + 1}/{total}</div>
         </div>

@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
-import { Diamond, FIELD_POS, PositionKey, TapState } from "@/components/Diamond";
+import { Diamond, PositionKey, TapState } from "@/components/Diamond";
 import { recordAttempt } from "@/lib/gameStorage";
 
 const POSITION_NAMES: Record<PositionKey, string> = {
@@ -17,6 +17,10 @@ const POSITION_NAMES: Record<PositionKey, string> = {
   P: "Pitcher",
   C: "Catcher",
 };
+
+// Standard scorebook order (1-9): battery, infield, outfield — reads naturally
+// top-to-bottom, unlike raw field (x,y) insertion order.
+const POSITION_GRID: PositionKey[] = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -106,14 +110,14 @@ export default function PositionPage() {
           />
 
           <div className="grid grid-cols-3 gap-2 mt-5">
-            {(Object.keys(FIELD_POS) as PositionKey[]).map(pos => (
+            {POSITION_GRID.map(pos => (
               <button
                 key={pos}
                 onClick={() => choosePosition(pos)}
                 className="bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl px-2 py-2.5 text-center transition-all"
               >
                 <p className="text-white font-bold text-sm">{pos}</p>
-                <p className="text-white/40 text-[10px]">{positionCounts[pos] ?? 0} plays</p>
+                <p className="text-white/40 text-[10px]">{positionCounts[pos] ?? 0} play{(positionCounts[pos] ?? 0) === 1 ? "" : "s"}</p>
               </button>
             ))}
           </div>

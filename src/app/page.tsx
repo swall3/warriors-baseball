@@ -61,7 +61,7 @@ export default function HomePage() {
             <a href="#about"   className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Program</a>
             <a href="#tryouts" className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
             <Link href="/games" className="hidden md:block text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
-            <a href="#signup"  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors ml-2">Sign Up</a>
+            <a href="#signup"  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ml-2">Sign Up</a>
             {/* Hamburger — mobile only */}
             <button
               className="md:hidden ml-2 text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -86,7 +86,7 @@ export default function HomePage() {
             <a href="#about"   onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Program</a>
             <a href="#tryouts" onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
             <Link href="/games" onClick={() => setMobileOpen(false)} className="text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
-            <a href="#signup"  onClick={() => setMobileOpen(false)} className="mt-2 bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-3 rounded-lg transition-colors text-center">Sign Up</a>
+            <a href="#signup"  onClick={() => setMobileOpen(false)} className="mt-2 bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors text-center">Sign Up</a>
           </div>
         )}
       </nav>
@@ -107,8 +107,8 @@ export default function HomePage() {
             {TRYOUTS_OPEN ? "Tryouts Open · Limited Roster" : "2026 Roster Set"}
           </p>
           <h1 className="font-display text-white mb-4">
-            <span className="block text-[#c9a84c] text-3xl mb-1">EAST CHEROKEE</span>
-            <span className="block text-8xl xl:text-9xl leading-none">WARRIORS</span>
+            <span className="block text-[#c9a84c] text-2xl sm:text-3xl mb-1">EAST CHEROKEE</span>
+            <span className="block leading-none" style={{ fontSize: "clamp(2.75rem, 13vw, 9rem)" }}>WARRIORS</span>
           </h1>
           <p className="text-white/65 text-lg max-w-md mb-8 leading-relaxed">
             8U Travel Baseball. Built on discipline, grit, and the warrior spirit.
@@ -149,37 +149,42 @@ export default function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Photo card */}
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
-              <Image src="/images/action-hero.jpg" alt="Elite Training" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">01</p>
-                <h3 className="text-white font-display text-2xl">ELITE TRAINING</h3>
+            {/* Card 1 */}
+            <div>
+              <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+                <Image src="/images/action-hero.jpg" alt="Elite Training" fill className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5">
+                  <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">01</p>
+                  <h3 className="text-white font-display text-2xl">ELITE TRAINING</h3>
+                </div>
               </div>
+              <p className="text-gray-500 text-[15px] leading-relaxed mt-4">Coached by experienced leaders who develop players at every level. We train hard so games feel easy.</p>
             </div>
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
-              <Image src="/images/glove-dirt.jpg" alt="Competitive Play" fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">02</p>
-                <h3 className="text-white font-display text-2xl">COMPETITIVE PLAY</h3>
+            {/* Card 2 */}
+            <div>
+              <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+                <Image src="/images/glove-dirt.jpg" alt="Competitive Play" fill className="object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5">
+                  <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">02</p>
+                  <h3 className="text-white font-display text-2xl">COMPETITIVE PLAY</h3>
+                </div>
               </div>
+              <p className="text-gray-500 text-[15px] leading-relaxed mt-4">Tournament baseball against the best teams in the region. We compete at the highest local level.</p>
             </div>
-            <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
-              <Image src="/images/hero-bg.jpg" alt="Brotherhood" fill className="object-cover object-center" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-5">
-                <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">03</p>
-                <h3 className="text-white font-display text-2xl">BROTHERHOOD</h3>
+            {/* Card 3 */}
+            <div>
+              <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+                <Image src="/images/hero-bg.jpg" alt="Brotherhood" fill className="object-cover object-center" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-5">
+                  <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">03</p>
+                  <h3 className="text-white font-display text-2xl">BROTHERHOOD</h3>
+                </div>
               </div>
+              <p className="text-gray-500 text-[15px] leading-relaxed mt-4">More than a team. We build character, leadership, and bonds that last long after the final out.</p>
             </div>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 mt-8">
-            <p className="text-gray-500 text-[15px] leading-relaxed">Coached by experienced leaders who develop players at every level. We train hard so games feel easy.</p>
-            <p className="text-gray-500 text-[15px] leading-relaxed">Tournament baseball against the best teams in the region. We compete at the highest local level.</p>
-            <p className="text-gray-500 text-[15px] leading-relaxed">More than a team. We build character, leadership, and bonds that last long after the final out.</p>
           </div>
         </div>
       </section>
@@ -254,7 +259,7 @@ export default function HomePage() {
               <h2 className="font-display text-5xl text-[#0f2044] mb-4">TRYOUTS CLOSED</h2>
               <p className="text-gray-500 text-base mb-8">The Warriors roster is full for 2026. Check back for 2027 tryout announcements.</p>
               <a href={`mailto:${COACH_EMAIL}?subject=2027 Warriors Interest`}
-                className="inline-block bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
+                className="inline-block bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
                 Get 2027 Notifications →
               </a>
             </div>

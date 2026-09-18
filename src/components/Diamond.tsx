@@ -15,6 +15,28 @@ export const FIELD_POS: Record<PositionKey, { x: number; y: number; label: strin
   C:   { x: 200, y: 350, label: "C"   },
 };
 
+// Position-group color coding (battery / infield / outfield) — same idea Dugout
+// Master uses, picked to not collide with the game's own green=correct,
+// red=wrong, gold=ball feedback colors.
+const BATTERY_FILL = "rgba(109,90,173,0.85)";
+const BATTERY_STROKE = "rgba(160,140,215,0.9)";
+const INFIELD_FILL = "rgba(38,135,160,0.85)";
+const INFIELD_STROKE = "rgba(90,190,215,0.9)";
+const OUTFIELD_FILL = "rgba(196,110,55,0.85)";
+const OUTFIELD_STROKE = "rgba(230,155,95,0.9)";
+
+export const POSITION_GROUP_FILL: Record<PositionKey, string> = {
+  P: BATTERY_FILL, C: BATTERY_FILL,
+  "1B": INFIELD_FILL, "2B": INFIELD_FILL, "3B": INFIELD_FILL, SS: INFIELD_FILL,
+  LF: OUTFIELD_FILL, CF: OUTFIELD_FILL, RF: OUTFIELD_FILL,
+};
+
+export const POSITION_GROUP_STROKE: Record<PositionKey, string> = {
+  P: BATTERY_STROKE, C: BATTERY_STROKE,
+  "1B": INFIELD_STROKE, "2B": INFIELD_STROKE, "3B": INFIELD_STROKE, SS: INFIELD_STROKE,
+  LF: OUTFIELD_STROKE, CF: OUTFIELD_STROKE, RF: OUTFIELD_STROKE,
+};
+
 export const BASES = {
   home:   { x: 200, y: 336 },
   first:  { x: 322, y: 212 },
@@ -161,8 +183,8 @@ export function Diamond({
         const isWrong   = tappedZone === key && tapState === "wrong" && key !== targetZone;
         const isNeutral = !isBall && !isTarget && !isWrong;
 
-        let circleFill   = "rgba(15,32,68,0.82)";
-        let circleStroke = "rgba(255,255,255,0.38)";
+        let circleFill   = POSITION_GROUP_FILL[key as PositionKey];
+        let circleStroke = POSITION_GROUP_STROKE[key as PositionKey];
         let textFill     = "white";
         let glowFilter: string | undefined;
 
