@@ -273,6 +273,7 @@ export default function BackupPage() {
             tapState={tapState}
             onTap={handleTap}
             interactive={tapState === null}
+            showRelay={s.ballReachesTarget !== false}
           />
 
           {/* Floating praise text */}

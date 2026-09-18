@@ -16,6 +16,12 @@ export type BackupScenario = {
   // targetZone = the position circle the player should tap
   targetZone: 'LF' | 'CF' | 'RF' | 'P' | '1B' | '2B' | 'SS' | '3B' | 'C';
   explanation: string;
+  // Does the ball actually travel from ballZone to targetZone (a real throw/relay
+  // the target receives), or is targetZone a pure backup/standby/mental-check role
+  // that never touches the ball in this depicted moment? Defaults to true (relay
+  // shown as a second ball hop after the answer reveal). Set false for backup-only
+  // positions so we don't animate a throw that never happens.
+  ballReachesTarget?: boolean;
 };
 
 // ─── RULES QUIZ ─────────────────────────────────────────────────────────────
@@ -595,6 +601,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Ball hit to LEFT FIELD! Tap the outfielder who backs up the left fielder.',
     targetZone: 'CF',
     explanation: 'CF backs up LF! Center field sprints over in case the ball gets past the left fielder. Never let a ball roll to the fence unchallenged!',
+    ballReachesTarget: false,
   },
   {
     id: 'b2',
@@ -604,6 +611,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Ball hit to CENTER FIELD! Tap the outfielder who backs up CF from the left side.',
     targetZone: 'LF',
     explanation: 'LF backs up CF! Left field cheats toward center whenever the ball is hit that direction. Outfielders always back up their neighbors.',
+    ballReachesTarget: false,
   },
   {
     id: 'b3',
@@ -613,6 +621,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Ball hit to RIGHT FIELD! Tap the outfielder who backs up the right fielder.',
     targetZone: 'CF',
     explanation: 'CF backs up RF! CF is the middle of the outfield and backs up BOTH corners. Center fielders cover the most ground — they\'re always moving!',
+    ballReachesTarget: false,
   },
   // ── Infield ground balls ──
   {
@@ -698,6 +707,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Runner on 3rd, ground ball to the PITCHER. Tap where the pitcher must GLANCE before throwing.',
     targetZone: '3B',
     explanation: 'Glance at third first! With open bases, the runner on 3rd might break for home. The pitcher peeks — if they\'re staying put, fire to 1st for the out. If they\'re going home, throw home! Always check the runner!',
+    ballReachesTarget: false,
   },
   {
     id: 'b13',
@@ -744,6 +754,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Runner stealing 2nd, catcher fires to the bag. Tap which outfielder backs up the throw.',
     targetZone: 'CF',
     explanation: 'CF backs up 2nd on EVERY steal attempt! If the throw gets past the shortstop, CF is there to stop the runner from taking 3rd. Center fielders must ALWAYS move on steal attempts — never be caught flat-footed!',
+    ballReachesTarget: false,
   },
   {
     id: 'b18',
@@ -880,6 +891,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Runner on 2nd, single to LEFT FIELD — runner racing to 3rd! LF fires to 3rd base. Tap who backs up that throw.',
     targetZone: 'P',
     explanation: 'The PITCHER backs up 3rd! When LF fires to 3rd, the pitcher sprints down the left side and sets up behind 3rd base. If the throw gets past 3B, the pitcher is there to stop the runner from scoring. CF is too far away to back up 3rd in time. Pitchers must read where throws are going and sprint to back up — every time!',
+    ballReachesTarget: false,
   },
   {
     id: 'b33',
@@ -907,6 +919,7 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Bases empty, ground ball to SHORTSTOP! Tap who backs up first base on the throw.',
     targetZone: 'RF',
     explanation: 'RF backs up first base! Anytime there\'s a throw to first from the infield, the right fielder should already be moving to back it up in case of an overthrow. Same idea as LF backing up third — somebody\'s always got the throw covered!',
+    ballReachesTarget: false,
   },
   {
     id: 'b36',
@@ -916,5 +929,6 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     question: 'Runner on 1st takes a big lead. Pitcher throws a PICK-OFF to 1st! Tap who backs up 1B in case the throw gets away.',
     targetZone: 'RF',
     explanation: 'RF backs up 1B on pickoffs too! If the throw sails past the first baseman, the right fielder is the only one back there to stop it from rolling to the fence. Stay alert and keep moving every time the pitcher throws over!',
+    ballReachesTarget: false,
   },
 ];

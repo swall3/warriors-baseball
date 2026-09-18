@@ -216,6 +216,7 @@ export default function PositionPage() {
             tapState={tapState}
             onTap={handleTap}
             interactive={tapState === null}
+            showRelay={s.ballReachesTarget !== false}
           />
         </div>
 

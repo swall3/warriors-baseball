@@ -46,6 +46,16 @@ export const BASES = {
   third:  { x: 78,  y: 212 },
 };
 
+/** A quadratic path between two points, gently bowed off the straight line. */
+function bowedPath(from: { x: number; y: number }, to: { x: number; y: number }): string {
+  const dx = to.x - from.x, dy = to.y - from.y;
+  const dist = Math.hypot(dx, dy) || 1;
+  const bow = Math.min(dist * 0.28, 46);
+  const ctrlX = (from.x + to.x) / 2 - (dy / dist) * bow;
+  const ctrlY = (from.y + to.y) / 2 + (dx / dist) * bow;
+  return `M ${from.x},${from.y} Q ${ctrlX},${ctrlY} ${to.x},${to.y}`;
+}
+
 export function Diamond({
   runners,
   ballZone,
@@ -54,6 +64,7 @@ export function Diamond({
   tapState,
   onTap,
   interactive,
+  showRelay = true,
 }: {
   runners: { first: boolean; second: boolean; third: boolean };
   ballZone: string;
@@ -62,6 +73,10 @@ export function Diamond({
   tapState?: TapState;
   onTap?: (zone: string) => void;
   interactive?: boolean;
+  // Does the ball actually travel on to targetZone once the answer is revealed?
+  // False for scenarios where targetZone is a backup/standby role the ball never
+  // reaches (see BackupScenario.ballReachesTarget) — no second hop is shown then.
+  showRelay?: boolean;
 }) {
   // Brief "ball in flight" beat before the ball-zone marker settles in —
   // makes each scenario feel like something just happened, not a static diagram.
@@ -74,16 +89,30 @@ export function Diamond({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ballZone, targetZone]);
 
+  // Second hop: once the answer is revealed, show the ball actually completing
+  // its real path from ballZone to targetZone (the correct fielder) — reinforces
+  // the lesson instead of just instantly lighting up the right circle.
+  const canRelay = showRelay && !!targetZone && targetZone !== ballZone;
+  const [relayLanded, setRelayLanded] = useState(tapState !== null || !canRelay);
+  useEffect(() => {
+    if (tapState === null || !canRelay) { setRelayLanded(!canRelay); return; }
+    setRelayLanded(false);
+    const t = setTimeout(() => setRelayLanded(true), 420);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tapState]);
+
   const ballPos = ballZone ? FIELD_POS[ballZone as PositionKey] : undefined;
+  const targetPos = targetZone ? FIELD_POS[targetZone as PositionKey] : undefined;
+
   let hitPath: string | undefined;
   if (ballPos && !landed) {
-    const homeX = BASES.home.x, homeY = BASES.home.y;
-    const dx = ballPos.x - homeX, dy = ballPos.y - homeY;
-    const dist = Math.hypot(dx, dy) || 1;
-    const bow = Math.min(dist * 0.28, 46);
-    const ctrlX = (homeX + ballPos.x) / 2 - (dy / dist) * bow;
-    const ctrlY = (homeY + ballPos.y) / 2 + (dx / dist) * bow;
-    hitPath = `M ${homeX},${homeY} Q ${ctrlX},${ctrlY} ${ballPos.x},${ballPos.y}`;
+    hitPath = bowedPath(BASES.home, ballPos);
+  }
+
+  let relayPath: string | undefined;
+  if (canRelay && ballPos && targetPos && !relayLanded) {
+    relayPath = bowedPath(ballPos, targetPos);
   }
 
   return (
@@ -204,7 +233,9 @@ export function Diamond({
       {/* ── Fielder position circles ── */}
       {Object.entries(FIELD_POS).map(([key, pos]) => {
         const isBall    = key === ballZone;
-        const isTarget  = tapState !== null && key === targetZone;
+        // Correct-target reveal waits for the relay ball to "arrive" (when a
+        // second hop applies) instead of snapping green the instant they tap.
+        const isTarget  = tapState !== null && key === targetZone && relayLanded;
         const isWrong   = tappedZone === key && tapState === "wrong" && key !== targetZone;
         const isNeutral = !isBall && !isTarget && !isWrong;
 
@@ -334,6 +365,20 @@ export function Diamond({
           <circle cx={ballPos.x} cy={ballPos.y} r={2} fill="none" stroke="#ffd60a" strokeWidth={3} opacity={0}>
             <animate attributeName="r" values="2;24" begin="0.42s" dur="0.35s" fill="freeze" />
             <animate attributeName="opacity" values="0.9;0" begin="0.42s" dur="0.35s" fill="freeze" />
+          </circle>
+        </g>
+      )}
+
+      {/* ── Relay: after the tap, the ball completes its real path to the correct fielder ── */}
+      {relayPath && targetPos && (
+        <g style={{ pointerEvents: "none" }}>
+          <circle r={5} fill="#fdf6e3" stroke="#8a5a20" strokeWidth={1.2}>
+            <animateMotion path={relayPath} dur="0.4s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.6 1" keyTimes="0;1" />
+            <animate attributeName="opacity" values="1;1;0" keyTimes="0;0.9;1" dur="0.4s" fill="freeze" />
+          </circle>
+          <circle cx={targetPos.x} cy={targetPos.y} r={2} fill="none" stroke="#22c55e" strokeWidth={3} opacity={0}>
+            <animate attributeName="r" values="2;22" begin="0.34s" dur="0.3s" fill="freeze" />
+            <animate attributeName="opacity" values="0.9;0" begin="0.34s" dur="0.3s" fill="freeze" />
           </circle>
         </g>
       )}

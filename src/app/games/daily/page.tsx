@@ -98,6 +98,7 @@ export default function DailyPage() {
                 tapState={tapState}
                 onTap={handleTap}
                 interactive={tapState === null}
+                showRelay={s.ballReachesTarget !== false}
               />
             </div>
 
