@@ -1,0 +1,395 @@
+/* Coach (Outlaws scorekeeping) dark theme — scoped entirely under .coach-theme
+   so it can never leak into the Warriors marketing site or /games design
+   system. Ported from outlaws-field-app/src/app/globals.css during the
+   /coach merge. Do not add bare `body`/`:root`/`h1`.. rules here — that was
+   the exact bug this scoping avoids (see merge report). */
+
+.coach-theme {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #8b5cf6;
+  --accent-emerald: #10b981;
+  --accent-rose: #f43f5e;
+  --accent-amber: #f59e0b;
+
+  /* Was the `body` rule — applied to the coach layout's root wrapper instead. */
+  min-height: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+  }
+
+  p {
+    line-height: 1.6;
+    color: var(--text-secondary);
+  }
+
+  /* Smooth gradients */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  }
+
+  /* Glass effect for cards */
+  .glass {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(51, 65, 85, 0.5);
+  }
+
+  /* Field with smooth shadows */
+  .baseball-field {
+    box-shadow:
+      0 20px 50px rgba(0, 0, 0, 0.5),
+      0 0 100px rgba(59, 130, 246, 0.1);
+  }
+
+  /* ==============================
+     BASEBALL FIELD — AERIAL VIEW
+     ============================== */
+
+  /* Field container background (foul territory / outside fair territory) */
+  .baseball-field-canvas {
+    background: #0a1a0a;
+  }
+
+  /* Clip every fair-territory layer to the 90° fan from home plate */
+  .field-fair-wedge {
+    clip-path: polygon(50% 87%, -50% -10%, 150% -10%);
+  }
+
+  /* Outfield grass — deep green, darker near the fence */
+  .field-outfield-grass {
+    background: radial-gradient(
+      ellipse 200% 110% at 50% 120%,
+      #1e6b0d 0%,
+      #185a0b 45%,
+      #103d07 80%
+    );
+  }
+
+  /* Mow-pattern stripes radiating from home plate */
+  .field-grass-stripes {
+    background: repeating-conic-gradient(
+      from 0deg at 50% 87%,
+      rgba(255, 255, 255, 0.045) 0deg 4deg,
+      transparent 4deg 8deg
+    );
+  }
+
+  /* Warning track — sandy arc near the outfield fence */
+  .field-warning-track {
+    background: radial-gradient(
+      ellipse 97% 88% at 50% 87%,
+      transparent 64%,
+      #b48b42 65.5%,
+      #c9a455 69%,
+      #b08040 73%,
+      transparent 74.5%
+    );
+  }
+
+  /* Outfield fence wall */
+  .field-outfield-fence {
+    background: radial-gradient(
+      ellipse 102% 93% at 50% 87%,
+      transparent 73.5%,
+      rgba(12, 12, 12, 0.92) 74.5%,
+      rgba(8, 8, 8, 0.95) 76.5%,
+      transparent 77.5%
+    );
+  }
+
+  /* Inner infield apron — lighter green ring */
+  .field-fair-territory {
+    background: radial-gradient(
+      ellipse 62% 52% at 50% 74%,
+      rgba(38, 120, 55, 0.55) 0%,
+      rgba(30, 95, 44, 0.35) 45%,
+      transparent 62%
+    );
+  }
+
+  /* Subtle distance rings */
+  .field-out-zone-rings {
+    background:
+      radial-gradient(ellipse 55% 48% at 50% 74%, transparent 44%, rgba(255,255,255,0.035) 45%, rgba(255,255,255,0.035) 46.2%, transparent 47.2%),
+      radial-gradient(ellipse 82% 72% at 50% 74%, transparent 56%, rgba(255,255,255,0.025) 57%, rgba(255,255,255,0.025) 58.2%, transparent 59.2%);
+  }
+
+  /* Foul lines */
+  .field-foul-line {
+    width: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    transform-origin: top center;
+  }
+  .field-foul-line-left  { transform: rotate(-45deg); }
+  .field-foul-line-right { transform: rotate(45deg); }
+
+  /* Infield dirt diamond (element is already rotated 45° in markup) */
+  .field-infield-dirt {
+    background: linear-gradient(135deg, #a3723c 0%, #7e5228 55%, #5b3a1b 100%);
+    border-radius: 2px;
+  }
+
+  /* Keyhole — dirt arc from pitcher's mound toward home plate */
+  .field-keyhole {
+    background: radial-gradient(
+      ellipse 75% 50% at 50% 22%,
+      #a3723c 0%,
+      #7e5228 55%,
+      transparent 72%
+    );
+  }
+
+  /* Basepath diamond outline (element is already rotated 45° in markup) */
+  .field-basepaths {
+    background: transparent;
+    border: 3px solid rgba(255, 255, 255, 0.82);
+    border-radius: 2px;
+  }
+
+  /* Pitcher's mound */
+  .field-mound {
+    background: radial-gradient(circle, #cca060 0%, #a07840 60%, #7e5228 100%);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+  }
+
+  /* Home plate */
+  .field-home-plate {
+    width: 16px;
+    height: 14px;
+    background: white;
+    clip-path: polygon(50% 0%, 100% 38%, 100% 100%, 0% 100%, 0% 38%);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Individual bases */
+  .field-base {
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.55);
+  }
+
+  /* Dark edge vignette */
+  .field-vignette {
+    background: radial-gradient(
+      ellipse 100% 90% at 50% 87%,
+      transparent 42%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
+    pointer-events: none;
+  }
+
+  .animate-fade-in {
+    animation: coach-fadeIn 0.3s ease-out;
+  }
+
+  .animate-pulse-slow {
+    animation: coach-pulse 3s ease-in-out infinite;
+  }
+
+  .animate-pin-drop {
+    animation: coach-pinDrop 0.3s ease-out;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: none;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  /* Field hit feedback */
+  .hit-hit {
+    background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald));
+    animation: coach-pulse 0.5s ease-out;
+  }
+
+  .hit-out {
+    background: linear-gradient(135deg, var(--accent-rose), var(--accent-rose));
+    animation: coach-pulse 0.5s ease-out;
+  }
+
+  /* Zone color classes */
+  .zone-left {
+    background: linear-gradient(90deg, #3b82f6, #1e40af);
+  }
+
+  .zone-center {
+    background: linear-gradient(90deg, #22c55e, #15803d);
+  }
+
+  .zone-right {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+  }
+
+  /* Stat card styling */
+  .stat-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.8));
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 0.75rem;
+    text-align: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--accent-primary);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  /* Heat map styling */
+  .heatmap-zone {
+    background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.2), transparent 60%);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.3), transparent 60%);
+      cursor: pointer;
+    }
+  }
+
+  /* Score display */
+  .score-display {
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    font-weight: bold;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Defensive rotation indicator */
+  .rotation-active {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  }
+
+  /* Responsive grid */
+  .grid-glass {
+    background: rgba(30, 41, 59, 0.9);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-primary);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+
+  /* Status indicators */
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: coach-pulse 2s ease-in-out infinite;
+  }
+
+  .status-active {
+    background: var(--accent-emerald);
+  }
+
+  .status-loading {
+    background: var(--accent-amber);
+    animation: coach-pulse 1.5s ease-in-out infinite;
+  }
+
+  /* Message bubble styling */
+  .message-bubble {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 41, 59, 0.8));
+    border-radius: 12px;
+    padding: 0.75rem;
+    border-left: 3px solid var(--accent-primary);
+  }
+
+  /* Integration badge */
+  .integration-badge {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  /* Footer styling */
+  .footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-primary);
+    padding: 2rem 0;
+  }
+}
+
+/* Standalone (installed PWA) uses viewportFit:cover — keep content clear of the
+   notch, status bar, and home indicator instead of sliding under them. */
+@media (display-mode: standalone) {
+  .coach-theme {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* NOTE: the three `!important` overrides that forced .rounded-lg/.rounded-xl/
+   .rounded-2xl to fixed pixel values in the original Outlaws globals.css were
+   intentionally dropped in this merge — nothing depended on them, and they
+   would have fought Tailwind's own utilities plus any future shadcn/ui install. */
+
+@keyframes coach-fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes coach-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes coach-pinDrop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

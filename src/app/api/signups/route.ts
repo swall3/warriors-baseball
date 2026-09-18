@@ -1,12 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-function getSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase not configured");
-  return createClient(url, key);
-}
+import { getSupabaseClient } from "@/lib/supabase";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +9,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = getSupabase();
+    const supabase = getSupabaseClient();
     const { data, error } = await supabase
       .from("tryout_signups")
       .select("*")

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Outlaws Field App">
+  <rect width="512" height="512" rx="108" fill="#111827"/>
+  <path d="M76 344 256 104l180 240H76Z" fill="#f8fafc"/>
+  <path d="M256 148 122 326h268L256 148Z" fill="#16a34a"/>
+  <path d="M256 148 122 326h268L256 148Z" fill="none" stroke="#f8fafc" stroke-width="18" stroke-linejoin="round"/>
+  <path d="M256 148v178M122 326l134-88 134 88" fill="none" stroke="#facc15" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="326" r="19" fill="#f8fafc"/>
+  <circle cx="122" cy="326" r="17" fill="#f8fafc"/>
+  <circle cx="390" cy="326" r="17" fill="#f8fafc"/>
+  <circle cx="256" cy="148" r="17" fill="#f8fafc"/>
+  <text x="256" y="432" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="800" fill="#f8fafc">OUT</text>
+</svg>
