@@ -61,34 +61,43 @@ export function Diamond({
         <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
           <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.35"/>
         </filter>
+        {/* Mowed-lawn stripe pattern — vivid alternating greens, not a flat fill */}
+        <pattern id="grass-stripes" width={40} height={400} patternUnits="userSpaceOnUse">
+          <rect width={40} height={400} fill="#3a9146" />
+          <rect width={20} height={400} fill="#4aa855" />
+        </pattern>
+        <pattern id="grass-stripes-foul" width={40} height={400} patternUnits="userSpaceOnUse">
+          <rect width={40} height={400} fill="#2f7a3a" />
+          <rect width={20} height={400} fill="#377f42" />
+        </pattern>
       </defs>
 
       {/* ── 1. Foul territory base ── */}
-      <rect width={400} height={390} rx={18} fill="#16291d" />
+      <rect width={400} height={390} rx={18} fill="url(#grass-stripes-foul)" />
 
       {/* ── 2. Fair territory ── */}
-      <polygon points="200,336 0,133 0,0 400,0 400,133" fill="#1f4a24" />
-      <polygon points="200,336 20,390 380,390" fill="#1f4a24" />
+      <polygon points="200,336 0,133 0,0 400,0 400,133" fill="url(#grass-stripes)" />
+      <polygon points="200,336 20,390 380,390" fill="url(#grass-stripes)" />
 
       {/* ── 3. Mowing arcs — centered at home, clipped to fair territory ── */}
       <g clipPath="url(#fair-clip)" opacity={0.9}>
-        <circle cx={200} cy={336} r={240} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={16} />
-        <circle cx={200} cy={336} r={300} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={16} />
-        <circle cx={200} cy={336} r={360} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth={16} />
+        <circle cx={200} cy={336} r={240} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={16} />
+        <circle cx={200} cy={336} r={300} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={16} />
+        <circle cx={200} cy={336} r={360} fill="none" stroke="rgba(255,255,255,0.10)" strokeWidth={16} />
       </g>
 
       {/* ── 4. Outfield wall arc ── */}
-      <path d="M 0,133 Q 200,-28 400,133" fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth={3} />
+      <path d="M 0,133 Q 200,-28 400,133" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth={3} />
 
       {/* ── 5. Foul lines ── */}
-      <line x1={200} y1={336} x2={0} y2={133} stroke="rgba(255,255,255,0.55)" strokeWidth={2} />
-      <line x1={200} y1={336} x2={400} y2={133} stroke="rgba(255,255,255,0.55)" strokeWidth={2} />
+      <line x1={200} y1={336} x2={0} y2={133} stroke="rgba(255,255,255,0.75)" strokeWidth={2} />
+      <line x1={200} y1={336} x2={400} y2={133} stroke="rgba(255,255,255,0.75)" strokeWidth={2} />
 
       {/* ── 6. Infield dirt circle (clipped to fair territory) ── */}
-      <circle cx={200} cy={210} r={152} fill="#9c7045" clipPath="url(#fair-clip)" />
+      <circle cx={200} cy={210} r={152} fill="#c9803f" clipPath="url(#fair-clip)" />
 
       {/* ── 7. Infield grass square ── */}
-      <polygon points="200,96 314,212 200,328 86,212" fill="#236327" />
+      <polygon points="200,96 314,212 200,328 86,212" fill="#3d9447" />
 
       {/* ── 8. Basepath chalk lines ── */}
       {[
@@ -106,7 +115,7 @@ export function Diamond({
       ))}
 
       {/* ── 9. Pitcher's mound ── */}
-      <circle cx={200} cy={210} r={18} fill="#8a5e38" />
+      <circle cx={200} cy={210} r={18} fill="#b5763a" />
       <rect x={194} y={207} width={12} height={6} rx={1.5} fill="#e8e8e8" opacity={0.85} />
 
       {/* ── Bases 1-3 ── */}
