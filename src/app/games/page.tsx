@@ -9,7 +9,7 @@ import { getMastery, MasteryMap, hasPlayedToday, getDailyState } from "@/lib/gam
 const POSITIONS = Object.keys(FIELD_POS) as PositionKey[];
 
 function masteryColor(rec: { correct: number; total: number } | undefined) {
-  if (!rec || rec.total === 0) return "bg-white/10 text-white/30";
+  if (!rec || rec.total === 0) return "bg-white/10 text-white/60";
   const pct = rec.correct / rec.total;
   if (pct >= 0.8) return "bg-green-500 text-white";
   if (pct >= 0.5) return "bg-[#c9a84c] text-[#0f2044]";
@@ -85,8 +85,6 @@ export default function GamesPage() {
                    style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)" }} />
               {/* bg icon */}
               <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.12] pointer-events-none -rotate-12 select-none">⚾</div>
-              {/* stars */}
-              <div className="absolute top-6 right-6 text-sm tracking-tight" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}>⭐⭐⭐</div>
 
               <div className="relative">
                 <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Game 1</span>
@@ -111,7 +109,6 @@ export default function GamesPage() {
               <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
                    style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)" }} />
               <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.12] pointer-events-none -rotate-12 select-none">📍</div>
-              <div className="absolute top-6 right-6 text-sm tracking-tight" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}>⭐⭐</div>
 
               <div className="relative">
                 <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Game 2</span>
@@ -153,10 +150,10 @@ export default function GamesPage() {
         </div>
 
         {/* Position Mastery */}
-        <div className="mt-8 bg-white/5 rounded-2xl p-5">
+        <div className="mt-8 bg-white/[0.07] border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-white/50 text-[11px] font-bold uppercase tracking-widest">Position Mastery</p>
-            <p className="text-white/30 text-[11px] font-semibold">{attempted}/9 started</p>
+            <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest">Position Mastery</p>
+            <p className="text-white/45 text-[11px] font-semibold">{attempted}/9 started</p>
           </div>
           <div className="grid grid-cols-9 gap-1.5">
             {POSITIONS.map(pos => (
@@ -167,7 +164,7 @@ export default function GamesPage() {
               </div>
             ))}
           </div>
-          <p className="text-white/25 text-[10px] mt-3 leading-snug">
+          <p className="text-white/40 text-[10px] mt-3 leading-snug">
             Fills in as you play Backup Drill or Where Do I Go? — green means you&apos;ve got it down.
           </p>
         </div>
