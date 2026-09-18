@@ -65,7 +65,11 @@ restored, and no new project can be created, without first freeing a slot.** The
 reports no downloadable backups for either paused project
 (`GET /v1/projects/{ref}/database/backups` → `"backups": []`).
 
-**This settles the "which Supabase project do we keep" question — neither.** See §3.
+> ✅ **RESOLVED 2026-09-18 — Stuart chose to upgrade to Pro.** Pro orgs have unlimited
+> active projects, so the cap disappears and both paused baseball projects restore
+> directly. The keeper is `omwqwwflvnunuvgidvwx` (Outlaws-field0app), which already has the
+> schema. See §3.1. The cap analysis below is retained because it explains *why* the design
+> looks the way it does — and because the same cap still governs the Free orgs.
 
 ### 0.3 Live bugs found during review
 
@@ -78,6 +82,7 @@ reports no downloadable backups for either paused project
 | **B5** | 🟡 Low | `outlaws-field-app/src/app/page.tsx:145,226` | Two incompatible identity namespaces seeded side by side: `DEFAULT_OUTLAWS_LINEUP` is jersey numbers (`"#00","#3","#6"…`), `DEFAULT_DEFENSE_GROUPS` is names (`"Jack","Linc","Kellen"`). The shipped defaults can never match each other. |
 | **B6** | 🟡 Low | `outlaws-field-app/src/lib/player-name.ts:2-7` | Alias map direction is inconsistent — `jackson→Jack` (long→short) but `linc→Lincoln` and `aidan→Aiden` (short→long). Hardcoded to one roster; a new player named Jackson can never be represented. |
 | **B7** | 🟡 Low | `outlaws-field-app/src/lib/auth.ts:12` | `APP_PASSCODE` defaults to the literal `"outlaws"` — a published default. **Already fixed** in `merge-outlaws-coach`'s `src/lib/coach/auth.ts` (fails closed). Do not regress it. |
+| **B8** | 🔴 High | `warriors-baseball/supabase-setup.sql` | **The `tryout_signups` table was never created.** That file's own header says "Run this in your Supabase SQL editor" — it never was. Every tryout signup since launch (~2026-06-19) returned `PGRST205 — Could not find the table 'public.tryout_signups' in the schema cache` → HTTP 500. The form did show visitors an error rather than a false success (`src/app/page.tsx:41-45`), so nobody believed they'd registered — but **every submission was lost, and there is no record of how many.** ✅ **FIXED 2026-09-18** — table created in `omwqwwflvnunuvgidvwx`, live endpoint verified returning `{"success":true}`. |
 
 ### 0.4 Data inventory — asymmetric risk
 
@@ -91,16 +96,21 @@ three independent local copies**:
 Games: `game-2026-05-24-bucks` (12–19 vs NYO Bucks), `game-2026-05-24-wahoos` (16–24 vs
 Oregon Park Wahoos). Losing the paused Outlaws DB costs nothing.
 
-**Signup data is the single point of failure.** `tryout_signups` exists **only** in a paused
-Supabase project. No local export, no seed file, no SQL dump anywhere in the workspace.
-It cannot currently be read.
-
-**Which project holds it is still unknown.** `supabase-aureolin-park` and `Outlaws-field0app`
-were created 4 minutes apart (00:15:30 and 00:19:22 on 2026-06-13) under the same
-Vercel-managed org. Warriors' Vercel env vars were created ~6 days later, consistent with
-either target — or with both apps sharing one project. `vercel env pull` returns empty
-values for all three Warriors secrets (Vercel does not return encrypted values), so the ref
-cannot be read from the CLI. Referred to below as `<WARRIORS_REF>`, resolved in Phase 0.
+> ✅ **RESOLVED — Phase 0 executed 2026-09-18.** Both projects were restored and inspected.
+> Findings, which materially simplify this plan:
+>
+> 1. **Warriors and Outlaws already share one Supabase project** —
+>    `omwqwwflvnunuvgidvwx`. Proven, not inferred: creating `public.tryout_signups` there
+>    flipped the live Warriors signup endpoint from 500 to `{"success":true}`. **There is no
+>    cross-project migration to do.** The keeper was always the shared project.
+> 2. **`tryout_signups` never existed** — so there was no signup data to rescue, and none
+>    was lost in the pause. See **B8**: the table was never created, and the live signup form
+>    has been failing since launch.
+> 3. **`supabase-aureolin-park` is a virgin project** — zero user tables, only stock
+>    `auth`/`storage` system schemas. Never used by anything. See §3.7.
+> 4. **Game data survived the pause intact** — verified in the restored DB:
+>    `teams=2, games=2, play_events=119`, both 2026-05-24 games with correct scores.
+>    Matches the three local copies exactly.
 
 ### 0.5 Decision recorded
 
@@ -117,7 +127,7 @@ open to resetting game/roster data and starting fresh. The plan below therefore 
 ```
 src/app/
 ├── page.tsx                      PUBLIC  Warriors home (hero, program, tryouts, signup)
-├── roster/page.tsx               PUBLIC  NEW — team roster (reads warriors.players)
+├── roster/page.tsx               PUBLIC  NEW — team roster (reads public.players)
 ├── schedule/page.tsx             PUBLIC  NEW — games + results
 ├── games/                        PUBLIC  kids' Play & Learn (unchanged)
 │   ├── page.tsx  daily/  rules/  backup/  position/
@@ -149,12 +159,13 @@ src/app/
 
 `src/app/admin/page.tsx` is **deleted** — folded into `/coach/tryouts` under the single gate.
 
-### 1.2 One database, one schema
+### 1.2 One dedicated database
 
-Single Supabase project `tlgeedmgvjlpkrsekpqq` (`personal-apps`), with all baseball tables in
-a dedicated **`warriors` Postgres schema** — not table prefixes. Rationale: `personal-apps`
-already hosts daily-walk and courtney-health in `public`; a separate schema gives collision-free
-namespacing, a single `grant` surface, and a clean `pg_dump -n warriors` backup boundary.
+Single Supabase project **`omwqwwflvnunuvgidvwx`** (`Outlaws-field0app`), restored onto Pro,
+holding every baseball table in `public`. It already has `teams`/`games`/`play_events` with
+the FK chain and text PKs the app depends on, so the merge is additive. Nothing else lives in
+this project, so the service-role key's blast radius is baseball data and nothing more (§3.5).
+No schema namespacing needed — that was only required by the abandoned shared-project plan.
 
 ### 1.3 Two PWAs, two scopes, one origin
 
@@ -179,13 +190,13 @@ here; both installs are already achievable with plain web manifests.
 The fix for B2–B6. Provenance-preserving: the raw `batter` string is **never dropped**.
 
 ```sql
--- migrations/001_warriors_schema.sql
-create schema if not exists warriors;
+-- migrations/001_identity.sql   (run against omwqwwflvnunuvgidvwx)
+-- teams / games / play_events already exist in public here — this is additive.
 create extension if not exists "pgcrypto";
 
-create table warriors.players (
+create table public.players (
   id             text primary key,          -- 'plr-jack', app-generated
-  team_id        text not null references warriors.teams(id) on delete restrict,
+  team_id        text not null references public.teams(id) on delete restrict,
   display_name   text not null,             -- canonical: 'Jack'
   first_name     text,
   last_name      text,
@@ -198,24 +209,24 @@ create table warriors.players (
   unique (team_id, jersey_number)
 );
 
-create table warriors.player_aliases (
+create table public.player_aliases (
   alias      text primary key,              -- ALWAYS lower(btrim(x))
-  player_id  text not null references warriors.players(id) on delete cascade,
+  player_id  text not null references public.players(id) on delete cascade,
   created_at timestamptz not null default now()
 );
 
-create index idx_player_aliases_player on warriors.player_aliases(player_id);
-create index idx_players_team          on warriors.players(team_id);
+create index idx_player_aliases_player on public.player_aliases(player_id);
+create index idx_players_team          on public.players(team_id);
 ```
 
 ### 2.2 Wire play events to identities
 
 ```sql
 -- migrations/002_link_play_events.sql
-alter table warriors.play_events
-  add column batter_player_id text references warriors.players(id) on delete set null;
+alter table public.play_events
+  add column batter_player_id text references public.players(id) on delete set null;
 
-create index idx_play_events_batter_player on warriors.play_events(batter_player_id);
+create index idx_play_events_batter_player on public.play_events(batter_player_id);
 ```
 
 `play_events.batter` (text) stays exactly as-is. `batter_player_id` is nullable — an
@@ -230,7 +241,7 @@ since the numbers and names were never correlated in the source (that is B5).
 
 ```sql
 -- migrations/003_seed_roster.sql
-insert into warriors.players (id, team_id, display_name) values
+insert into public.players (id, team_id, display_name) values
   ('plr-jack','team-outlaws','Jack'),       ('plr-lincoln','team-outlaws','Lincoln'),
   ('plr-aiden','team-outlaws','Aiden'),     ('plr-caden','team-outlaws','Caden'),
   ('plr-corey','team-outlaws','Corey'),     ('plr-felix','team-outlaws','Felix'),
@@ -239,7 +250,7 @@ insert into warriors.players (id, team_id, display_name) values
   ('plr-ryan','team-outlaws','Ryan')
 on conflict (id) do nothing;
 
-insert into warriors.player_aliases (alias, player_id) values
+insert into public.player_aliases (alias, player_id) values
   ('jack','plr-jack'),       ('jackson','plr-jack'),        -- confirmed same kid
   ('lincoln','plr-lincoln'), ('linc','plr-lincoln'),        -- confirmed same kid
   ('aiden','plr-aiden'),     ('aidan','plr-aiden'),         -- confirmed same kid
@@ -254,15 +265,15 @@ on conflict (alias) do nothing;
 **Path A — preserve the 119 events (default):**
 
 ```sql
-update warriors.play_events e
+update public.play_events e
 set batter_player_id = a.player_id
-from warriors.player_aliases a
+from public.player_aliases a
 where lower(btrim(e.batter)) = a.alias
   and e.batter_player_id is null;
 
 -- Verify: must return zero rows for Outlaws batters
 select distinct batter, count(*)
-from warriors.play_events
+from public.play_events
 where batter_player_id is null and batting_team = 'outlaws'
 group by batter order by 2 desc;
 ```
@@ -278,7 +289,7 @@ the local JSON copies remain as an archive. **Recommendation: take Path A.** It 
 
 | File | Change |
 |---|---|
-| `src/lib/coach/player-name.ts` | Replace hardcoded map with an async alias lookup + in-memory cache seeded from `warriors.player_aliases`. Keep a sync `canonicalPlayerName` fallback for client components. |
+| `src/lib/coach/player-name.ts` | Replace hardcoded map with an async alias lookup + in-memory cache seeded from `public.player_aliases`. Keep a sync `canonicalPlayerName` fallback for client components. |
 | `src/lib/coach/analytics.ts:98` | Key `playerMap` on `pin.batterPlayerId ?? canonicalPlayerName(pin.batter)` — **fixes B2** |
 | `src/app/coach/stats/page.tsx` | Same, at both `:130` and `:142` — **fixes B3** |
 | `src/app/coach/page.tsx` | Defense spot `<input>` → `<select>` over active roster + a "＋ new player" escape hatch — **fixes B4** |
@@ -288,78 +299,103 @@ the local JSON copies remain as an archive. **Recommendation: take Path A.** It 
 
 ## 3. Supabase consolidation
 
-### 3.1 Decision: consolidate into `tlgeedmgvjlpkrsekpqq` (`personal-apps`)
+### 3.1 Decision: keep `omwqwwflvnunuvgidvwx` (`Outlaws-field0app`), on Pro
 
-Neither source project survives. Reasons:
+> **REVISED 2026-09-18.** Stuart chose to upgrade to Pro. That removes the free-tier cap,
+> which was the *only* reason the earlier draft consolidated into `personal-apps`. The
+> merged app now keeps its **own dedicated project**, which also resolves the
+> courtney-health blast-radius problem in §3.5 outright rather than mitigating it.
 
-1. **Forced by the cap.** 3 active vs a 2-project limit means restoring either paused project
-   requires pausing a live one. `personal-apps` is already active and already in the
-   Buddy Apps org — using it consumes **zero additional slots**, permanently.
-2. Both paused projects are **Vercel-marketplace-managed** (`org=vercel_icfg_…`). Those are
-   tied to the Vercel integration lifecycle; `personal-apps` is a first-class project Stuart
-   controls directly via PAT.
-3. The Outlaws schema is the complex one (3 tables, FK chain, indexes, text PKs matching
-   app-generated ids) and it already exists as a clean idempotent `schema.sql`. Re-creating
-   it in a new schema is a paste. `tryout_signups` is one flat table.
+**Upgrade the `Stuart's projects` org** (`vercel_icfg_sPTP9uIhkIf8eLGywPwxcghZ`) to Pro —
+not Buddy Apps, not swall3's Org. That org already contains all three relevant projects:
 
-### 3.2 Phase 0 — rescue the signups (blocking, needs a free slot)
+| Project | Role after upgrade |
+|---|---|
+| `omwqwwflvnunuvgidvwx` (Outlaws-field0app) | **restored → becomes the merged app's DB** |
+| `hrisecaohwqybllffply` (aureolin-park) | restored temporarily → export signups → delete |
+| `fnqyckfvnqvhtqtvrdnz` (tournament-finder) | gains no-auto-pause + daily backups |
 
-`tryout_signups` is the only unbacked-up data in the system. To read it, one slot must be
-freed. Options, cheapest first:
+Why this org:
 
-| Option | Cost | Note |
-|---|---|---|
-| **B. Upgrade to Pro** ⭐ | $25/mo | Removes the cap permanently, removes the auto-pause risk that caused this outage, **and lets the merged app keep a dedicated project — buying back the isolation boundary that §3.5 otherwise gives up.** Re-ranked to first for that last reason. |
-| **A. Pause `tournament-finder` for ~20 min** | brief 500s on a live affiliate site | Cheapest one-time rescue if staying on free. Do it at low traffic (early AM ET). |
-| **C. Delete a dead project** | free | `HOAInspector` / `SDbook` are INACTIVE in `swall3's Org` — **but deleting a paused project is irreversible and its data is unrecoverable.** Confirm they're truly dead first. |
+1. **No slot juggling at all.** Pro orgs have unlimited active projects, so both paused
+   baseball projects restore directly. Nothing live has to be paused.
+2. **It frees a Free slot elsewhere.** Free projects are still allowed in a separate Free
+   org after upgrading (per Supabase's own docs). Moving `tournament-finder` out of the free
+   pool drops the free active count to 1 (`personal-apps`) — which **unblocks the `SDbook`
+   restore for the Property Pal / Lovable migration at no extra cost.** One upgrade, two
+   projects unblocked.
+3. **Keeps the schema that already exists.** `Outlaws-field0app` has `teams`/`games`/
+   `play_events` with the FK chain, indexes, and text PKs the app depends on. Reusing it
+   means the §3.3 work is additive (`players`, `player_aliases`, `tryout_signups`), not a
+   rebuild. No `warriors` schema namespace needed — use `public` in a project the app owns.
+4. **Protects the revenue site.** tournament-finder is the one project whose auto-pause
+   would actually cost money.
 
-Steps once a slot is free (`$PAT` = Supabase PAT, never echoed):
+**Cost:** $25/mo plan + $10/mo per running Micro instance − $10/mo credit (once per org).
+Steady state = tournament-finder + the merged app = **$35/mo**. aureolin-park is billed
+hourly and only runs during the export, so it costs cents. **Billed on the Vercel invoice,
+not Supabase** — Vercel-marketplace orgs bill through Vercel.
 
-```bash
-# 1. Restore the likelier Warriors candidate first
-curl -X POST -H "Authorization: Bearer $PAT" -H "Content-Type: application/json" \
-  -d '{}' https://api.supabase.com/v1/projects/hrisecaohwqybllffply/restore
-# wait for status ACTIVE_HEALTHY (poll GET /v1/projects/{ref})
+⚠️ **Do not upgrade `swall3's Org`.** It holds `SDbook`/`HOAInspector`, which must stay on
+the Free plan to use the free slot this upgrade opens up.
 
-# 2. Identify it — this is the discriminating check, not a guess
-curl -X POST -H "Authorization: Bearer $PAT" -H "Content-Type: application/json" \
-  -d '{"query":"select table_name from information_schema.tables where table_schema='"'"'public'"'"'"}' \
-  https://api.supabase.com/v1/projects/hrisecaohwqybllffply/database/query
-#   tryout_signups                → this is Warriors.  <WARRIORS_REF> resolved.
-#   teams/games/play_events       → this is Outlaws; re-pause and restore the other ref.
-#   both                          → one shared project; consolidation is already half done.
+### 3.2 Phase 0 — ✅ COMPLETE (executed 2026-09-18)
 
-# 3. Export everything before touching anything
-curl -X POST -H "Authorization: Bearer $PAT" -H "Content-Type: application/json" \
-  -d '{"query":"select * from tryout_signups order by signed_up_at"}' \
-  https://api.supabase.com/v1/projects/<WARRIORS_REF>/database/query \
-  > backups/2026-09-18-tryout-signups.json
+Originally scoped as "free a slot, restore, rescue the signups before they're lost." What
+actually happened, in order:
 
-# 4. Verify in the SAME restored session — do NOT try to compare against the
-#    admin UI, which reads this very DB and is down until the restore lands.
-#    select count(*) from tryout_signups;   ← must equal the exported length
-python3 -c "import json;print(len(json.load(open('backups/2026-09-18-tryout-signups.json'))))"
+1. Stuart upgraded the `Stuart's projects` org to **Supabase Pro** via Vercel. The restore
+   403 cleared immediately.
+2. Restored **both** `omwqwwflvnunuvgidvwx` and `hrisecaohwqybllffply` — no slot juggling,
+   nothing live paused. ~4 min to `ACTIVE_HEALTHY`.
+3. Ran the discriminating check on both. Result: Outlaws had `teams`/`games`/`play_events`;
+   aureolin-park had **nothing**. Neither had `tryout_signups`.
+4. Traced the live Warriors 500 to `PGRST205` via `vercel logs --json` — a valid PostgREST
+   response, which proved the URL and key were good and the *table* was the problem (B8).
+5. Created `public.tryout_signups` in `omwqwwflvnunuvgidvwx` → live endpoint returned
+   `{"success":true}`. **This is the proof that both apps share that project.**
+6. Cleaned up: diagnostic row deleted, the scratch table dropped from aureolin-park.
+7. Verified the keeper: `teams=2, games=2, play_events=119, tryout_signups=0`, both games
+   with correct scores — matching the local copies exactly.
 
-# 5. Re-pause to free the slot again
-curl -X POST -H "Authorization: Bearer $PAT" \
-  https://api.supabase.com/v1/projects/<WARRIORS_REF>/pause
-```
+**Net effect on the rest of this plan:** the entire cross-project data migration disappears.
+No export, no re-import, no `<WARRIORS_REF>` to resolve, no backup file to commit. The
+"single point of failure" turned out to be an empty set. §3.3 and §3.4 shrink accordingly —
+the keeper already holds everything, and the remaining work is purely additive schema.
 
-Commit `backups/2026-09-18-tryout-signups.json` **and** a generated
-`backups/2026-09-18-tryout-signups.sql` of `insert` statements. Do not proceed to Phase 1
-until both exist and the count is verified.
+**Decision history (don't re-litigate):**
+
+| Option | Verdict |
+|---|---|
+| **Upgrade to Pro** | ✅ **CHOSEN and DONE 2026-09-18.** |
+| Pause `tournament-finder` ~20 min | Never needed. |
+| ~~Delete `HOAInspector`/`SDbook`~~ | ❌ **RULED OUT — frees nothing, and destroys live migration infrastructure.** See below. |
+
+**Why deleting `HOAInspector`/`SDbook` was wrong (verified, don't retry it):**
+
+1. **It frees nothing.** The free cap counts *active* projects, not total — the 403 itself
+   offers "pause" as a remedy, which is only meaningful if paused projects don't count.
+   Both are INACTIVE and contribute **zero**. Active count was exactly 2:
+   `tournament-finder` + `personal-apps`. `Copperridge-HOA` doesn't count — Stuart is
+   `Developer` there, not Owner/Admin, and the cap only applies to orgs he administers.
+2. **They aren't dead.** Per `memory/project-lovable-migration.md`: `SDbook`
+   (`lmijqjluldnecvknrery`) is the **designated restore target for Property Pal**, and
+   `HOAInspector` (`lzcedfznktojhjrxyjhh`) matches Home Check Pro. That note also records
+   *"No further migration action should be taken proactively."*
+
+Going Pro means they never needed deleting — and the Free slot it freed is exactly what the
+Property Pal restore was waiting on. **Don't act on that without Stuart saying he's ready**;
+that note records an explicit hold pending his decision to actually cancel Lovable.
 
 ### 3.3 Build the target schema
 
 ```sql
--- migrations/000_bootstrap.sql  (run against tlgeedmgvjlpkrsekpqq)
-create schema if not exists warriors;
+-- migrations/000_bootstrap.sql  (run against omwqwwflvnunuvgidvwx)
+-- teams / games / play_events ALREADY EXIST in this project's public schema —
+-- do NOT recreate them. Re-run outlaws-field-app/supabase/schema.sql only if
+-- the restore comes back empty; it is idempotent (create ... if not exists).
 
--- teams / games / play_events: copy verbatim from
--- outlaws-field-app/supabase/schema.sql lines 5-53, prefixing every table
--- name with warriors.  Keep text PKs — app-generated ids depend on them.
-
-create table warriors.tryout_signups (
+create table public.tryout_signups (
   id             uuid primary key default gen_random_uuid(),
   player_name    text not null,
   age            integer not null,
@@ -374,41 +410,30 @@ create table warriors.tryout_signups (
   evaluated_at   timestamptz,
   eval_scores    jsonb,        -- {hitting:1-5, fielding:1-5, throwing:1-5, running:1-5}
   eval_notes     text,
-  player_id      text references warriors.players(id) on delete set null
+  player_id      text references public.players(id) on delete set null
 );
 
 -- RLS on everything; the service-role key bypasses it, anon gets nothing.
-alter table warriors.teams          enable row level security;
-alter table warriors.games          enable row level security;
-alter table warriors.play_events    enable row level security;
-alter table warriors.players        enable row level security;
-alter table warriors.player_aliases enable row level security;
-alter table warriors.tryout_signups enable row level security;
+alter table public.teams          enable row level security;
+alter table public.games          enable row level security;
+alter table public.play_events    enable row level security;
+alter table public.players        enable row level security;
+alter table public.player_aliases enable row level security;
+alter table public.tryout_signups enable row level security;
 ```
 
-Then expose the schema to PostgREST:
-
-```bash
-curl -X PATCH -H "Authorization: Bearer $PAT" -H "Content-Type: application/json" \
-  -d '{"db_schema":"public,warriors"}' \
-  https://api.supabase.com/v1/projects/tlgeedmgvjlpkrsekpqq/config/postgrest
-```
-
-And pin the client to it in `src/lib/supabase.ts`:
-
-```ts
-cachedClient = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"), {
-  auth: { persistSession: false },
-  db:   { schema: "warriors" },        // ← add this
-});
-```
+No PostgREST schema exposure or `db: { schema }` pin is needed — everything lives in
+`public`, which PostgREST exposes by default. (Both were required only by the abandoned
+shared-project plan.)
 
 ### 3.4 Load the data
 
-1. Games/teams/events — from `outlaws-field-app/supabase/schema.sql` seed inserts
-   (lines 61+), `s/^insert into /insert into warriors./`. **Local files are the source of
-   truth; the paused Outlaws DB is never restored.**
-2. Signups — from `backups/2026-09-18-tryout-signups.sql`.
+1. Games/teams/events — should already be present once `omwqwwflvnunuvgidvwx` restores.
+   **Reconcile against the local copies, which remain the source of truth** (2 teams,
+   2 games, 119 events). If the restore comes back short or empty, replay the seed inserts
+   from `outlaws-field-app/supabase/schema.sql` (lines 61+) — they're `on conflict do nothing`,
+   so replaying over a healthy restore is a no-op.
+2. Signups — from `backups/2026-09-18-tryout-signups.sql`, into the table created in §3.3.
 3. Run `001`–`003` + the §2.4 backfill.
 4. Verify — all five, as one checklist:
    - `teams=2, games=2, play_events=119, players=11, player_aliases=14`
@@ -416,43 +441,67 @@ cachedClient = createClient(env("SUPABASE_URL"), env("SUPABASE_SERVICE_ROLE_KEY"
    - the §2.4 orphan query returns **zero rows** — this is the one check that proves the
      alias seed is complete, so run it here, not only in §2.4
 
-### 3.5 Security tradeoff of consolidating into `personal-apps`
+### 3.5 Security posture — ✅ resolved by the Pro upgrade
 
-`personal-apps` also hosts **courtney-health** in its `public` schema. The
-`SUPABASE_SERVICE_ROLE_KEY` set in §3.5 **bypasses RLS on every schema in the project**, not
-just `warriors`. Deploying it to the `warriors-baseball` Vercel project means a key leak from
-a public youth-sports marketing site reaches health records.
+An earlier draft consolidated into `personal-apps`, which also hosts **courtney-health**.
+Because `SUPABASE_SERVICE_ROLE_KEY` bypasses RLS across an entire *project* (every schema,
+not just one), that plan would have put a key with reach into health records on a public
+youth-sports marketing site. Real problem, and it was forced by the free-tier cap rather
+than chosen.
 
-Outlaws previously had its own isolated project; this consolidation collapses that boundary.
-It is forced by the free-tier cap, not chosen. Mitigations if staying on free:
+**Going Pro removes it entirely.** The merged app gets its own project
+(`omwqwwflvnunuvgidvwx`), so the only data its service-role key can reach is baseball data.
+The boundary Outlaws always had is preserved.
 
-- Keep the key server-only — never `NEXT_PUBLIC_*`. (Already true; `src/lib/supabase.ts`
-  reads it only in server code. Enforce with a lint rule.)
+Still worth keeping, independent of the above:
+
+- Key stays server-only — never `NEXT_PUBLIC_*`. (Already true; `src/lib/supabase.ts` reads
+  it only in server code. Worth a lint rule to keep it that way.)
 - Mark it **Sensitive** in Vercel so it can't be read back from the dashboard or CLI.
-- Consider a dedicated Postgres role scoped to the `warriors` schema with a custom JWT,
-  instead of the project-wide service-role key. More work, and it restores most of the boundary.
-
-**Cleanest fix is Option B in §3.2** — Pro removes the cap, so the merged app gets its own
-project and the boundary is never collapsed. Flagged as Open Item §9.2.
+- RLS enabled on every table (§3.3), so a leaked *anon* key still yields nothing.
 
 ### 3.6 Vercel env
 
 Set manually on the `warriors-baseball` project (**do not** re-wire the Supabase Vercel
-integration — it would create yet another project and re-trip the cap):
+integration — it provisions a new project rather than reusing this one):
 
 ```
-SUPABASE_URL=https://tlgeedmgvjlpkrsekpqq.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<personal-apps service role key>
+SUPABASE_URL=https://omwqwwflvnunuvgidvwx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<Outlaws-field0app service role key, post-restore>
 APP_PASSCODE=outlaws
 ```
 
 `ADMIN_PASSWORD` is **removed** — `/admin` is gone, the coach passcode replaces it (§4).
 Mark all three as Sensitive. Preview and Production both.
 
-> ⚠️ That service-role key bypasses RLS across the **whole** `personal-apps` project,
-> including courtney-health's data in `public`. Read §3.5 before setting it.
+> Fetch the key after the restore via
+> `GET /v1/projects/omwqwwflvnunuvgidvwx/api-keys` — paste it into Vercel's UI directly,
+> never into a shell command, a commit, or this file.
 
 ---
+
+### 3.7 `supabase-aureolin-park` — ✅ DELETED 2026-09-18
+
+Confirmed a virgin project before deleting: zero tables in `public`, zero rows in
+`auth.users`, never referenced by any app. It had been restored into a **Pro** org, where it
+billed ~$10/mo compute for nothing — and **Pro projects cannot be paused**
+(`POST /pause` → *"Project is not free-tier. Please downgrade it to free-tier first"*), so
+delete was the only way to stop the meter.
+
+Deleted via `DELETE /v1/projects/hrisecaohwqybllffply`; the Vercel Marketplace resource shows
+`Uninstalled`. Live Warriors signup endpoint re-verified healthy afterwards.
+
+**Final Supabase estate:**
+
+| Ref | Name | Status | Plan | Role |
+|---|---|---|---|---|
+| `omwqwwflvnunuvgidvwx` | Outlaws-field0app | ACTIVE | Pro | **merged app's DB** (shared by both apps) |
+| `fnqyckfvnqvhtqtvrdnz` | tournament-finder | ACTIVE | Pro | unrelated, now pause-proof |
+| `tlgeedmgvjlpkrsekpqq` | personal-apps | ACTIVE | Free | daily-walk, courtney-health |
+| `lmijqjluldnecvknrery` | SDbook | INACTIVE | Free | Property Pal restore target — **do not delete** |
+| `lzcedfznktojhjrxyjhh` | HOAInspector | INACTIVE | Free | Home Check Pro shell — **do not delete** |
+
+Steady-state cost: $25 plan + 2 Micro ($20) − $10 credit = **$35/mo** on the Vercel invoice.
 
 ## 4. Auth model — invert the gate
 
@@ -624,10 +673,10 @@ The gap: `defenseGroups` + `inningDefenseGroup` exist and work, but live **only*
 
 ```sql
 -- migrations/004_lineup_plans.sql
-create table warriors.lineup_plans (
+create table public.lineup_plans (
   id          text primary key,
-  game_id     text references warriors.games(id) on delete cascade,
-  team_id     text not null references warriors.teams(id),
+  game_id     text references public.games(id) on delete cascade,
+  team_id     text not null references public.teams(id),
   label       text not null default 'Game plan',
   format      text not null default 'coach_pitch' check (format in ('coach_pitch','kid_pitch')),
   batting_order jsonb not null default '[]'::jsonb,   -- [player_id, …]
@@ -635,7 +684,7 @@ create table warriors.lineup_plans (
   inning_map  jsonb not null default '{}'::jsonb,     -- {1:'A1',2:'A2',…}
   updated_at  timestamptz not null default now()
 );
-create index idx_lineup_plans_game on warriors.lineup_plans(game_id);
+create index idx_lineup_plans_game on public.lineup_plans(game_id);
 ```
 
 `POST/GET /api/coach/lineup`. Client keeps localStorage as the offline write-ahead buffer and
@@ -652,7 +701,7 @@ Three of the four already have partial implementations. Scope accordingly:
 | **Lineup builder by inning** | `defenseGroups`/`inningDefenseGroup` (localStorage), `defense.ts` constants | Phase 3 persists it. Remaining: a real grid UI at `/coach/lineup` — innings × positions, tap-to-assign, live conflict detection (same kid in two spots). |
 | **Bench-time fairness** | `buildFairness()` renders at `dashboard/page.tsx:659`, counts innings benched | Promote from a read-only dashboard panel to a **live constraint** in the builder: flag any kid benched >1 consecutive inning or >N total, and add a "balance remaining innings" auto-suggest. |
 | **Drill library** | Warriors `src/lib/gameData.ts` — 920 lines of real scenarios, already driving `/games/backup` + `/games/position` | Mostly a re-presentation: a coach-facing `/coach/drills` index over the same data, filtered by position/situation, plus practice-plan assembly. Do **not** rebuild the content. |
-| **Tryout evaluation** | `tryout_signups` rows are the raw material | Genuinely new: `eval_scores`/`eval_notes` columns (already in §3.3), a 1–5 rubric UI on `/coach/tryouts`, ranked sort, CSV export, and "promote signup → player" writing `warriors.players` + linking `tryout_signups.player_id`. |
+| **Tryout evaluation** | `tryout_signups` rows are the raw material | Genuinely new: `eval_scores`/`eval_notes` columns (already in §3.3), a 1–5 rubric UI on `/coach/tryouts`, ranked sort, CSV export, and "promote signup → player" writing `public.players` + linking `tryout_signups.player_id`. |
 
 **Outlaws' moat stays untouched.** Pitch-level events (`GameEventV2`, `pitchOutcome`,
 `countAfter`), `heatmap-canvas.tsx` (386 lines), `spray-chart.tsx`, and `field-geometry.ts`
@@ -660,8 +709,8 @@ have no Dugout Master equivalent. Nothing in Phase 4 modifies them.
 
 ### Phase 5 — Public site
 
-`/roster` reading `warriors.players` (public, `active=true` only — names and numbers, **no
-contact data**), `/schedule` from `warriors.games`. Optionally surface the Play & Learn
+`/roster` reading `public.players` (public, `active=true` only — names and numbers, **no
+contact data**), `/schedule` from `public.games`. Optionally surface the Play & Learn
 mastery stats coaches can see.
 
 ---
@@ -670,11 +719,12 @@ mastery stats coaches can see.
 
 1. **Back up before anything.** Phase 0 is blocking. `tryout_signups` has zero copies; the
    other data has three. Verify row counts against the admin UI before proceeding.
-2. **Never restore-then-migrate in one step.** Export → verify → re-pause → load into the
-   target. Do not attempt a live DB-to-DB copy while the cap is in play.
+2. **Never restore-then-migrate in one step.** Export → verify locally → load into the
+   keeper → re-verify there → only then delete the source. Deletion is irreversible and the
+   signups have no other copy.
 3. **The local JSON files are the source of truth for game data.** `data/local-db.json`,
-   `src/lib/seed-db.json`, and `schema.sql` agree byte-for-byte. Never reconcile against the
-   paused Outlaws DB.
+   `src/lib/seed-db.json`, and `schema.sql` agree byte-for-byte. Reconcile the restored DB
+   *against them*, not the other way round — if the restore disagrees, the files win.
 4. **Feature flags** for every new UI: `NEXT_PUBLIC_FF_PLAYER_IDS`, `NEXT_PUBLIC_FF_LINEUP_V2`,
    `NEXT_PUBLIC_FF_DRILLS`, `NEXT_PUBLIC_FF_TRYOUT_EVAL`. Default **off**; flip per-env in
    Vercel. The live-scoring screen is used during actual games — it must never regress.
@@ -686,10 +736,10 @@ mastery stats coaches can see.
    API `POST /v1/projects/{ref}/database/query`.
 7. **Don't cut over DNS/primary URL until a real game has been logged end-to-end** on the
    merged app against the new DB.
-8. **Re-pausing risk.** Supabase free-tier auto-pauses after ~7 days idle — that is how this
-   happened. `personal-apps` is active because daily-walk/courtney-health touch it. If the
-   merged app becomes the only consumer during an off-season, it will pause again and B1's
-   fallback becomes load-bearing. Pro ($25/mo) removes the risk entirely.
+8. **Auto-pause risk — retired by Pro.** Supabase free-tier auto-pauses after ~7 days idle;
+   that is exactly how both projects died over the summer, and an off-season would have done
+   it again. Pro projects never auto-pause, so the keeper stays up through the winter. Ship
+   B1's error-fallback anyway — it costs three lines and covers every other outage mode.
 9. **Verify `next build --webpack` after every phase.** Turbopack prod builds are broken here.
 
 ---
@@ -719,18 +769,22 @@ jersey-number↔name correlation in §2.3, and the final cutover.
 
 ## 9. Open items for Stuart
 
-1. **Which slot to free** for the Phase 0 signup rescue — pause `tournament-finder` briefly,
-   pay for Pro, or delete `HOAInspector`/`SDbook`. Nothing else can start until this is
-   answered; it is the only true blocker.
-2. **Free tier or Pro ($25/mo)?** This is a *security* decision, not just a cost one. On free,
-   the merged app shares `personal-apps` with courtney-health and a service-role key on the
-   public Warriors site has RLS-bypass reach into health data (§3.5). On Pro, the app gets its
-   own project and that boundary holds. Accepting the free path means accepting shared blast
-   radius — worth saying out loud rather than discovering later.
-3. **Jersey-number → name mapping.** `#00 #3 #6 #11 #15 #18 #20 #22 #31 #41 #99` vs the 11
+1. ✅ **Free tier vs Pro — DECIDED 2026-09-18: Pro.** Closed both the capacity blocker and
+   the security one (§3.1, §3.5).
+2. ✅ **Pro upgrade — DONE 2026-09-18.** `Stuart's projects` org upgraded via Vercel; the
+   restore 403 cleared and Phase 0 ran to completion (§3.2).
+   **Do not upgrade `swall3's Org`** — it must stay Free to hold `SDbook`/`HOAInspector`.
+3. 🔲 **Was anyone lost to the broken signup form?** B8 means every tryout submission since
+   ~2026-06-19 failed with a visible error. Worth checking email/texts from parents who hit
+   it and couldn't register — there's no server-side record of how many tried.
+4. **Jersey-number → name mapping.** `#00 #3 #6 #11 #15 #18 #20 #22 #31 #41 #99` vs the 11
    names. Never correlated in the source.
-4. **Repo/app name.** Plan assumes the `warriors-baseball` repo and Vercel project are kept
+5. **Repo/app name.** Plan assumes the `warriors-baseball` repo and Vercel project are kept
    as-is. Renaming is cosmetic and can happen any time after Phase 1.
-5. **Roster scope.** Are the Outlaws and the Warriors 8U the same set of kids, or two teams
-   in one app? `warriors.players.team_id` supports both, but the UI differs — a team switcher
+6. 🔲 **Delete `supabase-aureolin-park`?** Confirmed virgin — zero user tables, never used by
+   any app. Now running in a Pro org at ~$10/mo compute for nothing, and **Pro projects can't
+   be paused**, so it's delete or keep paying. Deletion is irreversible but the only loss is
+   an empty shell. See §3.7.
+7. **Roster scope.** Are the Outlaws and the Warriors 8U the same set of kids, or two teams
+   in one app? `public.players.team_id` supports both, but the UI differs — a team switcher
    vs a single implicit team.
