@@ -931,4 +931,54 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     explanation: 'RF backs up 1B on pickoffs too! If the throw sails past the first baseman, the right fielder is the only one back there to stop it from rolling to the fence. Stay alert and keep moving every time the pitcher throws over!',
     ballReachesTarget: false,
   },
+  // ── Backing up an infield error (nobody's perfect) ──
+  // Distinct from the overthrow-backup scenarios above: this is about the
+  // ORIGINAL ground ball getting past an infielder untouched, not a throw
+  // sailing past afterward. Rule taught here: LF has the left side of the
+  // infield, RF has the right side, CF has everything up the middle.
+  {
+    id: 'b37',
+    label: 'Hard Grounder to 3rd — Bases Empty',
+    runners: { first: false, second: false, third: false },
+    ballZone: '3B',
+    question: 'Hard ground ball to THIRD BASE — it skips through the infield! Tap who is backing it up in the outfield.',
+    targetZone: 'LF',
+    explanation: 'LF backs up 3B! Left field covers every ground ball hit to the left side of the infield in case of a bad hop or a miss. Nobody fields everything cleanly — a backup outfielder turns an error into a single instead of the batter ending up on 2nd or 3rd.',
+  },
+  {
+    id: 'b38',
+    label: 'Hard Grounder to Shortstop — Bases Empty',
+    runners: { first: false, second: false, third: false },
+    ballZone: 'SS',
+    question: 'Hard ground ball to SHORTSTOP — it gets through! Tap who is backing it up in the outfield.',
+    targetZone: 'CF',
+    explanation: 'CF backs up the middle infield! Center field has the most ground to cover and backs up anything hit up the middle — pitcher, shortstop, or second base. Keep moving even on plays that aren\'t hit to you!',
+  },
+  {
+    id: 'b39',
+    label: 'Hard Grounder to 2nd Base — Bases Empty',
+    runners: { first: false, second: false, third: false },
+    ballZone: '2B',
+    question: 'Hard ground ball to SECOND BASE — it skips through! Tap who is backing it up in the outfield.',
+    targetZone: 'CF',
+    explanation: 'CF backs up 2B too! Center field is responsible for everything that gets through the middle of the infield — pitcher, shortstop, AND second base. That\'s a lot of ground, which is why CF is usually your fastest, most alert outfielder.',
+  },
+  {
+    id: 'b40',
+    label: 'Hard Grounder to 1st Base — Bases Empty',
+    runners: { first: false, second: false, third: false },
+    ballZone: '1B',
+    question: 'Hard ground ball to FIRST BASE — it skips through! Tap who is backing it up in the outfield.',
+    targetZone: 'RF',
+    explanation: 'RF backs up 1B! Right field covers every ground ball hit to the right side of the infield. One bad hop happens to everyone — the backup outfielder is what keeps a tough play from turning into extra bases.',
+  },
+  {
+    id: 'b41',
+    label: 'Comebacker to the Pitcher — Bases Empty',
+    runners: { first: false, second: false, third: false },
+    ballZone: 'P',
+    question: 'Comebacker up the middle to the PITCHER — it gets through! Tap who is backing it up in the outfield.',
+    targetZone: 'CF',
+    explanation: 'CF backs up the pitcher too! Anything hit back through the box or up the middle is CF\'s job to back up. Same rule every time: middle of the infield means center field has your back.',
+  },
 ];
