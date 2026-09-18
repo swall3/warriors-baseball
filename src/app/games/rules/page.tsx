@@ -229,11 +229,11 @@ export default function RulesQuizPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-3xl p-6 shadow-xl mb-4">
-            <p className="text-[#8b1a2e] text-[11px] font-bold uppercase tracking-widest mb-3">
-              ⚾ Question {current + 1}
+          <div className="game-panel rounded-3xl p-6 shadow-xl mb-4">
+            <p className="font-display text-[#c9a84c] text-[13px] tracking-widest mb-3">
+              ⚾ QUESTION {current + 1}
             </p>
-            <h2 className="text-[#0f2044] text-[18px] font-bold leading-snug mb-5">
+            <h2 className="text-white text-[18px] font-bold leading-snug mb-5">
               {q.question}
             </h2>
 
@@ -243,20 +243,20 @@ export default function RulesQuizPage() {
                 const isSelected = selected === i;
                 const isCorrectOpt = i === q.correct;
 
-                let style = "tactile w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl font-semibold text-[15px] bg-white text-[#1a2a4a] ";
+                let style = "tactile-dark w-full flex items-center gap-3 text-left px-4 py-3.5 rounded-2xl font-semibold text-[15px] ";
                 let chipStyle = "w-[30px] h-[30px] rounded-[10px] flex items-center justify-center text-[13px] font-extrabold shrink-0 transition-colors ";
 
                 if (selected === null) {
-                  chipStyle += "bg-[#eef1f8] text-[#4a5880]";
+                  chipStyle += "bg-white/10 text-white/70";
                 } else if (isCorrectOpt) {
-                  style += "tactile-correct animate-pop-in ";
+                  style += "tactile-dark-correct animate-pop-in ";
                   chipStyle += "bg-green-500 text-white";
                 } else if (isSelected && !isCorrectOpt) {
-                  style += `tactile-wrong ${wrongKey > 0 && wrongIdx === i ? "animate-shake-h" : ""} `;
+                  style += `tactile-dark-wrong ${wrongKey > 0 && wrongIdx === i ? "animate-shake-h" : ""} `;
                   chipStyle += "bg-red-500 text-white";
                 } else {
                   style += "opacity-45 ";
-                  chipStyle += "bg-[#eef1f8] text-[#4a5880]";
+                  chipStyle += "bg-white/10 text-white/70";
                 }
 
                 return (
@@ -279,10 +279,15 @@ export default function RulesQuizPage() {
             {selected !== null && (
               <div
                 className={`mt-5 rounded-2xl px-5 py-4 text-[14px] leading-relaxed animate-pop-in ${
-                  isCorrect ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-900"
+                  isCorrect ? "feedback-correct" : "feedback-wrong"
                 }`}
               >
-                <p className="font-bold mb-1">{isCorrect ? "✅ Correct!" : "❌ Not quite!"}</p>
+                <p className="font-bold mb-1.5 flex items-center gap-2">
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-black shrink-0 ${isCorrect ? "feedback-badge-correct" : "feedback-badge-wrong"}`}>
+                    {isCorrect ? "✓" : "!"}
+                  </span>
+                  {isCorrect ? "Correct!" : "Not quite!"}
+                </p>
                 <p>{q.explanation}</p>
               </div>
             )}

@@ -132,13 +132,21 @@ export default function GamesPage() {
 
           {/* Where Do I Go? — free play, not scored */}
           <Link href="/games/position" className="block">
-            <div className="relative overflow-hidden rounded-[24px] p-6 cursor-pointer border-2 border-dashed border-white/20 hover:border-white/35 transition-colors active:scale-[0.98]">
+            <div className="tile-position tile-3d relative overflow-hidden rounded-[24px] p-6 cursor-pointer">
+              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
+                   style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.10) 0%,transparent 100%)" }} />
+              <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.14] pointer-events-none -rotate-12 select-none">🧭</div>
+
               <div className="relative">
-                <span className="inline-block bg-white/10 text-white/60 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Practice Mode</span>
+                <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Practice Mode</span>
                 <h2 className="font-display text-white text-3xl leading-none mb-2">WHERE DO I GO?</h2>
-                <p className="text-white/50 text-[13px] font-medium leading-snug">
+                <p className="text-white/70 text-[13px] font-medium leading-snug mb-4 max-w-[240px]">
                   Pick YOUR position. Only see the plays where you have a job — no scoring, just reps.
                 </p>
+                <div className="flex items-center justify-between">
+                  <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">🎯 No Pressure</span>
+                  <div className="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white text-lg">›</div>
+                </div>
               </div>
             </div>
           </Link>

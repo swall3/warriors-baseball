@@ -214,13 +214,18 @@ export default function PositionPage() {
           </p>
         )}
 
-        <div className="bg-white rounded-3xl px-5 py-5 shadow-xl mb-4">
-          <p className="text-[#1a4a72] text-[11px] font-bold uppercase tracking-widest mb-1.5">📍 Your Move</p>
-          <h2 className="text-[#0f2044] text-[17px] font-bold leading-snug">{s.question}</h2>
+        <div className="game-panel rounded-3xl px-5 py-5 shadow-xl mb-4">
+          <p className="font-display text-[#c9a84c] text-[12px] tracking-widest mb-1.5">📍 YOUR MOVE</p>
+          <h2 className="text-white text-[17px] font-bold leading-snug">{s.question}</h2>
 
           {tapState !== null && (
-            <div className={`mt-4 rounded-2xl px-4 py-4 text-[14px] leading-relaxed animate-pop-in ${tapState === "correct" ? "bg-green-50 text-green-800" : "bg-amber-50 text-amber-900"}`}>
-              <p className="font-bold mb-1">{tapState === "correct" ? "✅ Correct!" : "❌ Check the green circle!"}</p>
+            <div className={`mt-4 rounded-2xl px-4 py-4 text-[14px] leading-relaxed animate-pop-in ${tapState === "correct" ? "feedback-correct" : "feedback-wrong"}`}>
+              <p className="font-bold mb-1.5 flex items-center gap-2">
+                <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[11px] font-black shrink-0 ${tapState === "correct" ? "feedback-badge-correct" : "feedback-badge-wrong"}`}>
+                  {tapState === "correct" ? "✓" : "!"}
+                </span>
+                {tapState === "correct" ? "Correct!" : "Check the green circle!"}
+              </p>
               <p>{s.explanation}</p>
             </div>
           )}
