@@ -41,15 +41,26 @@ export default function PositionPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
 
+  // A scenario belongs to a position if that position either starts the play
+  // (ballZone) or is the correct responder (targetZone) — NOT targetZone alone.
+  // Filtering by targetZone only would mean every scenario shown has "your own
+  // circle" as the answer, which isn't a decision, it's just tapping yourself.
+  // Including ballZone brings in the genuine "you fielded it — now where does
+  // it go?" plays, where the right answer is often a different position.
+  const relevantTo = (s: (typeof BACKUP_SCENARIOS)[number], pos: PositionKey) =>
+    s.targetZone === pos || s.ballZone === pos;
+
   const positionCounts = useMemo(() => {
     const counts: Partial<Record<PositionKey, number>> = {};
-    for (const s of BACKUP_SCENARIOS) counts[s.targetZone] = (counts[s.targetZone] ?? 0) + 1;
+    for (const pos of POSITION_GRID) {
+      counts[pos] = BACKUP_SCENARIOS.filter(s => relevantTo(s, pos)).length;
+    }
     return counts;
   }, []);
 
   const choosePosition = (zone: string) => {
     const pos = zone as PositionKey;
-    const matches = shuffle(BACKUP_SCENARIOS.filter(s => s.targetZone === pos));
+    const matches = shuffle(BACKUP_SCENARIOS.filter(s => relevantTo(s, pos)));
     setPosition(pos);
     setScenarios(matches);
     setCurrent(0);
@@ -222,7 +233,7 @@ export default function PositionPage() {
 
         {tapState === null && (
           <p className="text-center text-white/50 text-[13px] font-semibold mb-3 tracking-wide">
-            👆 Tap where {position} should be
+            👆 Tap a player on the field
           </p>
         )}
 
