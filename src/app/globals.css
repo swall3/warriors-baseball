@@ -82,6 +82,11 @@ textarea.field { resize: none; }
   background: linear-gradient(145deg, #1a4a72 0%, #0e2e4e 100%);
   box-shadow: 0 6px 0 #061830, 0 10px 40px rgba(26,74,114,0.5);
 }
+/* 3D raised game tile — gold (daily play) */
+.tile-daily {
+  background: linear-gradient(145deg, #d4b55a 0%, #a8842e 100%);
+  box-shadow: 0 6px 0 #7a5f1e, 0 10px 40px rgba(201,168,76,0.5);
+}
 .tile-3d { transition: transform 0.12s; }
 .tile-3d:active { transform: translateY(4px); }
 

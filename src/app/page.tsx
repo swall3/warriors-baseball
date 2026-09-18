@@ -104,7 +104,7 @@ export default function HomePage() {
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-20 w-full">
           <p className="inline-block bg-[#8b1a2e] text-white text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
-            Tryouts Open · Limited Roster
+            {TRYOUTS_OPEN ? "Tryouts Open · Limited Roster" : "2026 Roster Set"}
           </p>
           <h1 className="font-display text-white mb-4">
             <span className="block text-[#c9a84c] text-3xl mb-1">EAST CHEROKEE</span>
