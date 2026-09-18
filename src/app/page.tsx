@@ -176,7 +176,7 @@ export default function HomePage() {
             {/* Card 3 */}
             <div>
               <div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
-                <Image src="/images/hero-bg.jpg" alt="Brotherhood" fill className="object-cover object-center" />
+                <Image src="/images/brotherhood.jpg" alt="Brotherhood" fill className="object-cover object-center" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 to-transparent" />
                 <div className="absolute bottom-0 left-0 p-5">
                   <p className="text-[#c9a84c] text-xs font-bold uppercase tracking-wider mb-1">03</p>

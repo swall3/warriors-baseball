@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
 import { Diamond, PositionKey, TapState } from "@/components/Diamond";
 import { getDailyIndex, getDailyState, recordDailyPlay, recordAttempt, hasPlayedToday } from "@/lib/gameStorage";
@@ -49,6 +50,10 @@ export default function DailyPage() {
         <div className="flex items-center gap-2 mb-4">
           <Link href="/games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
+          </Link>
+          <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Warriors home">
+            <Image src="/images/warriors/mascot.png" alt="" width={22} height={22} className="object-contain" />
+            <span className="font-display text-white text-xs tracking-wide hidden sm:inline">WARRIORS</span>
           </Link>
           <div className="flex-1" />
           <div className="streak-flame flex items-center gap-1.5 font-extrabold text-white text-sm rounded-full px-3.5 py-1.5">
@@ -129,7 +134,7 @@ export default function DailyPage() {
             {tapState !== null && (
               <Link
                 href="/games"
-                className="cta-blue block w-full text-center text-white font-extrabold text-sm uppercase tracking-wider py-4 rounded-[18px] animate-pop-in"
+                className="cta-gold block w-full text-center text-[#0f2044] font-extrabold text-sm uppercase tracking-wider py-4 rounded-[18px] animate-pop-in"
               >
                 Back to Games →
               </Link>

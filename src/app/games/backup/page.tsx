@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { BACKUP_SCENARIOS, BackupScenario } from "@/lib/gameData";
 import { Diamond, FIELD_POS, PositionKey, TapState } from "@/components/Diamond";
 import { recordAttempt } from "@/lib/gameStorage";
@@ -222,6 +223,10 @@ export default function BackupPage() {
           <Link href="/games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
           </Link>
+          <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Warriors home">
+            <Image src="/images/warriors/mascot.png" alt="" width={22} height={22} className="object-contain" />
+            <span className="font-display text-white text-xs tracking-wide hidden sm:inline">WARRIORS</span>
+          </Link>
           <div className="flex-1" />
           {streak >= 2 ? (
             <div className="streak-flame flex items-center gap-1.5 font-extrabold text-white text-sm rounded-full px-3.5 py-1.5">
@@ -322,7 +327,7 @@ export default function BackupPage() {
         {tapState !== null && (
           <button
             onClick={handleNext}
-            className="cta-blue w-full text-white font-extrabold text-sm uppercase tracking-wider py-4 rounded-[18px] animate-pop-in"
+            className="cta-gold w-full text-[#0f2044] font-extrabold text-sm uppercase tracking-wider py-4 rounded-[18px] animate-pop-in"
           >
             {current + 1 >= total ? "See My Score →" : "Next Situation →"}
           </button>

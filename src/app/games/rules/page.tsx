@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { RULES_QUESTIONS, RulesQuestion } from "@/lib/gameData";
 
 function shuffle<T>(arr: T[]): T[] {
@@ -187,6 +188,10 @@ export default function RulesQuizPage() {
         <div className="flex items-center gap-2 mb-4">
           <Link href="/games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
+          </Link>
+          <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Warriors home">
+            <Image src="/images/warriors/mascot.png" alt="" width={22} height={22} className="object-contain" />
+            <span className="font-display text-white text-xs tracking-wide hidden sm:inline">WARRIORS</span>
           </Link>
           <div className="flex-1" />
           {streak >= 2 ? (
