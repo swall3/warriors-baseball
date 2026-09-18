@@ -41,3 +41,17 @@ export async function expectedToken(): Promise<string | null> {
   if (!passcode) return null;
   return hashPasscode(passcode);
 }
+
+// Defense-in-depth for /api/coach/* route handlers: middleware.ts already
+// gates the whole /api/coach/:path* tree, but this lets each handler verify
+// independently rather than relying solely on the matcher never being
+// edited. Reads the cookie via next/headers, so no request object is needed
+// at the call site.
+export async function requireCoach(): Promise<boolean> {
+  const expected = await expectedToken();
+  if (!expected) return false;
+  const { cookies } = await import("next/headers");
+  const store = await cookies();
+  const cookie = store.get(AUTH_COOKIE)?.value;
+  return cookie === expected;
+}

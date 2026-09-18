@@ -67,7 +67,15 @@ function coerceDb(parsed: Partial<LocalDb>): LocalDb {
 export async function readDb(): Promise<LocalDb> {
   // Primary source: shared Supabase DB (real cross-device data).
   if (isSupabaseEnabled()) {
-    return readDbFromSupabase();
+    try {
+      return await readDbFromSupabase();
+    } catch (error) {
+      // B1 fix: Supabase being *configured* doesn't mean it's *reachable*
+      // (paused project, network blip, etc). Previously this threw straight
+      // through to a 500 on every data screen. Now it degrades to the local
+      // fallback below instead of taking the whole read path down.
+      console.error("Supabase read failed, falling back to local/seed data", error);
+    }
   }
   // Local dev fallback: working-copy JSON file, else the bundled seed.
   try {
