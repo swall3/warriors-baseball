@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 const TRYOUTS_OPEN    = false; // flip to true when next season opens
 const COACH_EMAIL     = "warriors8u@gmail.com";
@@ -15,6 +16,7 @@ export default function HomePage() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 60);
@@ -58,9 +60,35 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <a href="#about"   className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Program</a>
             <a href="#tryouts" className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
+            <Link href="/games" className="hidden md:block text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
             <a href="#signup"  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors ml-2">Sign Up</a>
+            {/* Hamburger — mobile only */}
+            <button
+              className="md:hidden ml-2 text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
+              onClick={() => setMobileOpen(o => !o)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
+        {/* Mobile dropdown */}
+        {mobileOpen && (
+          <div className="md:hidden bg-[#0f2044] border-t border-white/10 px-6 py-4 flex flex-col gap-1">
+            <a href="#about"   onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Program</a>
+            <a href="#tryouts" onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
+            <Link href="/games" onClick={() => setMobileOpen(false)} className="text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
+            <a href="#signup"  onClick={() => setMobileOpen(false)} className="mt-2 bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-3 rounded-lg transition-colors text-center">Sign Up</a>
+          </div>
+        )}
       </nav>
 
       {/* HERO — stadium photo, mascot right, text left */}

@@ -1,16 +1,26 @@
 {
   "name": "Warriors Baseball",
-  "short_name": "Warriors",
-  "description": "East Cherokee Warriors Baseball",
-  "start_url": "/",
+  "short_name": "Warriors ⚾",
+  "description": "East Cherokee Warriors — Rules Quiz & Backup Positions game",
+  "start_url": "/games",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
-  "theme_color": "#8b1a2e",
+  "orientation": "portrait",
+  "background_color": "#0f2044",
+  "theme_color": "#0f2044",
+  "categories": ["sports", "games", "education"],
   "icons": [
     {
-      "src": "/images/warriors/logo.jpg",
+      "src": "/images/warriors/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/warriors/logo.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

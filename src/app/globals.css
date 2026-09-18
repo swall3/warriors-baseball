@@ -35,3 +35,106 @@ html, body {
 .field::placeholder { color: #b0b7c3; }
 select.field { cursor: pointer; }
 textarea.field { resize: none; }
+
+/* ── Game animations ── */
+@keyframes float-up {
+  0%   { opacity: 1; transform: translateY(0) scale(1.05); }
+  25%  { opacity: 1; transform: translateY(-18px) scale(1.15); }
+  100% { opacity: 0; transform: translateY(-72px) scale(0.85); }
+}
+@keyframes pop-in {
+  0%   { transform: scale(0.4); opacity: 0; }
+  65%  { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+@keyframes shake-h {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-10px); }
+  40%     { transform: translateX(10px); }
+  60%     { transform: translateX(-6px); }
+  80%     { transform: translateX(6px); }
+}
+.animate-float-up { animation: float-up 1.05s ease forwards; }
+.animate-pop-in   { animation: pop-in  0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.animate-shake-h  { animation: shake-h 0.4s ease; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(0.65); }
+}
+.animate-pulse-dot { animation: pulse-dot 1.4s ease infinite; }
+
+/* ── Game-feel design system ── */
+/* Radial spotlight background for the hub */
+.hub-bg {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 0%, rgba(201,168,76,0.13) 0%, transparent 60%),
+    linear-gradient(180deg, #0f2044 0%, #091630 100%);
+}
+
+/* 3D raised game tile — red (rules) */
+.tile-rules {
+  background: linear-gradient(145deg, #9f1d31 0%, #6e0e1e 100%);
+  box-shadow: 0 6px 0 #3d0710, 0 10px 40px rgba(139,26,46,0.5);
+}
+/* 3D raised game tile — blue (backup) */
+.tile-backup {
+  background: linear-gradient(145deg, #1a4a72 0%, #0e2e4e 100%);
+  box-shadow: 0 6px 0 #061830, 0 10px 40px rgba(26,74,114,0.5);
+}
+.tile-3d { transition: transform 0.12s; }
+.tile-3d:active { transform: translateY(4px); }
+
+/* Tactile 3D answer button */
+.tactile {
+  border: 2px solid #e4eaf5;
+  border-bottom: 4px solid #c8d4ec;
+  box-shadow: 0 2px 0 rgba(15,32,68,0.06);
+  transition: transform 0.1s, border-color 0.1s, background 0.1s, box-shadow 0.1s;
+}
+.tactile:not(:disabled):hover {
+  border-color: #0f2044;
+  border-bottom-color: #0f2044;
+  background: #f0f4ff;
+}
+.tactile:not(:disabled):active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  box-shadow: none;
+}
+.tactile-correct {
+  background: #f0fdf4 !important;
+  border-color: #22c55e !important;
+  border-bottom-color: #16a34a !important;
+  color: #14532d !important;
+  box-shadow: 0 2px 0 #15803d;
+}
+.tactile-wrong {
+  background: #fff1f2 !important;
+  border-color: #f87171 !important;
+  border-bottom-color: #dc2626 !important;
+  color: #7f1d1d !important;
+  box-shadow: 0 2px 0 #b91c1c;
+}
+
+/* 3D CTA button (Next) */
+.cta-gold {
+  background: linear-gradient(180deg, #d4b55a 0%, #c9a84c 100%);
+  border-bottom: 4px solid #a88030;
+  box-shadow: 0 4px 16px rgba(201,168,76,0.35);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.cta-gold:active { transform: translateY(2px); border-bottom-width: 2px; }
+.cta-blue {
+  background: linear-gradient(180deg, #1f5a8a 0%, #1a4a72 100%);
+  border-bottom: 4px solid #0e2a4a;
+  box-shadow: 0 4px 16px rgba(26,74,114,0.4);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.cta-blue:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+/* Streak flame badge */
+.streak-flame {
+  background: linear-gradient(135deg, #ff6000, #ff9200);
+  box-shadow: 0 2px 12px rgba(255,100,0,0.45);
+}
