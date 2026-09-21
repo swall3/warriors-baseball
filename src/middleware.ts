@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE, expectedToken } from "@/lib/coach/auth";
+import { resolveCoachSession } from "@/lib/coach/auth";
 
 // Gate for the ported Outlaws coach tool. Allow-by-default: the matcher
 // below is the entire allowlist. Anything not matched (Warriors' public
@@ -44,9 +44,26 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const cookie = req.cookies.get(AUTH_COOKIE)?.value;
-  const expected = await expectedToken(); // null when APP_PASSCODE unset -> fails closed
-  if (expected && cookie === expected) {
+  // MT-3: the same resolver the route handlers use (auth.ts), given this
+  // request's cookie jar instead of next/headers. It verifies the signed
+  // ec_coach_session HMAC and falls back to the MT-2 ec_coach_auth hash for
+  // browsers that logged in before this deploy — see auth.ts's header for why
+  // that bridge exists and why it is not a weakening.
+  //
+  // Sharing the resolver is the point: an edge gate and a handler gate that
+  // each reimplement "is this session valid" is how one of them ends up
+  // accepting something the other rejects.
+  //
+  // Still fails closed — resolveCoachSession() returns null when neither
+  // SESSION_SECRET nor APP_PASSCODE is configured.
+  //
+  // The middleware only asks WHETHER, not WHO. Trusting an org id decided here
+  // and passed downstream in a header would make the gate the authority on
+  // tenancy; instead each handler re-resolves the session itself
+  // (requireCoach() -> getOrgContext()), so the org a query is scoped to comes
+  // from the cookie that request actually carried.
+  const session = await resolveCoachSession((name) => req.cookies.get(name)?.value);
+  if (session) {
     return NextResponse.next();
   }
 

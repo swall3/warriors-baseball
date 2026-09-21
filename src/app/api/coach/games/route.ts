@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { readDb } from "@/lib/coach/local-db";
 import { requireCoach } from "@/lib/coach/auth";
-import { getOrgScope } from "@/lib/tenant/context";
 
 export async function GET() {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   try {
-    const db = await readDb(await getOrgScope());
+    const db = await readDb({ orgId: session.orgId });
     const games = db.games.map((g) => {
       const team = db.teams.find((t) => t.id === g.opponentTeamId);
       const pins = db.playEvents

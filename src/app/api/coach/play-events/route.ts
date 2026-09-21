@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { readDb, toV2EventFallback } from '@/lib/coach/local-db';
 import { requireCoach } from '@/lib/coach/auth';
-import { getOrgScope } from '@/lib/tenant/context';
 
 export async function GET(request: NextRequest) {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return Response.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
   try {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ ok: false, error: 'Game ID is required' }, { status: 400 });
     }
 
-    const db = await readDb(await getOrgScope());
+    const db = await readDb({ orgId: session.orgId });
     const game = db.games.find(g => g.clientGameId === gameId || g.id === gameId);
 
     if (!game) {

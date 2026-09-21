@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { readDb, toV2EventFallback } from "@/lib/coach/local-db";
 import { requireCoach } from "@/lib/coach/auth";
-import { getOrgScope } from "@/lib/tenant/context";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ gameId: string }> }) {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   try {
     const { gameId } = await params;
-    const db = await readDb(await getOrgScope());
+    const db = await readDb({ orgId: session.orgId });
     const game = db.games.find((g) => g.clientGameId === gameId || g.id === gameId);
     if (!game) return NextResponse.json({ ok: false, error: "Game not found" }, { status: 404 });
 

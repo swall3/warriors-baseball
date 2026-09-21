@@ -8,7 +8,6 @@
 import { NextResponse } from "next/server";
 import { requireCoach } from "@/lib/coach/auth";
 import { isSupabaseEnabled, sbSelectAll, sbUpsert, type OrgScope } from "@/lib/supabase";
-import { getOrgScope } from "@/lib/tenant/context";
 import {
   normalizeFormat,
   normalizeGroups,
@@ -74,7 +73,8 @@ async function rowToPlan(scope: OrgScope, row: LineupPlanRow): Promise<LineupPla
 // GET /api/coach/lineup?gameId=<clientGameId> — fetch the plan for a game
 // GET /api/coach/lineup               — list plans for the team (newest first)
 export async function GET(request: Request) {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const scope = await getOrgScope();
+    const scope: OrgScope = { orgId: session.orgId };
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const gameId = url.searchParams.get("gameId");
@@ -149,7 +149,8 @@ export async function GET(request: Request) {
 // server round-trip first, and so an offline edit can be replayed later without
 // creating a duplicate row.
 export async function POST(request: Request) {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
@@ -183,7 +184,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const scope = await getOrgScope();
+    const scope: OrgScope = { orgId: session.orgId };
     const now = new Date().toISOString();
     const gameRowId = await resolveGameRowId(scope, plan.gameId ?? null);
 

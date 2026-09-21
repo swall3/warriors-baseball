@@ -4,7 +4,6 @@ import { readScoreUs, readStateUsRuns, readUsAreHome, toTeamAtBat } from "@/lib/
 import { makeId, normalizeTeamName, readDb, writeDb } from "@/lib/coach/local-db";
 import { isSupabaseEnabled, sbDelete, sbInsert, sbSelectAll, sbUpsert, type OrgScope } from "@/lib/supabase";
 import { requireCoach } from "@/lib/coach/auth";
-import { getOrgScope } from "@/lib/tenant/context";
 
 function toV2Events(game: PersistedGamePayload): GameEventV2[] {
   if (Array.isArray(game.eventsV2) && game.eventsV2.length > 0) return game.eventsV2;
@@ -30,7 +29,8 @@ function toV2Events(game: PersistedGamePayload): GameEventV2[] {
 }
 
 export async function POST(request: Request) {
-  if (!(await requireCoach())) {
+  const session = await requireCoach();
+  if (!session) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   try {
@@ -41,9 +41,9 @@ export async function POST(request: Request) {
     }
 
     if (isSupabaseEnabled()) {
-      return await syncToSupabase(game, await getOrgScope());
+      return await syncToSupabase(game, { orgId: session.orgId });
     }
-    return await syncToLocalFile(game, await getOrgScope());
+    return await syncToLocalFile(game, { orgId: session.orgId });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown sync error";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
