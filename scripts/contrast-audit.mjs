@@ -16,7 +16,15 @@ import { chromium } from "/home/swall/.local/lib/node_modules/openclaw/node_modu
 
 const PASSCODE = process.argv[2] || process.env.APP_PASSCODE;
 const BASE = process.env.BASE || "http://127.0.0.1:3010";
-const PAGES = ["/coach/login", "/coach/dashboard", "/coach/lineup", "/coach", "/coach/stats", "/coach/intel", "/coach/import"];
+const PAGES = [
+  "/coach/login", "/coach/dashboard", "/coach/lineup", "/coach",
+  "/coach/stats", "/coach/intel", "/coach/import",
+  // Dynamic route — id comes from seed-db.json, so this works offline with
+  // Supabase unconfigured. Both states matter: the second exercises the
+  // "Game Not Found" branch.
+  "/coach/game/game-2026-05-24-bucks",
+  "/coach/game/does-not-exist",
+];
 
 const AUDIT = () => {
   const lum = ([r, g, b]) => {
