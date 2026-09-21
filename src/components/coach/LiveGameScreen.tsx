@@ -606,7 +606,7 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
   const params = useSearchParams();
   const board = params.get("view") === "board";
   const live = useLiveGame(orgId, gameId, board);
-  const [tab, setTab] = useState("all");
+  const [tab, setTab] = useState(params.get("setup") === "crew" ? "crew" : "all");
   const [actionError, setActionError] = useState("");
   const [wake, setWake] = useState(false);
   const game = board || live.conflict ? live.confirmed : live.game;
@@ -753,7 +753,8 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
   return (
     <Workspace
       catalog={catalog}
-      active="Games"
+      active="Today"
+      gameStatus={game?.status}
       compact={game?.status === "live"}
     >
       {catalogError && <LoadError error={catalogError} retry={retry} />}

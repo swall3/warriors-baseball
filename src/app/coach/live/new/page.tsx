@@ -34,7 +34,7 @@ export default function NewGame() {
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error);
-                router.push(`/coach/live/${data.game.id}`);
+                router.push(`/coach/live/${data.game.id}?setup=crew`);
               } finally {
                 setBusy(false);
               }

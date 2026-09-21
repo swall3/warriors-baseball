@@ -303,3 +303,116 @@ test("authenticated multi-recorder lifecycle, persisted insights and training", 
     false,
   );
 });
+
+test("six-inning game preserves split-recorder pitch totals and display state", async () => {
+  const catalog = await request(prefix + "/catalog");
+  const roster = catalog.players
+    .filter((p) => p.team_id === "team-review-warriors")
+    .map((p) => ({ id: p.id, name: p.display_name }));
+  const positions = Object.fromEntries(
+    ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].map((p, i) => [
+      p,
+      roster[i].id,
+    ]),
+  );
+  const created = await request(prefix + "/live", {
+    method: "POST",
+    body: {
+      config: {
+        teamId: "team-review-warriors",
+        teamName: "Warriors",
+        opponent: "Six inning review",
+        date: "2026-09-21",
+        usAreHome: true,
+        format: "kid_pitch",
+        innings: 6,
+        roster,
+        order: roster.map((p) => p.id),
+        opponentOrder: roster.map((_, i) => ({
+          id: `op-${i}`,
+          name: `Opponent ${i + 1}`,
+        })),
+        positions,
+        crewMode: "split",
+      },
+    },
+  });
+  assert.equal(created.status, 201);
+  let game = created.game;
+  const url = prefix + "/live/" + game.id;
+  const grant = async (lane) =>
+    (
+      await request(url + "/crew", {
+        method: "POST",
+        body: { lane, label: `Six inning ${lane}` },
+      })
+    ).grant;
+  const pitch = await grant("pitch"),
+    play = await grant("play"),
+    display = await grant("display");
+  const send = async (command, token) => {
+    const response = await request(url, {
+      method: "POST",
+      body: { id: randomUUID(), expectedRevision: game.revision, command },
+      ...(token ? { auth: viewer, token } : {}),
+    });
+    assert.equal(response.status, 200, JSON.stringify(response));
+    game = response.game;
+  };
+  await send({ type: "start" });
+  await send({ type: "pitch", outcome: "in_play" }, pitch.token);
+  await send(
+    {
+      type: "result",
+      pitchId: game.pending.id,
+      result: "home_run",
+      zone: "LF",
+      moves: [{ id: game.pending.batter.id, to: "home" }],
+      countRunsOnThirdOut: false,
+    },
+    play.token,
+  );
+  assert.equal(game.score.them, 1);
+  for (let half = 0; half < 12; half++) {
+    if (half === 6)
+      await send({ type: "pitcher", side: "us", pitcher: roster[3] });
+    for (let out = 0; out < 3; out++)
+      for (let strike = 0; strike < 3; strike++)
+        await send({ type: "pitch", outcome: "called_strike" }, pitch.token);
+    const board = await request(url, { auth: viewer, token: display.token });
+    assert.equal(board.status, 200);
+    assert.equal(board.game.revision, game.revision);
+    assert.deepEqual(board.game.score, game.score);
+    assert.deepEqual(board.game.pitchCounts, game.pitchCounts);
+    assert.equal(game.outs, 0);
+  }
+  await send({ type: "finish" });
+  assert.equal(game.status, "final");
+  assert.equal(game.score.us, 0);
+  assert.equal(game.score.them, 1);
+  assert.equal(game.pitchCounts["us:" + roster[0].id], 28);
+  assert.equal(game.pitchCounts["us:" + roster[3].id], 27);
+  assert.equal(
+    Object.values(game.pitchCounts).reduce((sum, n) => sum + n, 0),
+    109,
+  );
+  const final = await request(url, { auth: viewer, token: display.token });
+  assert.equal(final.game.status, "final");
+  assert.equal(
+    (
+      await request(url, {
+        auth: viewer,
+        token: display.token,
+        method: "POST",
+        body: {
+          id: randomUUID(),
+          expectedRevision: game.revision,
+          command: { type: "undo", targetId: randomUUID() },
+        },
+      })
+    ).status,
+    403,
+  );
+  const insights = await request(url + "/insights");
+  assert.deepEqual(insights.insights.zones, [["LF", 1]]);
+});
