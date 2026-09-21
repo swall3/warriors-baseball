@@ -65,9 +65,9 @@ export const eyebrow = club.region.toUpperCase();
  */
 export const team = {
   /** Short display name used throughout the coach tool: scoreboards, box scores. */
-  name: "Outlaws",
+  name: "Your team",
   /** Full name, used on the coach login screen. */
-  fullName: "East Cherokee Outlaws",
+  fullName: "Team workspace",
   /**
    * Filename-safe slug for generated downloads (`<slug>-game-summary.md`).
    * Display-only — this is NOT the `team-outlaws` database id, and changing it

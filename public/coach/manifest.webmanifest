@@ -1,39 +1,28 @@
 {
-  "name": "Outlaws Field App",
-  "short_name": "Outlaws",
-  "description": "Fast mobile scorekeeping, spray chart tracking, lineup, and game stats for the Outlaws.",
+  "name": "Ninety Feet Coach",
+  "short_name": "Coach",
+  "description": "Team scorekeeping, spray charts, lineups and game stats.",
   "start_url": "/coach",
   "scope": "/coach",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui", "browser"],
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
   "orientation": "portrait",
   "background_color": "#f8fafc",
   "theme_color": "#111827",
-  "categories": ["sports", "productivity"],
+  "categories": [
+    "sports",
+    "productivity"
+  ],
   "icons": [
     {
-      "src": "/coach/icons/outlaws-icon.svg",
+      "src": "/coach/icons/coach-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
-    },
-    {
-      "src": "/coach/icons/outlaws-icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/coach/icons/outlaws-icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/coach/icons/outlaws-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ],
   "shortcuts": [
@@ -41,13 +30,27 @@
       "name": "Score Game",
       "short_name": "Score",
       "url": "/coach",
-      "icons": [{ "src": "/coach/icons/outlaws-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/coach/icons/coach-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
     },
     {
       "name": "Stats",
       "short_name": "Stats",
       "url": "/coach/stats",
-      "icons": [{ "src": "/coach/icons/outlaws-icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/coach/icons/coach-icon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml",
+          "purpose": "any"
+        }
+      ]
     }
   ]
 }

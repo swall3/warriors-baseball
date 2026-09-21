@@ -8,5 +8,5 @@
   <circle cx="122" cy="326" r="17" fill="#f8fafc"/>
   <circle cx="390" cy="326" r="17" fill="#f8fafc"/>
   <circle cx="256" cy="148" r="17" fill="#f8fafc"/>
-  <text x="256" y="432" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="800" fill="#f8fafc">OUT</text>
+  <text x="256" y="432" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="58" font-weight="800" fill="#f8fafc">COACH</text>
 </svg>

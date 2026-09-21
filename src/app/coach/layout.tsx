@@ -10,6 +10,7 @@
 // background. Keeping it on a wrapper div rather than on <body> is deliberate
 // — it is what stops the coach palette from leaking onto the public Warriors
 // site or the /games hub, which share the same root layout.
+import { getCoachBrand } from "@/lib/coach/org-brand";
 import type { Metadata } from "next";
 import WorkspaceEntry from "@/components/coach/WorkspaceEntry";
 import { CoachOrgProvider } from "@/lib/coach/org-client";
@@ -26,11 +27,13 @@ import "./workspace.css";
 // cross-tenant mix-up to avoid.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Ninety Feet Coach",
-  // Coach screens are a private tool; keep them out of search results.
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  let orgId: string | null = null;
+  try { orgId = (await getOrgContext()).orgId; }
+  catch (error) { if (!(error instanceof NoOrgSessionError)) throw error; }
+  const brand = await getCoachBrand(orgId);
+  return { title: orgId ? `${brand.name} · Coach` : "Team sign-in", robots: { index: false, follow: false } };
+}
 
 // MT-3: this is also where the client learns which tenant it is rendering for.
 // The layout is the right place because it is the one server component every
@@ -60,8 +63,9 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     orgId = null;
   }
 
+  const brand = await getCoachBrand(orgId);
   return (
-    <CoachOrgProvider value={{ orgId, isOwnerOrg: orgId === OWNER_ORG_ID }}>
+    <CoachOrgProvider value={{ orgId, isOwnerOrg: orgId === OWNER_ORG_ID, brand }}>
       <div className="dugout-theme min-h-screen"><WorkspaceEntry/>{children}</div>
     </CoachOrgProvider>
   );

@@ -36,6 +36,7 @@ export type CoachOrg = {
   // null on /coach/login, which renders inside this layout with no session yet.
   orgId: string | null;
   isOwnerOrg: boolean;
+  brand?: { name: string; fullName: string; slug: string };
 };
 
 const CoachOrgContext = createContext<CoachOrg>({ orgId: null, isOwnerOrg: false });
@@ -50,8 +51,8 @@ export function CoachOrgProvider({
   // `value` is a fresh object from the server component on every render, so
   // memoize on its fields rather than on the object identity.
   const memo = useMemo(
-    () => ({ orgId: value.orgId, isOwnerOrg: value.isOwnerOrg }),
-    [value.orgId, value.isOwnerOrg],
+    () => ({ orgId: value.orgId, isOwnerOrg: value.isOwnerOrg, brand: value.brand }),
+    [value.orgId, value.isOwnerOrg, value.brand],
   );
   return <CoachOrgContext.Provider value={memo}>{children}</CoachOrgContext.Provider>;
 }
@@ -81,4 +82,8 @@ export function useCoachStorageKeys(): CoachStorageKeys {
     typeof window === "undefined" ? undefined : window.localStorage,
   );
   return useMemo(() => coachStorageKeys(orgId), [orgId]);
+}
+
+export function useCoachBrand() {
+  return useCoachOrg().brand ?? { name: "Your team", fullName: "Team workspace", slug: "team" };
 }

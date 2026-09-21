@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import SprayChart from '@/components/coach/spray-chart';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
 import type { PlayEvent } from '@/lib/coach/types';
-import { team as brandTeam } from '@/lib/brand-config';
+import { useCoachBrand } from "@/lib/coach/org-client";
 import { toTeamAtBat } from '@/lib/coach/game-types';
 import { useCoachStorageKeys } from '@/lib/coach/org-client';
 
@@ -54,6 +54,7 @@ type Stats = {
 };
 
 export default function StatsPage() {
+  const brandTeam = useCoachBrand();
   const storageKeys = useCoachStorageKeys();
   const [stats, setStats] = useState<Stats | null>(null);
   const [plays, setPlays] = useState<Play[]>([]);

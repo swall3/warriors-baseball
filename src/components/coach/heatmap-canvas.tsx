@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useLayoutEffect } from "react";
 import type { PlayEvent } from "@/lib/coach/types";
 import { drawBaseballField } from "@/lib/coach/field-geometry";
-import { team as brandTeam } from "@/lib/brand-config";
+import { useCoachBrand } from "@/lib/coach/org-client";
 
 interface HeatmapCanvasProps {
   gameId?: string;
@@ -157,6 +157,7 @@ const C_GREY_T: RGB = [165, 175, 190];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCanvasProps) {
+  const brandTeam = useCoachBrand();
   const [fetchedEvents, setFetchedEvents] = useState<PlayEvent[]>([]);
   const [loading, setLoading] = useState(() => !!gameId && propEvents === undefined);
   const [error, setError] = useState<string | null>(null);
