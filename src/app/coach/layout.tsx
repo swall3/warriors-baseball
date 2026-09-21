@@ -12,7 +12,18 @@
 // site or the /games hub, which share the same root layout.
 import type { Metadata } from "next";
 import { team } from "@/lib/brand-config";
+import { CoachOrgProvider } from "@/lib/coach/org-client";
+import { NoOrgSessionError, OWNER_ORG_ID, getOrgContext } from "@/lib/tenant/context";
 import "./coach.css";
+
+// Every /coach route renders per-request, never prerendered.
+//
+// Not a performance knob — a correctness one. This layout now puts an ORG ID
+// into the HTML, and a statically generated shell would bake ONE tenant's org
+// id into a file served to every tenant. The pages are gated, uncacheable and
+// entirely client-rendered anyway, so there is nothing to lose and a
+// cross-tenant mix-up to avoid.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: `${team.name} Coach`,
@@ -20,6 +31,37 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function CoachLayout({ children }: { children: React.ReactNode }) {
-  return <div className="dugout-theme min-h-screen">{children}</div>;
+// MT-3: this is also where the client learns which tenant it is rendering for.
+// The layout is the right place because it is the one server component every
+// coach screen passes through, and because a value put here lands in the
+// server-rendered HTML — available to client components synchronously on their
+// first render, which storage-keys.ts's ORDERING note explains is a data-safety
+// requirement and not a performance preference.
+//
+// The try/catch is load-bearing: /coach/login renders INSIDE this layout, and
+// by definition has no session yet. getOrgContext() throws in that case (it
+// refuses to guess an org), so without this, the login page — the one page a
+// locked-out coach needs — would 500. A null org is the honest answer for it,
+// and useCoachStorageKeys() throws if any other page somehow reaches storage
+// with one.
+//
+// It catches NoOrgSessionError SPECIFICALLY and rethrows everything else. A
+// bare `catch {}` here also swallowed the control-flow error Next throws out of
+// cookies() to bail out of static rendering, which silently prerendered these
+// pages with no org in them; the build failed on it. Narrow catches around
+// framework calls, always.
+export default async function CoachLayout({ children }: { children: React.ReactNode }) {
+  let orgId: string | null = null;
+  try {
+    orgId = (await getOrgContext()).orgId;
+  } catch (e) {
+    if (!(e instanceof NoOrgSessionError)) throw e;
+    orgId = null;
+  }
+
+  return (
+    <CoachOrgProvider value={{ orgId, isOwnerOrg: orgId === OWNER_ORG_ID }}>
+      <div className="dugout-theme min-h-screen">{children}</div>
+    </CoachOrgProvider>
+  );
 }

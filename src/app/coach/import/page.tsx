@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { readUsLineup } from "@/lib/coach/game-types";
+import { useCoachStorageKeys } from "@/lib/coach/org-client";
 
 interface GameEvent {
   batter: string;
@@ -30,6 +31,7 @@ const ZONE_COORDS: Record<string, { x: number; y: number }> = {
 };
 
 export default function GameImportPage() {
+  const storageKeys = useCoachStorageKeys();
   const router = useRouter();
   const [currentGameId, setCurrentGameId] = useState<string>("");
   const [gameLabel, setGameLabel] = useState<string>("");
@@ -45,13 +47,15 @@ export default function GameImportPage() {
   // Load existing game IDs
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
-    const HISTORY_KEY = "outlaws-field-app:games:v1";
 
     const loadExistingGames = async () => {
       try {
-        const rawHistory = window.localStorage.getItem(HISTORY_KEY);
-        const rawCurrent = window.localStorage.getItem("outlaws-field-app:v1");
+        // Per-org as of MT-3 (T7). This page previously hardcoded both key
+        // names, one of them inline — src/lib/coach/storage-keys.ts now owns
+        // them, and the legacy blob has already been copied across by the time
+        // this effect runs.
+        const rawHistory = window.localStorage.getItem(storageKeys.history);
+        const rawCurrent = window.localStorage.getItem(storageKeys.state);
 
         const storedGames = rawHistory ? (JSON.parse(rawHistory) as Array<{ id?: string; label?: string; opponentTeamName?: string; pins?: unknown[] }>) : [];
         const existingIds = storedGames.filter((g) => g.pins && Array.isArray(g.pins) && g.id).map((g) => g.id as string);
@@ -77,7 +81,7 @@ export default function GameImportPage() {
     };
 
     loadExistingGames();
-  }, []);
+  }, [storageKeys.history, storageKeys.state]);
 
   const handleAddEvent = () => {
     const zone = "center_field";

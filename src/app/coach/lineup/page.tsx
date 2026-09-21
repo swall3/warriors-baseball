@@ -16,15 +16,15 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DEFENSE_GROUP_NAMES, type DefenseGroupName } from "@/lib/coach/defense";
 import { readUsLineup } from "@/lib/coach/game-types";
+import { useCoachStorageKeys } from "@/lib/coach/org-client";
+import type { CoachStorageKeys } from "@/lib/coach/storage-keys";
 import {
   assignmentFor,
   assignPlayer,
   buildFairness,
-  COACH_STORAGE_KEY,
   detectConflicts,
   fieldSpotsForFormat,
   groupForInning,
-  LINEUP_PLAN_KEY,
   makeEmptyPlan,
   normalizeFormat,
   normalizeGroups,
@@ -50,20 +50,20 @@ type SyncState = "idle" | "saving" | "saved" | "error" | "local";
 // ---------------------------------------------------------------------------
 // localStorage I/O
 //
-// The live-scoring page owns `outlaws-field-app:v1` and rewrites the ENTIRE
-// blob on every state change. So we read-modify-write: spread the existing blob
-// and overwrite only the three defense keys. A partial write here is the one
-// way this page could break live scoring.
+// The live-scoring page owns `keys.state` and rewrites the ENTIRE blob on every
+// state change. So we read-modify-write: spread the existing blob and overwrite
+// only the three defense keys. A partial write here is the one way this page
+// could break live scoring.
 // ---------------------------------------------------------------------------
 
 // `fromStorage` is false only when this device has never seen a plan — neither
 // key present. That's the signal to adopt the server's copy outright instead of
 // offering it, which is what makes "lost the phone" and "opened the laptop"
 // actually work.
-function readPlanFromStorage(): { plan: LineupPlan; fromStorage: boolean } {
+function readPlanFromStorage(keys: CoachStorageKeys): { plan: LineupPlan; fromStorage: boolean } {
   const meta = (() => {
     try {
-      const raw = window.localStorage.getItem(LINEUP_PLAN_KEY);
+      const raw = window.localStorage.getItem(keys.lineupPlan);
       return raw ? normalizePlan(JSON.parse(raw)) : null;
     } catch {
       return null;
@@ -73,7 +73,7 @@ function readPlanFromStorage(): { plan: LineupPlan; fromStorage: boolean } {
   const base = meta ?? makeEmptyPlan();
 
   try {
-    const raw = window.localStorage.getItem(COACH_STORAGE_KEY);
+    const raw = window.localStorage.getItem(keys.state);
     if (!raw) return { plan: base, fromStorage: Boolean(meta) };
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const plan: LineupPlan = {
@@ -97,15 +97,15 @@ function readPlanFromStorage(): { plan: LineupPlan; fromStorage: boolean } {
   }
 }
 
-function writePlanToStorage(plan: LineupPlan) {
+function writePlanToStorage(plan: LineupPlan, keys: CoachStorageKeys) {
   try {
-    window.localStorage.setItem(LINEUP_PLAN_KEY, JSON.stringify(plan));
+    window.localStorage.setItem(keys.lineupPlan, JSON.stringify(plan));
   } catch {
     // Quota/private-mode failures must not break the page.
   }
 
   try {
-    const raw = window.localStorage.getItem(COACH_STORAGE_KEY);
+    const raw = window.localStorage.getItem(keys.state);
     const existing = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
     // This is a read-modify-write, so the pre-006 keys would survive the spread
     // and sit alongside their replacements forever — a stale `outlawsLineup`
@@ -115,7 +115,7 @@ function writePlanToStorage(plan: LineupPlan) {
     delete existing.outlawsLineup;
     delete existing.outlawsAreHome;
     window.localStorage.setItem(
-      COACH_STORAGE_KEY,
+      keys.state,
       JSON.stringify({
         ...existing,
         usLineup: plan.battingOrder,
@@ -132,6 +132,7 @@ function writePlanToStorage(plan: LineupPlan) {
 // ---------------------------------------------------------------------------
 
 export default function LineupBuilderPage() {
+  const storageKeys = useCoachStorageKeys();
   const [plan, setPlan] = useState<LineupPlan | null>(null);
   const [selected, setSelected] = useState<{ player: string; inning: number } | null>(null);
   const [syncState, setSyncState] = useState<SyncState>("idle");
@@ -147,10 +148,10 @@ export default function LineupBuilderPage() {
   // Load from localStorage after mount (never during render — the server has no
   // localStorage, and reading it in a state initializer desyncs hydration).
   useEffect(() => {
-    const { plan: local, fromStorage } = readPlanFromStorage();
+    const { plan: local, fromStorage } = readPlanFromStorage(storageKeys);
     hadLocalPlan.current = fromStorage;
     setPlan(local);
-  }, []);
+  }, [storageKeys]);
 
   // One-shot reconcile with the server copy.
   //
@@ -191,7 +192,7 @@ export default function LineupBuilderPage() {
   // is debounced and its failure is cosmetic.
   useEffect(() => {
     if (!plan) return;
-    writePlanToStorage(plan);
+    writePlanToStorage(plan, storageKeys);
 
     if (skipNextSync.current) {
       skipNextSync.current = false;

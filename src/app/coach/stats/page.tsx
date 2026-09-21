@@ -7,6 +7,7 @@ import { canonicalPlayerName } from '@/lib/coach/player-name';
 import type { PlayEvent } from '@/lib/coach/types';
 import { team as brandTeam } from '@/lib/brand-config';
 import { toTeamAtBat } from '@/lib/coach/game-types';
+import { useCoachStorageKeys } from '@/lib/coach/org-client';
 
 type Play = {
   inning: number;
@@ -53,6 +54,7 @@ type Stats = {
 };
 
 export default function StatsPage() {
+  const storageKeys = useCoachStorageKeys();
   const [stats, setStats] = useState<Stats | null>(null);
   const [plays, setPlays] = useState<Play[]>([]);
   const [sprayEvents, setSprayEvents] = useState<PlayEvent[]>([]);
@@ -63,9 +65,9 @@ export default function StatsPage() {
 
   const loadStats = async () => {
     try {
-      // Not renamed by 006 — see coach/page.tsx. T7 owns the key rename.
-      const STORAGE_KEY = 'outlaws-field-app:v1';
-      const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+      // Per-org as of MT-3 (T7) — src/lib/coach/storage-keys.ts.
+      const raw =
+        typeof window !== 'undefined' ? window.localStorage.getItem(storageKeys.state) : null;
       let pins: StoredPin[] = [];
       let nextScore = { us: 0, opponents: 0 };
 

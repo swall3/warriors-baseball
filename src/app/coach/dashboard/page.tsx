@@ -7,6 +7,7 @@ import type { PlayEvent } from '@/lib/coach/types';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
 import { team as brandTeam } from '@/lib/brand-config';
 import { readScoreUs, readUsLineup, toTeamAtBat } from '@/lib/coach/game-types';
+import { useCoachStorageKeys } from '@/lib/coach/org-client';
 
 type TeamKey = 'us' | 'them';
 type Scope = 'current' | 'multiple' | 'all';
@@ -48,10 +49,9 @@ type DefenseSnapshot = {
   opponentTeamName: string;
 };
 
-// Not renamed by 006 — see the note on the same constants in coach/page.tsx.
-// These address Stuart's live game state; the T7 key rename is MT-3/MT-4.
-const STORAGE_KEY = 'outlaws-field-app:v1';
-const HISTORY_KEY = 'outlaws-field-app:games:v1';
+// The live-state and history keys are per-org as of MT-3 (T7) and are passed
+// in from useCoachStorageKeys() — see the note on the same constants in
+// coach/page.tsx and src/lib/coach/storage-keys.ts.
 const DEFENSE_SPOTS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'LCF', 'RCF', 'RF', 'BENCH'] as const;
 const DEFENSE_GROUP_NAMES: DefenseGroupName[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 const PLANNED_INNINGS = 6;
@@ -63,13 +63,13 @@ function toDateLabel(value: number | string): string {
     : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function loadGames(): StoredGame[] {
+function loadGames(stateKey: string, historyKey: string): StoredGame[] {
   if (typeof window === 'undefined') return [];
 
   let currentPins: StoredPin[] = [];
   let currentOpponentTeamName = 'Opponents';
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(stateKey);
     if (raw) {
       const parsed = JSON.parse(raw);
       currentPins = Array.isArray(parsed?.pins) ? parsed.pins : [];
@@ -81,7 +81,7 @@ function loadGames(): StoredGame[] {
 
   let historicalGames: StoredGame[] = [];
   try {
-    const raw = window.localStorage.getItem(HISTORY_KEY);
+    const raw = window.localStorage.getItem(historyKey);
     if (raw) {
       const parsed = JSON.parse(raw);
       historicalGames = Array.isArray(parsed) ? parsed : [];
@@ -109,12 +109,12 @@ function loadGames(): StoredGame[] {
   return [currentGame, ...normalizedHistory];
 }
 
-function loadDefense(): DefenseSnapshot {
+function loadDefense(stateKey: string): DefenseSnapshot {
   if (typeof window === 'undefined') {
     return { groups: null, perInning: null, usLineup: [], score: { us: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
   }
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(stateKey);
     if (!raw) return { groups: null, perInning: null, usLineup: [], score: { us: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
     const parsed = JSON.parse(raw);
     return {
@@ -409,11 +409,15 @@ function pinsToPlayEvents(pins: StoredPin[], selectedPlayer: string | null): Pla
 }
 
 export default function Dashboard() {
+  const storageKeys = useCoachStorageKeys();
   const [selectedTeam, setSelectedTeam] = useState<TeamKey>('us');
   const [scope, setScope] = useState<Scope>('all');
   const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
 
-  const localGames = useMemo(() => loadGames(), []);
+  const localGames = useMemo(
+    () => loadGames(storageKeys.state, storageKeys.history),
+    [storageKeys.state, storageKeys.history],
+  );
   const [serverGames, setServerGames] = useState<StoredGame[]>([]);
 
   useEffect(() => {
@@ -480,7 +484,7 @@ export default function Dashboard() {
   const selectedZoneReport = useMemo(() => buildZoneReport(scopedPins, selectedTeam), [scopedPins, selectedTeam]);
   const opponentGapReport = useMemo(() => buildZoneReport(scopedPins, 'them'), [scopedPins]);
 
-  const defenseSnapshot = useMemo(() => loadDefense(), []);
+  const defenseSnapshot = useMemo(() => loadDefense(storageKeys.state), [storageKeys.state]);
   const inningGrid = useMemo(() => buildInningGrid(defenseSnapshot), [defenseSnapshot]);
   const fairness = useMemo(() => buildFairness(defenseSnapshot), [defenseSnapshot]);
 

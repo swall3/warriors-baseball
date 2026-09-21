@@ -84,16 +84,14 @@ export const BENCH_CODE = "BENCH";
 // resolved from the org rather than named by a constant.
 export const DEFAULT_TEAM_ID = "team-outlaws";
 
-// localStorage keys. The first is the live-scoring blob — shared, and merged
-// into rather than overwritten (see readPlanFromStorage/writePlanToStorage in
-// the page). The second holds plan metadata that has no home in that blob.
-//
-// Also deliberately untouched by 006: this string is the address of Stuart's
-// only copy of in-progress game state, and renaming it orphans that blob
-// silently. T7 owns the rename and ships an old-key -> new-key migration with
-// it (MULTI-TENANT-PLAN §0.3 T7, §6.4).
-export const COACH_STORAGE_KEY = "outlaws-field-app:v1";
-export const LINEUP_PLAN_KEY = "warriors-coach:lineup-plan:v1";
+// The two localStorage keys this feature uses — the live-scoring blob (shared,
+// and merged into rather than overwritten; see readPlanFromStorage /
+// writePlanToStorage in the page) and the plan metadata that has no home in it
+// — moved to src/lib/coach/storage-keys.ts in MT-3, where they became per-org
+// and acquired their old-key -> new-key migration (T7, §6.4). They are not
+// re-exported from here: a module-level constant naming one tenant's storage is
+// exactly what T7 removed, and leaving an alias behind would invite a call site
+// to import the tenant-blind version again.
 
 // ---------------------------------------------------------------------------
 // Construction

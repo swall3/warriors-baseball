@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useCoachStorageKeys } from "@/lib/coach/org-client";
 import { isDatabaseSyncEnabled, syncGameToDatabase } from "@/lib/coach/db-sync";
 import type { Bases, EventPin, FieldZone, GameEventV2, LegacyPersistedGamePayload, PlayResult, TeamAtBat } from "@/lib/coach/game-types";
 import { readUsAreHome, readUsLineup, toTeamAtBat } from "@/lib/coach/game-types";
@@ -141,14 +142,18 @@ type GameSnapshot = {
   bases: Bases;
 };
 
-// ⚠️ NOT renamed by the 006 "outlaws" -> "us" pass, on purpose. These strings
-// are the address of Stuart's only copy of in-progress game state; renaming
-// the key orphans the blob instantly and silently. That rename is T7 and ships
-// with its own old-key -> new-key migration in MT-3/MT-4
-// (MULTI-TENANT-PLAN §0.4 bucket (d), §4.4, §6.4). The blob's *contents* are
-// migrated on read — see readSavedGameState() at the bottom of this file.
-const STORAGE_KEY = "outlaws-field-app:v1";
-const HISTORY_KEY = "outlaws-field-app:games:v1";
+// The live-state and history localStorage keys used to be two module-level
+// constants here. They are now per-org and come from useCoachStorageKeys()
+// inside the component — the T7 rename migration 006 deferred, arriving in MT-3
+// with the old-key -> new-key copy it promised (MULTI-TENANT-PLAN §0.4 bucket
+// (d), §6.4, M12). src/lib/coach/storage-keys.ts holds both the naming and the
+// migration, and explains why the copy runs during render rather than from an
+// effect: this file reads saved state DURING RENDER (see `const saved =` in
+// Home() below), so a migration one tick later would read a miss and then stamp
+// an empty game over the destination.
+//
+// The blob's *contents* are still migrated on read — readSavedGameState() at
+// the bottom of this file, unchanged.
 
 const DEFAULT_US_LINEUP = ["#00", "#3", "#6", "#11", "#15", "#18", "#20", "#22", "#31", "#41", "#99"];
 // Start empty: opponent lineups are rarely known pre-game, so live-add builds the
@@ -321,7 +326,10 @@ function makeV2Event(params: {
 }
 
 export default function Home() {
-  const saved = readSavedGameState();
+  // Must come before the first read below: the hook runs the legacy-key
+  // migration during render (storage-keys.ts ORDERING).
+  const storageKeys = useCoachStorageKeys();
+  const saved = readSavedGameState(storageKeys.state);
 
   const [inning, setInning] = useState(typeof saved.inning === "number" ? saved.inning : 1);
   const [outs, setOuts] = useState(typeof saved.outs === "number" ? saved.outs : 0);
@@ -442,8 +450,8 @@ export default function Home() {
       gameFormat,
       eventsV2: eventLog,
     };
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, [inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, usLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, usAreHome, gameFormat, eventLog]);
+    window.localStorage.setItem(storageKeys.state, JSON.stringify(next));
+  }, [storageKeys.state, inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, usLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, usAreHome, gameFormat, eventLog]);
 
   const summary = useMemo(() => {
     const outCount = pins.filter((p) => p.result === "out" || p.result === "strikeout" || p.result === "fielders_choice").length;
@@ -680,7 +688,7 @@ export default function Home() {
 
   const saveCurrentGameToHistory = () => {
     if (typeof window === "undefined" || pins.length === 0) return;
-    const existing: SavedGameHistory[] = readSavedHistory();
+    const existing: SavedGameHistory[] = readSavedHistory(storageKeys.history);
     const stamp = new Date();
     const entry: SavedGameHistory = {
       id: `game-${stamp.getTime()}`,
@@ -693,7 +701,7 @@ export default function Home() {
       opponentTeamName: opponentLabel,
       usAreHome,
     };
-    window.localStorage.setItem(HISTORY_KEY, JSON.stringify([entry, ...existing]));
+    window.localStorage.setItem(storageKeys.history, JSON.stringify([entry, ...existing]));
     setLastSavedGameId(null);
     if (isDatabaseSyncEnabled()) {
       setShareSyncStatus("Syncing read-only share link...");
@@ -1109,7 +1117,7 @@ export default function Home() {
               className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-4 py-2 text-sm font-semibold text-d-neg active:scale-95 touch-manipulation"
               onClick={() => {
                 if (typeof window !== "undefined" && window.confirm("Clear all saved game history from this browser?")) {
-                  window.localStorage.removeItem(HISTORY_KEY);
+                  window.localStorage.removeItem(storageKeys.history);
                   setLastPlay("Cleared saved game history from this browser.");
                 }
               }}
@@ -1421,7 +1429,8 @@ export default function Home() {
 }
 
 function SavedGamesCheck() {
-  const [games] = useState<SavedGameHistory[]>(() => readSavedHistory());
+  const storageKeys = useCoachStorageKeys();
+  const [games] = useState<SavedGameHistory[]>(() => readSavedHistory(storageKeys.history));
   const [serverGames, setServerGames] = useState<Array<{ id: string; label?: string; pinCount?: number }>>([]);
 
   useEffect(() => {
@@ -1768,11 +1777,13 @@ function normalizeLegacyEvent(event: GameEventV2): GameEventV2 {
 // key still says `outlawsLineup`, the lineup silently resets to the default
 // eleven jersey numbers mid-game and the batting order is gone.
 //
-// The storage KEY itself (`outlaws-field-app:v1`) is deliberately unchanged —
-// that rename is T7 / MT-4 and carries its own migration.
-function readSavedGameState(): Partial<SavedGameState> {
+// The storage KEY is now passed in, per-org, and the pre-MT-3
+// `outlaws-field-app:v1` blob was copied onto it by storage-keys.ts before
+// this function ever ran — so a blob written before EITHER rename still
+// arrives here, and still gets normalised.
+function readSavedGameState(stateKey: string): Partial<SavedGameState> {
   if (typeof window === "undefined") return {};
-  const raw = window.localStorage.getItem(STORAGE_KEY);
+  const raw = window.localStorage.getItem(stateKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw) as Partial<SavedGameState> & LegacyPersistedGamePayload;
@@ -1801,9 +1812,9 @@ function readSavedGameState(): Partial<SavedGameState> {
   }
 }
 
-function readSavedHistory(): SavedGameHistory[] {
+function readSavedHistory(historyKey: string): SavedGameHistory[] {
   if (typeof window === "undefined") return [];
-  const raw = window.localStorage.getItem(HISTORY_KEY);
+  const raw = window.localStorage.getItem(historyKey);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);

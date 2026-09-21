@@ -70,9 +70,26 @@ export async function getOrgContext(): Promise<OrgContext> {
   const { requireCoach } = await import("@/lib/coach/auth");
   const session = await requireCoach();
   if (!session) {
-    throw new Error("No coach session: cannot resolve an organization");
+    throw new NoOrgSessionError();
   }
   return { orgId: session.orgId, role: session.role };
+}
+
+// A NAMED error class, not a bare `new Error(...)`, because exactly one caller
+// is allowed to catch this and it must be able to catch ONLY this.
+//
+// coach/layout.tsx wraps getOrgContext() so that /coach/login — which renders
+// inside that layout with no session — does not 500. A broad `catch {}` there
+// swallowed more than it should: Next throws its own control-flow error out of
+// cookies() to bail out of static rendering, so the catch turned "this route
+// must be dynamic" into "there is no session", and the coach pages prerendered
+// into static HTML with no org in them. That was caught by the build rather
+// than by a reviewer, which is the argument for this class existing.
+export class NoOrgSessionError extends Error {
+  constructor() {
+    super("No coach session: cannot resolve an organization");
+    this.name = "NoOrgSessionError";
+  }
 }
 
 // The scope object src/lib/supabase.ts's shim functions require in argument
