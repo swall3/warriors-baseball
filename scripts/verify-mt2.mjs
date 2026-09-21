@@ -257,7 +257,11 @@ async function layer2() {
     union all select 'tryout_signups.null', count(*)::int from public.tryout_signups where org_id is null;`);
   const by = Object.fromEntries(counts.map((r) => [r.k, r.n]));
 
-  eq("organizations = 1", by["organizations"], 1);
+  // Was `= 1` when MT-2 shipped and there was one tenant. MT-3 provisioned a
+  // second (§3.5), so the meaningful assertion is that the OWNER org is still
+  // there — a global count would now have to be edited every time a customer
+  // signs up, which is a harness that cries wolf.
+  check(`${OWNER_ORG} exists`, by["organizations"] >= 1, `${by["organizations"]} organizations`);
   eq("org_members = 0 (empty by design until MT-5, §2.2)", by["org_members"], 0);
   for (const t of ["teams", "games", "play_events", "players", "player_aliases", "lineup_plans", "tryout_signups"]) {
     eq(`${t}: zero rows with a null org_id`, by[`${t}.null`], 0);
@@ -267,13 +271,19 @@ async function layer2() {
     select table_name, is_nullable from information_schema.columns
      where table_schema='public' and column_name='org_id'
        and table_name <> 'org_members' order by table_name;`);
-  eq(
-    "org_id is NOT NULL on all 7 tenant tables",
-    nullable.filter((r) => r.is_nullable === "NO").length,
-    7,
-  );
+  // By name, not by count: MT-3's org_passcodes also carries a NOT NULL
+  // org_id, so counting rows in information_schema made this check fail for a
+  // reason that was not a defect. Naming the seven says what is meant.
+  const notNull = new Set(nullable.filter((r) => r.is_nullable === "NO").map((r) => r.table_name));
+  for (const t of ["teams", "games", "play_events", "players", "player_aliases", "lineup_plans", "tryout_signups"]) {
+    check(`${t}.org_id is NOT NULL`, notNull.has(t));
+  }
 
-  const kinds = await runSql(`select kind, count(*)::int n from public.teams group by 1 order by 1`);
+  // Scoped to the owner org as of MT-3: a second tenant brings its own
+  // kind='own' row (§3.5), which used to make this global count fail.
+  const kinds = await runSql(
+    `select kind, count(*)::int n from public.teams where org_id='${OWNER_ORG}' group by 1 order by 1`,
+  );
   check(
     "teams.kind separates our team from scouted opponents",
     JSON.stringify(kinds) === JSON.stringify([{ kind: "opponent", n: 2 }, { kind: "own", n: 1 }]),
@@ -388,8 +398,16 @@ async function layer3() {
     // An unscoped read is what makes the exclusion mean something rather than
     // being indistinguishable from an empty table — the same trap §6.3 Block A
     // warns about.
+    // Relative, not absolute: the owner's 3 plus org-test's 2, plus whatever
+    // other tenants exist by now (MT-3 provisioned one). What must be true is
+    // that the unscoped read sees strictly MORE than the scoped one — an
+    // absolute number here just breaks on the next customer.
     const unscoped = await runSql(`select count(*)::int n from public.teams`);
-    eq("...and an UNSCOPED read does see them (so the check is not vacuous)", unscoped[0].n, 5);
+    check(
+      "...and an UNSCOPED read does see them (so the check is not vacuous)",
+      unscoped[0].n >= s["teams"] + 2,
+      `unscoped ${unscoped[0].n} vs scoped ${s["teams"]} (+2 org-test rows)`,
+    );
 
     const leak = await runSql(`
       select count(*)::int n from public.games
@@ -543,13 +561,16 @@ async function layer3() {
   eq("cleanup: no org-test rows survive anywhere",
     leftovers.reduce((sum, r) => sum + r.n, 0), 0);
 
+  // Scoped to the owner org as of MT-3. These were global counts, which
+  // silently became "every tenant's data" the moment a second tenant existed —
+  // and the label would still have said org-outlaws.
   const owner = await runSql(`
-    select (select count(*)::int from public.teams)       teams,
-           (select count(*)::int from public.games)       games,
-           (select count(*)::int from public.play_events) events,
-           (select count(*)::int from public.players)     players,
-           (select count(*)::int from public.player_aliases) aliases,
-           (select count(*)::int from public.tryout_signups) signups;`);
+    select (select count(*)::int from public.teams       where org_id='${OWNER_ORG}') teams,
+           (select count(*)::int from public.games       where org_id='${OWNER_ORG}') games,
+           (select count(*)::int from public.play_events where org_id='${OWNER_ORG}') events,
+           (select count(*)::int from public.players     where org_id='${OWNER_ORG}') players,
+           (select count(*)::int from public.player_aliases where org_id='${OWNER_ORG}') aliases,
+           (select count(*)::int from public.tryout_signups where org_id='${OWNER_ORG}') signups;`);
   const o = owner[0];
   check(
     "org-outlaws' data is untouched by the whole run",
