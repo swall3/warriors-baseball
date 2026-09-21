@@ -60,9 +60,28 @@ export const BENCH_CODE = "BENCH";
 
 // A `teams.id` row value, not a label — deliberately untouched by migration
 // 006, which renamed only the perspective vocabulary. Changing it means an
-// UPDATE across every FK that references it. T6 replaces this fallback with a
-// 400 in MT-2 anyway, at which point the constant goes away rather than being
-// renamed (MULTI-TENANT-PLAN §0.3 T6).
+// UPDATE across every FK that references it.
+//
+// ⚠️ T6 IS FIXED, AND THIS CONSTANT SURVIVED IT. The earlier note here
+// predicted the constant would "go away"; that turned out to be half right, so
+// here is what actually happened (MULTI-TENANT-PLAN §0.3 T6):
+//
+//   * The two SERVER fallbacks are gone. api/coach/lineup/route.ts used to
+//     read `searchParams.get("teamId") || DEFAULT_TEAM_ID` and write
+//     `plan.teamId || DEFAULT_TEAM_ID` — a request that named no team read and
+//     WROTE tenant #1's data. Both are now 400s. That was the defect.
+//
+//   * The three CLIENT uses below (makeBlankPlan, normalizePlan) stay. They
+//     are not a tenant fallback: they seed a brand-new local plan in the
+//     browser, offline, before anything is sent anywhere, on a device that
+//     belongs to exactly one org. Turning them into throws would break offline
+//     plan creation — the feature lineup-sync.ts's whole "localStorage is the
+//     write-ahead buffer" contract exists to protect — and would fix nothing,
+//     because the server no longer accepts an unnamed team regardless of what
+//     the client seeded.
+//
+// It becomes per-org config in MT-4, alongside branding, when `teams` rows are
+// resolved from the org rather than named by a constant.
 export const DEFAULT_TEAM_ID = "team-outlaws";
 
 // localStorage keys. The first is the live-scoring blob — shared, and merged

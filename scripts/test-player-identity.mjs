@@ -100,13 +100,13 @@ try {
   // because nothing exercises it yet — the table is unapplied.
   try {
     assert.equal(canonicalPlayerName("Jackson"), "Jack", "static map should resolve Jackson");
-    primeAliasCache({ "  JACKSON ": "Jackson Smith", jack: "Jack" });
+    primeAliasCache("org-a", { "  JACKSON ": "Jackson Smith", jack: "Jack" });
     assert.equal(
-      canonicalPlayerName("jackson"),
+      canonicalPlayerName("jackson", "org-a"),
       "Jackson Smith",
       "primed cache must take precedence over the static map (and key on lower(btrim(x)))",
     );
-    assert.equal(canonicalPlayerName("Levi"), "Levi", "unknown names still pass through verbatim");
+    assert.equal(canonicalPlayerName("Levi", "org-a"), "Levi", "unknown names still pass through verbatim");
 
     // The discriminating case for the withheld-alias rule: 'linc' IS in the
     // static map (-> Lincoln) but is absent from this primed cache, mirroring
@@ -114,17 +114,54 @@ try {
     // primed cache must not fall back to the static map, or the app layer
     // silently re-applies the merge that 003 deliberately withheld.
     assert.equal(
-      canonicalPlayerName("Linc"),
+      canonicalPlayerName("Linc", "org-a"),
       "Linc",
       "a primed cache must NOT fall back to the static map on a miss",
     );
+
+    // --- 5. The per-org cache does not bleed (MULTI-TENANT-PLAN §2.4) ------
+    // The bug this replaced: one module-level cache, shared by every request
+    // on a server process, so whichever org primed first decided the roster
+    // for all of them. These four assertions are the regression guard.
+    primeAliasCache("org-b", { jackson: "Jax Different-Kid" });
+
+    assert.equal(
+      canonicalPlayerName("jackson", "org-b"),
+      "Jax Different-Kid",
+      "org B must see its own roster",
+    );
+    assert.equal(
+      canonicalPlayerName("jackson", "org-a"),
+      "Jackson Smith",
+      "priming org B must not overwrite org A's cache",
+    );
+    // An org with no cache of its own falls back to the static map — it must
+    // NOT inherit whichever org primed most recently.
+    assert.equal(
+      canonicalPlayerName("jackson", "org-c"),
+      "Jack",
+      "an unprimed org falls back to the static map, not to another org's cache",
+    );
+    // And a caller that cannot name an org (every "use client" component) is
+    // static-map-only rather than reading someone's cache by accident.
+    assert.equal(
+      canonicalPlayerName("jackson"),
+      "Jack",
+      "an org-less caller must never read a primed cache",
+    );
+
+    // Clearing one org leaves the others intact.
+    clearAliasCache("org-b");
+    assert.equal(canonicalPlayerName("jackson", "org-b"), "Jack", "cleared org falls back to the map");
+    assert.equal(canonicalPlayerName("jackson", "org-a"), "Jackson Smith", "org A survives org B's clear");
   } finally {
     clearAliasCache();
   }
-  assert.equal(canonicalPlayerName("Jackson"), "Jack", "clearing the cache restores static behaviour");
+  assert.equal(canonicalPlayerName("Jackson", "org-a"), "Jack", "clearing the cache restores static behaviour");
 
-  console.log("PASS — 4 checks: Jack/Jackson merge to one canonical row (total 4, on-base 3),");
-  console.log("       zones aggregate, opponents excluded, and the alias cache overrides the map.");
+  console.log("PASS — 5 checks: Jack/Jackson merge to one canonical row (total 4, on-base 3),");
+  console.log("       zones aggregate, opponents excluded, the alias cache overrides the map,");
+  console.log("       and per-org caches do not bleed into one another.");
 } finally {
   fs.rmSync(outDir, { recursive: true, force: true });
 }

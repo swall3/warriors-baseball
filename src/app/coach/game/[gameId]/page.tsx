@@ -1,10 +1,16 @@
 import Link from "next/link";
 import { readDb, toV2EventFallback } from "@/lib/coach/local-db";
 import { team as brandTeam } from "@/lib/brand-config";
+import { getOrgScope } from "@/lib/tenant/context";
 
 export default async function ReadOnlyGamePage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
-  const db = await readDb();
+  // This page has no requireCoach() of its own — middleware.ts gates the whole
+  // /coach/:path* subtree ahead of it. The org scope still has to be resolved
+  // here rather than defaulted inside readDb, so that the one place this page
+  // learns which tenant it serves is getOrgContext() like everywhere else
+  // (§1.2).
+  const db = await readDb(await getOrgScope());
   const game = db.games.find((g) => g.clientGameId === gameId || g.id === gameId);
 
   if (!game) {

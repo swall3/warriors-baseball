@@ -4,7 +4,7 @@ import type { GameEventV2, TeamAtBat } from "@/lib/coach/game-types";
 // Bundled at build time so it ships with serverless functions (e.g. Vercel),
 // where the local data/ file is absent and the filesystem is read-only.
 import seedDb from "@/lib/coach/seed-db.json";
-import { isSupabaseEnabled, sbSelectAll } from "@/lib/supabase";
+import { isSupabaseEnabled, sbSelectAll, type OrgScope } from "@/lib/supabase";
 
 export type LocalDb = {
   teams: Array<{ id: string; name: string; normalizedName: string; createdAt: string }>;
@@ -64,11 +64,23 @@ function coerceDb(parsed: Partial<LocalDb>): LocalDb {
   };
 }
 
-export async function readDb(): Promise<LocalDb> {
+// ⚠️ Takes an OrgScope as of MT-2 (§3.4 Stage A). It is required rather than
+// defaulted for the same reason sbSelectAll's is: a default would let a caller
+// read another tenant's games by forgetting an argument, and the compiler
+// would say nothing. Every caller is a route handler or server component that
+// already awaits requireCoach(), so `await getOrgScope()` sits naturally
+// beside it — and in MT-3 that line becomes `session.orgId` with no other
+// change (T5).
+//
+// The local/seed fallback below is NOT scoped, and does not need to be:
+// data/local-db.json and seed-db.json are single-tenant development fixtures
+// that never contain another org's rows. They are reached only when Supabase
+// is unconfigured or unreachable.
+export async function readDb(scope: OrgScope): Promise<LocalDb> {
   // Primary source: shared Supabase DB (real cross-device data).
   if (isSupabaseEnabled()) {
     try {
-      return await readDbFromSupabase();
+      return await readDbFromSupabase(scope);
     } catch (error) {
       // B1 fix: Supabase being *configured* doesn't mean it's *reachable*
       // (paused project, network blip, etc). Previously this threw straight
@@ -102,11 +114,15 @@ type EventRow = {
   bases_after: { first: string | null; second: string | null; third: string | null }; created_at: string;
 };
 
-async function readDbFromSupabase(): Promise<LocalDb> {
+async function readDbFromSupabase(scope: OrgScope): Promise<LocalDb> {
+  // These three selects are the reason §2.3 denormalizes org_id onto
+  // play_events rather than deriving it through games: this runs on every
+  // dashboard load and pulls the entire event table, so the tenant predicate
+  // has to be an index scan on one column, not a three-deep FK walk.
   const [teams, games, events] = await Promise.all([
-    sbSelectAll<TeamRow>("teams"),
-    sbSelectAll<GameRow>("games", "select=*&order=played_at.desc"),
-    sbSelectAll<EventRow>("play_events", "select=*&order=event_index.asc"),
+    sbSelectAll<TeamRow>(scope, "teams"),
+    sbSelectAll<GameRow>(scope, "games", "select=*&order=played_at.desc"),
+    sbSelectAll<EventRow>(scope, "play_events", "select=*&order=event_index.asc"),
   ]);
   return {
     teams: teams.map((t) => ({

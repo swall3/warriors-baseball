@@ -34,21 +34,31 @@ const NAME_ALIASES: Record<string, string> = {
 export const STATIC_NAME_ALIASES: Readonly<Record<string, string>> = NAME_ALIASES;
 
 // ---------------------------------------------------------------------------
-// Runtime alias cache
+// Runtime alias cache — PER ORG (MULTI-TENANT-PLAN.md §2.4)
 // ---------------------------------------------------------------------------
 // Populated from public.player_aliases by ./player-name-db.ts. Keys are
 // lower(btrim(x)), matching the 001 invariant; values are the player's
 // display_name.
 //
-// Module-level mutable state is the right shape here: the alias set is small
-// (tens of rows), changes only when a coach edits the roster, and every caller
-// is synchronous. A per-request cache would mean threading a context object
-// through pure functions like lineup.ts's `assignmentFor`, for no benefit.
-let aliasCache: Record<string, string> | null = null;
+// ⚠️ THIS WAS A SINGLE MODULE-LEVEL OBJECT AND THAT WAS A REAL BUG, not a
+// stylistic shortcut. Module state on a server persists across requests and is
+// shared by all of them. With one cache, the first request to prime it decided
+// the roster for every subsequent request — so org B's coach would have been
+// served org A's kids' names, wherever a cached alias happened to hit. The
+// file's own header justified the singleton on single-tenant grounds, which
+// was honest and is now false. It becomes wrong the moment tenant #2 exists,
+// and it fails in the direction that leaks names rather than the direction
+// that errors.
+//
+// Keyed by org, the same state is correct: the alias set is small (tens of
+// rows per org), changes only when a coach edits the roster, and priming one
+// org's entry cannot touch another's.
+const aliasCaches = new Map<string, Record<string, string>>();
 
-// Replaces the cache wholesale. Called by the server-side loader; exported
-// unattached to any I/O so tests can drive it directly.
-export function primeAliasCache(entries: Record<string, string>): void {
+// Replaces one org's cache wholesale. Called by the server-side loader;
+// exported unattached to any I/O so tests can drive it directly.
+export function primeAliasCache(orgId: string, entries: Record<string, string>): void {
+  if (!orgId) throw new Error("primeAliasCache requires an orgId");
   const next: Record<string, string> = {};
   for (const [alias, displayName] of Object.entries(entries)) {
     const key = alias.trim().toLowerCase();
@@ -56,18 +66,20 @@ export function primeAliasCache(entries: Record<string, string>): void {
     if (!key || !value) continue;
     next[key] = value;
   }
-  aliasCache = next;
+  aliasCaches.set(orgId, next);
 }
 
-// Drops the cache, so lookups fall back to the static map again.
-export function clearAliasCache(): void {
-  aliasCache = null;
+// Drops one org's cache, so its lookups fall back to the static map again.
+// Omitting orgId drops every org's — for tests and for a full roster reload.
+export function clearAliasCache(orgId?: string): void {
+  if (orgId === undefined) aliasCaches.clear();
+  else aliasCaches.delete(orgId);
 }
 
-// True once the cache has been primed — lets the loader skip redundant reads
-// without exposing the cache itself.
-export function hasAliasCache(): boolean {
-  return aliasCache !== null;
+// True once this org's cache has been primed — lets the loader skip redundant
+// reads without exposing the cache itself.
+export function hasAliasCache(orgId: string): boolean {
+  return aliasCaches.has(orgId);
 }
 
 // ---------------------------------------------------------------------------
@@ -96,10 +108,33 @@ export function hasAliasCache(): boolean {
 //
 // Behaviour is unchanged from the original implementation whenever the cache
 // is empty, which is every code path today.
-export function canonicalPlayerName(name?: string | null): string {
+//
+// ⚠️ `orgId` IS OPTIONAL, AND ITS ABSENCE MEANS "STATIC MAP ONLY" — never
+// "whichever org primed last." That distinction is the whole per-org fix
+// (§2.4), so it is worth being explicit about why the parameter is not simply
+// required:
+//
+// This function is synchronous and is imported by "use client" components
+// (coach/page.tsx, dashboard/page.tsx, stats/page.tsx) and by pure logic
+// (lineup.ts, analytics.ts). Those callers have no request context and no org
+// to pass — threading one to them would mean making lineup.ts's `assignmentFor`
+// tenant-aware, which is the context-object-through-pure-functions cost this
+// module's original header correctly refused to pay.
+//
+// Making the parameter optional resolves that without reopening the bug: a
+// caller that cannot name an org gets the static map, which is exactly what it
+// gets today (nothing primes a cache in the browser). A caller that CAN name an
+// org gets that org's roster and no other org's. There is no code path that
+// reads a cache it did not ask for by id, which is the property that was
+// missing.
+export function canonicalPlayerName(name?: string | null, orgId?: string): string {
   const raw = (name || "").trim();
   if (!raw) return "Unknown";
   const key = raw.toLowerCase();
-  if (aliasCache) return aliasCache[key] || raw;
+  if (orgId) {
+    const cache = aliasCaches.get(orgId);
+    // Primed means authoritative — see the no-fallback-on-miss rule above.
+    if (cache) return cache[key] || raw;
+  }
   return NAME_ALIASES[key] || raw;
 }

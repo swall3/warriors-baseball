@@ -7,9 +7,9 @@
 // shim for all queries, and never a 5xx for a condition the client can handle.
 import { NextResponse } from "next/server";
 import { requireCoach } from "@/lib/coach/auth";
-import { isSupabaseEnabled, sbSelectAll, sbUpsert } from "@/lib/supabase";
+import { isSupabaseEnabled, sbSelectAll, sbUpsert, type OrgScope } from "@/lib/supabase";
+import { getOrgScope } from "@/lib/tenant/context";
 import {
-  DEFAULT_TEAM_ID,
   normalizeFormat,
   normalizeGroups,
   normalizeInningMap,
@@ -34,28 +34,30 @@ type LineupPlanRow = {
 // `games.client_game_id`. Resolve one to the other, returning null when the
 // game hasn't been synced yet — a plan built before the game exists is a
 // normal case, which is why lineup_plans.game_id is nullable.
-async function resolveGameRowId(clientGameId: string | null): Promise<string | null> {
+async function resolveGameRowId(scope: OrgScope, clientGameId: string | null): Promise<string | null> {
   if (!clientGameId) return null;
   const rows = await sbSelectAll<{ id: string }>(
+    scope,
     "games",
     `client_game_id=eq.${encodeURIComponent(clientGameId)}&select=id`,
   );
   return rows[0]?.id ?? null;
 }
 
-async function clientGameIdFor(rowId: string | null): Promise<string | null> {
+async function clientGameIdFor(scope: OrgScope, rowId: string | null): Promise<string | null> {
   if (!rowId) return null;
   const rows = await sbSelectAll<{ client_game_id: string }>(
+    scope,
     "games",
     `id=eq.${encodeURIComponent(rowId)}&select=client_game_id`,
   );
   return rows[0]?.client_game_id ?? null;
 }
 
-async function rowToPlan(row: LineupPlanRow): Promise<LineupPlan> {
+async function rowToPlan(scope: OrgScope, row: LineupPlanRow): Promise<LineupPlan> {
   return {
     id: row.id,
-    gameId: await clientGameIdFor(row.game_id),
+    gameId: await clientGameIdFor(scope, row.game_id),
     teamId: row.team_id,
     label: row.label,
     format: normalizeFormat(row.format),
@@ -83,37 +85,57 @@ export async function GET(request: Request) {
   }
 
   try {
+    const scope = await getOrgScope();
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const gameId = url.searchParams.get("gameId");
-    const teamId = url.searchParams.get("teamId") || DEFAULT_TEAM_ID;
+    const teamId = url.searchParams.get("teamId");
 
     if (id) {
       const rows = await sbSelectAll<LineupPlanRow>(
+        scope,
         TABLE,
         `id=eq.${encodeURIComponent(id)}&select=*`,
       );
-      const plan = rows[0] ? await rowToPlan(rows[0]) : null;
+      const plan = rows[0] ? await rowToPlan(scope, rows[0]) : null;
       return NextResponse.json({ ok: true, plan, persisted: true });
     }
 
     if (gameId) {
-      const gameRowId = await resolveGameRowId(gameId);
+      const gameRowId = await resolveGameRowId(scope, gameId);
       // The game isn't in the DB yet, so no plan can be attached to it.
       if (!gameRowId) return NextResponse.json({ ok: true, plan: null, persisted: true });
       const rows = await sbSelectAll<LineupPlanRow>(
+        scope,
         TABLE,
         `game_id=eq.${encodeURIComponent(gameRowId)}&select=*&order=updated_at.desc`,
       );
-      const plan = rows[0] ? await rowToPlan(rows[0]) : null;
+      const plan = rows[0] ? await rowToPlan(scope, rows[0]) : null;
       return NextResponse.json({ ok: true, plan, persisted: true });
     }
 
+    // T6: a missing tenant key is a 400, not a default.
+    //
+    // This used to be `|| DEFAULT_TEAM_ID`. A GET with no teamId listed tenant
+    // #1's plans, which under one tenant looked like a convenience and under
+    // two is a cross-tenant read. The fix is not to substitute the caller's
+    // org's own team — that would be the same silent guess with better
+    // manners. The client always knows which team it is asking about; a
+    // request that does not is a bug in the caller and should say so
+    // (MULTI-TENANT-PLAN §0.3 T6).
+    if (!teamId) {
+      return NextResponse.json(
+        { ok: false, error: "teamId is required" },
+        { status: 400 },
+      );
+    }
+
     const rows = await sbSelectAll<LineupPlanRow>(
+      scope,
       TABLE,
       `team_id=eq.${encodeURIComponent(teamId)}&select=*&order=updated_at.desc`,
     );
-    const plans = await Promise.all(rows.map(rowToPlan));
+    const plans = await Promise.all(rows.map((row) => rowToPlan(scope, row)));
     return NextResponse.json({ ok: true, plans, plan: plans[0] ?? null, persisted: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load lineup plan";
@@ -147,16 +169,32 @@ export async function POST(request: Request) {
       );
     }
 
+    // T6: same rule on the write side, and it matters more here. This used to
+    // be `plan.teamId || DEFAULT_TEAM_ID`, so a payload with no teamId WROTE a
+    // row into tenant #1's data. Under multi-tenancy a missing tenant key must
+    // be a 400 (MULTI-TENANT-PLAN §0.3 T6).
+    //
+    // Checked before the upsert rather than inside it so the client gets a 400
+    // it can act on instead of a 500 from a null-violating insert.
+    if (!plan.teamId) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid payload: plan.teamId required" },
+        { status: 400 },
+      );
+    }
+
+    const scope = await getOrgScope();
     const now = new Date().toISOString();
-    const gameRowId = await resolveGameRowId(plan.gameId ?? null);
+    const gameRowId = await resolveGameRowId(scope, plan.gameId ?? null);
 
     await sbUpsert(
+      scope,
       TABLE,
       [
         {
           id: plan.id,
           game_id: gameRowId,
-          team_id: plan.teamId || DEFAULT_TEAM_ID,
+          team_id: plan.teamId,
           label: plan.label || "Game plan",
           format: normalizeFormat(plan.format),
           batting_order: Array.isArray(plan.battingOrder) ? plan.battingOrder : [],
