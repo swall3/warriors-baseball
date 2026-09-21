@@ -30,3 +30,8 @@ yarn-error.log*
 # unconfigured). Per-machine scratch, never the source of truth — the bundled
 # src/lib/coach/seed-db.json is.
 data/
+
+# Provisioned tenant credentials (scripts/create-org.mjs prints a passcode once).
+# The database stores only a salted SHA-256; the plaintext exists here and in
+# the customer's hands, and must never reach a commit.
+*-CREDENTIALS.txt
