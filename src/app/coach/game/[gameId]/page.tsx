@@ -9,10 +9,10 @@ export default async function ReadOnlyGamePage({ params }: { params: Promise<{ g
 
   if (!game) {
     return (
-      <main className="mx-auto max-w-3xl p-6 text-slate-100">
+      <main className="mx-auto max-w-3xl p-6 text-d-ink">
         <h1 className="text-2xl font-black">Game Not Found</h1>
-        <p className="mt-2 text-slate-300">No game exists for id: {gameId}</p>
-        <Link href="/coach" className="mt-4 inline-block rounded bg-cyan-700 px-4 py-2 text-sm font-semibold text-white">Back to Logger</Link>
+        <p className="mt-2 text-d-ink-2">No game exists for id: {gameId}</p>
+        <Link href="/coach" className="mt-4 inline-block rounded bg-d-sel px-4 py-2 text-sm font-semibold text-white">Back to Logger</Link>
       </main>
     );
   }
@@ -24,24 +24,24 @@ export default async function ReadOnlyGamePage({ params }: { params: Promise<{ g
     .map((row) => toV2EventFallback(row));
 
   return (
-    <main className="mx-auto max-w-4xl p-6 text-slate-100">
+    <main className="mx-auto max-w-4xl p-6 text-d-ink">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="text-2xl font-black">{game.label}</h1>
-        <Link href="/coach" className="rounded border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100">Open Logger</Link>
+        <Link href="/coach" className="rounded border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel">Open Logger</Link>
       </div>
-      <p className="text-sm text-slate-300">{new Date(game.playedAt).toLocaleString()} · {brandTeam.name} {game.outlawsScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
+      <p className="text-sm text-d-ink-2">{new Date(game.playedAt).toLocaleString()} · {brandTeam.name} {game.outlawsScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
 
-      <section className="mt-6 rounded-xl border border-slate-700 bg-slate-950/60 p-4">
+      <section className="mt-6 rounded-xl border border-d-line bg-d-surface p-4">
         <h2 className="mb-3 text-lg font-bold">Live Feed</h2>
         <ul className="space-y-2 text-sm">
           {events.map((event) => (
-            <li key={event.id} className="rounded border border-slate-700 bg-slate-900/60 p-2">
+            <li key={event.id} className="rounded border border-d-line bg-d-surface p-2">
               <div className="font-semibold">Inning {event.inning} · {event.batter} · {event.result.replaceAll("_", " ")}</div>
-              <div className="text-slate-300">{event.description}</div>
-              <div className="text-xs text-slate-400">Outs: {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
+              <div className="text-d-ink-2">{event.description}</div>
+              <div className="text-xs text-d-ink-3">Outs: {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
             </li>
           ))}
-          {events.length === 0 && <li className="text-slate-400">No events recorded.</li>}
+          {events.length === 0 && <li className="text-d-ink-3">No events recorded.</li>}
         </ul>
       </section>
     </main>

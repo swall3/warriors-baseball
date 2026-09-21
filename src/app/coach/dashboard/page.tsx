@@ -497,33 +497,33 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen app-shell text-white">
-      <header className="border-b border-cyan-300/20 bg-slate-950/75 p-4 backdrop-blur-sm">
+    <div className="min-h-screen app-shell text-d-ink">
+      <header className="border-b border-d-sel/40 bg-d-surface p-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-cyan-100">{brandTeam.name} Heat Map Dashboard</h1>
-            <p className="mt-1 text-sm text-slate-300">Scope by current game, selected games, or all recorded games.</p>
+            <h1 className="text-2xl font-black tracking-tight text-d-sel">{brandTeam.name} Heat Map Dashboard</h1>
+            <p className="mt-1 text-sm text-d-ink-2">Scope by current game, selected games, or all recorded games.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
-            <Link href="/coach" className="rounded-lg border border-cyan-300/30 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-500/30 touch-manipulation active:scale-95">
+            <Link href="/coach" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Back To Scoring
             </Link>
-<Link href="/coach/import" className="rounded-lg border border-rose-300/50 bg-rose-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-rose-100 hover:bg-rose-500/30 touch-manipulation active:scale-95">
+<Link href="/coach/import" className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-neg touch-manipulation active:scale-95">
               Import Game
             </Link>
-            <Link href="/coach/lineup" className="rounded-lg border border-emerald-300/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/30 touch-manipulation active:scale-95">
+            <Link href="/coach/lineup" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
               Lineup
             </Link>
-            <Link href="/coach/intel" className="rounded-lg border border-purple-300/40 bg-purple-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-purple-100 hover:bg-purple-500/30 touch-manipulation active:scale-95">
+            <Link href="/coach/intel" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Intel
             </Link>
-            <Link href="/coach/stats" className="rounded-lg border border-sky-300/40 bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sky-100 hover:bg-sky-500/30 touch-manipulation active:scale-95">
+            <Link href="/coach/stats" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Spray
             </Link>
-            <button onClick={onExportMarkdown} className="rounded-lg border border-cyan-300/30 bg-slate-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-slate-700 touch-manipulation active:scale-95">
+            <button onClick={onExportMarkdown} className="rounded-lg border border-d-sel/40 bg-d-sunken px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Export MD
             </button>
-            <button onClick={onExportCsv} className="rounded-lg border border-cyan-300/30 bg-slate-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-slate-700 touch-manipulation active:scale-95">
+            <button onClick={onExportCsv} className="rounded-lg border border-d-sel/40 bg-d-sunken px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Export CSV
             </button>
           </nav>
@@ -532,17 +532,17 @@ export default function Dashboard() {
 
       <main className="mx-auto max-w-6xl space-y-4 p-4">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-300">Team View</h2>
+          <div className="rounded-xl border border-d-line bg-d-surface p-4">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Team View</h2>
             <div className="grid grid-cols-2 gap-2">
               <button
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'outlaws' ? 'border-emerald-500 bg-emerald-600 text-white' : 'border-slate-600 bg-slate-900 text-slate-200'}`}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'outlaws' ? 'border-d-pos bg-d-pos text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
                 onClick={() => setSelectedTeam('outlaws')}
               >
                 {brandTeam.name}
               </button>
               <button
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'opponent' ? 'border-rose-500 bg-rose-500 text-white' : 'border-slate-600 bg-slate-900 text-slate-200'}`}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'opponent' ? 'border-d-neg bg-d-neg text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
                 onClick={() => setSelectedTeam('opponent')}
               >
                 {opponentTeamLabel}
@@ -550,13 +550,13 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 md:col-span-2">
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-300">Game Scope</h2>
+          <div className="rounded-xl border border-d-line bg-d-surface p-4 md:col-span-2">
+            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Game Scope</h2>
             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {(['current', 'multiple', 'all'] as Scope[]).map((value) => (
                 <button
                   key={value}
-                  className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 capitalize ${scope === value ? 'border-cyan-300 bg-cyan-400 text-slate-900' : 'border-slate-600 bg-slate-900 text-slate-200'}`}
+                  className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 capitalize ${scope === value ? 'border-d-sel bg-d-sel text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
                   onClick={() => setScope(value)}
                 >
                   {value === 'current' ? 'Current Game' : value === 'multiple' ? 'Selected Games' : 'All Games'}
@@ -565,12 +565,12 @@ export default function Dashboard() {
             </div>
 
             {scope === 'multiple' && (
-              <div className="grid grid-cols-1 gap-2 rounded-lg border border-slate-700 bg-slate-900/60 p-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 rounded-lg border border-d-line bg-d-surface p-3 sm:grid-cols-2">
                 {games.map((game) => (
-                  <label key={game.id} className="flex items-center gap-2 text-sm text-slate-200">
+                  <label key={game.id} className="flex items-center gap-2 text-sm text-d-ink">
                     <input type="checkbox" checked={selectedGameIds.includes(game.id)} onChange={() => onToggleGame(game.id)} />
                     <span>{game.label || game.id}</span>
-                    <span className="text-xs text-slate-400">({(game.pins || []).length} events)</span>
+                    <span className="text-xs text-d-ink-3">({(game.pins || []).length} events)</span>
                   </label>
                 ))}
               </div>
@@ -578,15 +578,15 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-300">Player Focus</h2>
+        <div className="rounded-xl border border-d-line bg-d-surface p-4">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Player Focus</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-sm text-slate-300" htmlFor="player-filter">
+            <label className="text-sm text-d-ink-2" htmlFor="player-filter">
               Batter:
             </label>
             <select
               id="player-filter"
-              className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="rounded-lg border border-d-line bg-d-sunken px-3 py-2 text-sm text-d-ink"
               value={selectedPlayer}
               onChange={(e) => setSelectedPlayer(e.target.value)}
             >
@@ -595,20 +595,20 @@ export default function Dashboard() {
                 <option key={name} value={name}>{name}</option>
               ))}
             </select>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-d-ink-3">
               Showing {activePlayer ? activePlayer : 'all players'} in current scope.
             </span>
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Field Heat Map</h2>
+        <div className="rounded-xl border border-d-line bg-d-surface p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Field Heat Map</h2>
           <HeatmapCanvas events={heatmapEvents} visualStyle="classic" />
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Team Contact Report</h2>
+          <section className="rounded-xl border border-d-line bg-d-surface p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Team Contact Report</h2>
             <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <Metric label="PA" value={String(selectedSummary.pa)} />
               <Metric label="Hits" value={String(selectedSummary.hits)} />
@@ -617,13 +617,13 @@ export default function Dashboard() {
               <Metric label="Reached" value={String(selectedSummary.reached)} />
               <Metric label="Outs Logged" value={String(selectedSummary.outs)} />
             </div>
-            <p className="mt-3 text-xs text-slate-400">
+            <p className="mt-3 text-xs text-d-ink-3">
               Historical imports use estimated field coordinates when notes only say things like LC, up middle, or down 3B line.
             </p>
           </section>
 
-          <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 lg:col-span-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Where Balls Are Finding Grass</h2>
+          <section className="rounded-xl border border-d-line bg-d-surface p-4 lg:col-span-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Where Balls Are Finding Grass</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <ZoneList title={selectedTeam === 'outlaws' ? `${brandTeam.name} Contact` : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
               <ZoneList title="Defensive Gap Watch" rows={opponentGapReport} />
@@ -631,13 +631,13 @@ export default function Dashboard() {
           </section>
         </div>
 
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Defensive Plan &amp; Playing Time</h2>
-          <p className="mt-1 text-xs text-slate-400">Current game&apos;s inning-by-inning defense and bench fairness (from Game Setup).</p>
+        <section className="rounded-xl border border-d-line bg-d-surface p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Defensive Plan &amp; Playing Time</h2>
+          <p className="mt-1 text-xs text-d-ink-3">Current game&apos;s inning-by-inning defense and bench fairness (from Game Setup).</p>
           <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-xs text-slate-200">
-                <thead className="border-b border-slate-700 text-slate-400">
+              <table className="min-w-full text-left text-xs text-d-ink">
+                <thead className="border-b border-d-line text-d-ink-3">
                   <tr>
                     <th className="py-2 pr-3">Pos</th>
                     {Array.from({ length: PLANNED_INNINGS }, (_, i) => (
@@ -647,10 +647,10 @@ export default function Dashboard() {
                 </thead>
                 <tbody>
                   {inningGrid.map((row) => (
-                    <tr key={`grid-${row.spot}`} className="border-b border-slate-800">
-                      <td className="py-2 pr-3 font-semibold text-cyan-100">{row.spot}</td>
+                    <tr key={`grid-${row.spot}`} className="border-b border-d-line">
+                      <td className="py-2 pr-3 font-semibold text-d-sel">{row.spot}</td>
                       {row.cells.map((cell) => (
-                        <td key={`grid-${row.spot}-${cell.inning}`} className={`py-2 pr-3 text-center ${cell.player ? '' : 'text-slate-600'}`}>
+                        <td key={`grid-${row.spot}-${cell.inning}`} className={`py-2 pr-3 text-center ${cell.player ? '' : 'text-d-ink-3'}`}>
                           {cell.player || '—'}
                         </td>
                       ))}
@@ -660,31 +660,31 @@ export default function Dashboard() {
               </table>
             </div>
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">Bench Fairness (innings benched)</h3>
-              <ul className="mt-2 space-y-1 text-xs text-slate-200">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-d-ink-3">Bench Fairness (innings benched)</h3>
+              <ul className="mt-2 space-y-1 text-xs text-d-ink">
                 {fairness.map((f) => {
                   const bench = f.counts.BENCH || 0;
                   const field = Object.entries(f.counts).reduce((sum, [spot, n]) => (spot === 'BENCH' ? sum : sum + n), 0);
                   return (
-                    <li key={`fair-${f.player}`} className="flex items-center justify-between gap-3 rounded border border-slate-800 bg-slate-950/40 px-3 py-1.5">
-                      <span className="font-medium text-slate-100">{f.player}</span>
-                      <span className="text-slate-400 tabular-nums">
-                        <span className="text-emerald-300">{field}</span> in field / <span className={bench > 1 ? 'text-amber-300' : 'text-slate-400'}>{bench}</span> benched
+                    <li key={`fair-${f.player}`} className="flex items-center justify-between gap-3 rounded border border-d-line bg-d-surface px-3 py-1.5">
+                      <span className="font-medium text-d-ink">{f.player}</span>
+                      <span className="text-d-ink-3 tabular-nums">
+                        <span className="text-d-pos">{field}</span> in field / <span className={bench > 1 ? 'text-d-warn' : 'text-d-ink-3'}>{bench}</span> benched
                       </span>
                     </li>
                   );
                 })}
-                {fairness.length === 0 && <li className="text-slate-500">No defense plan set for the current game yet.</li>}
+                {fairness.length === 0 && <li className="text-d-ink-3">No defense plan set for the current game yet.</li>}
               </ul>
             </div>
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-300">Player Hitting Report</h2>
+        <section className="rounded-xl border border-d-line bg-d-surface p-4">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Player Hitting Report</h2>
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-xs text-slate-200">
-              <thead className="border-b border-slate-700 text-slate-400">
+            <table className="min-w-full text-left text-xs text-d-ink">
+              <thead className="border-b border-d-line text-d-ink-3">
                 <tr>
                   <th className="py-2 pr-3">Player</th>
                   <th className="py-2 pr-3">PA</th>
@@ -704,8 +704,8 @@ export default function Dashboard() {
                   const obpDenominator = row.ab + row.walks;
                   const obp = obpDenominator ? (row.hits + row.walks) / obpDenominator : 0;
                   return (
-                    <tr key={row.player} className="border-b border-slate-800">
-                      <td className="py-2 pr-3 font-semibold text-cyan-100">{row.player}</td>
+                    <tr key={row.player} className="border-b border-d-line">
+                      <td className="py-2 pr-3 font-semibold text-d-sel">{row.player}</td>
                       <td className="py-2 pr-3">{row.pa}</td>
                       <td className="py-2 pr-3">{row.ab}</td>
                       <td className="py-2 pr-3">{row.hits}</td>
@@ -720,7 +720,7 @@ export default function Dashboard() {
                 })}
                 {playerReports.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-4 text-center text-slate-400">No player events in this scope.</td>
+                    <td colSpan={10} className="py-4 text-center text-d-ink-3">No player events in this scope.</td>
                   </tr>
                 )}
               </tbody>
@@ -734,27 +734,27 @@ export default function Dashboard() {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-black text-cyan-100">{value}</div>
+    <div className="rounded-lg border border-d-line bg-d-surface p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-d-ink-3">{label}</div>
+      <div className="mt-1 text-lg font-black text-d-sel">{value}</div>
     </div>
   );
 }
 
 function ZoneList({ title, rows }: { title: string; rows: Array<{ zone: string; hits: number; outs: number; total: number }> }) {
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">{title}</h3>
-      <ul className="mt-2 space-y-1 text-xs text-slate-200">
+    <div className="rounded-lg border border-d-line bg-d-surface p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-d-ink-3">{title}</h3>
+      <ul className="mt-2 space-y-1 text-xs text-d-ink">
         {rows.slice(0, 7).map((row) => (
           <li key={row.zone} className="flex items-center justify-between gap-3">
             <span>{ZONE_LABELS[row.zone] || row.zone}</span>
-            <span className="text-slate-400">
-              <span className="font-semibold text-emerald-300">{row.hits}</span> hits / {row.total} contacts
+            <span className="text-d-ink-3">
+              <span className="font-semibold text-d-pos">{row.hits}</span> hits / {row.total} contacts
             </span>
           </li>
         ))}
-        {rows.length === 0 && <li className="text-slate-500">No contact yet.</li>}
+        {rows.length === 0 && <li className="text-d-ink-3">No contact yet.</li>}
       </ul>
     </div>
   );

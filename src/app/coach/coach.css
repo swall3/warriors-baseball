@@ -1,64 +1,102 @@
-/* Coach (Outlaws scorekeeping) dark theme — scoped entirely under .coach-theme
-   so it can never leak into the Warriors marketing site or /games design
-   system. Ported from outlaws-field-app/src/app/globals.css during the
-   /coach merge. Do not add bare `body`/`:root`/`h1`.. rules here — that was
-   the exact bug this scoping avoids (see merge report). */
+/* Coach ("Field") surface — LIGHT theme, scoped entirely under .dugout-theme
+   so it can never leak into the Warriors marketing site or the /games design
+   system.
 
-.coach-theme {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-card: #1e293b;
-  --border-primary: #334155;
-  --border-secondary: #475569;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --accent-primary: #3b82f6;
-  --accent-secondary: #8b5cf6;
-  --accent-emerald: #10b981;
-  --accent-rose: #f43f5e;
-  --accent-amber: #f59e0b;
+   Why light: this tool is used one-handed at a fence, outdoors, in direct sun.
+   A dark phone screen in sunlight is a mirror. See DESIGN.md DECISION-1 — the
+   ported Outlaws theme was dark, and the stated requirement was always the
+   opposite. This file is the light replacement.
 
-  /* Was the `body` rule — applied to the coach layout's root wrapper instead. */
+   Naming: `.dugout-theme` / `--d-*`, not `field`, because `field` already means
+   two other things in this codebase — `globals.css` defines `.field` as the
+   signup form-input class, and the baseball field graphic below uses `field-*`.
+   (DESIGN.md §1, "why dugout, not field".)
+
+   ⚠️ Do NOT add bare `body` / `:root` / `h1`..`h6` / `p` rules here. Two
+   separate reasons, both real:
+     1. Scoping is what keeps this off the public site — that was the original
+        port's bug, and the file comment has warned about it since.
+     2. A rule like `.dugout-theme p { color: … }` has specificity (0,1,1) and
+        would silently beat every Tailwind `text-*` utility (0,1,0) used on the
+        coach pages. The old dark file had exactly that, which is why the
+        tokens could not simply be retinted.
+
+   Tailwind utilities for these tokens (`bg-d-surface`, `text-d-ink`, …) are
+   generated from the `@theme` block in globals.css — Tailwind only reads
+   `@theme` from the entry stylesheet that has `@import "tailwindcss"`, which
+   this file is not. The two blocks must be kept in sync. */
+
+.dugout-theme {
+  /* ── Sunlight palette ───────────────────────────────────────────────────
+     Designed to ~7:1 for primary text rather than AA's 4.5:1, because outdoor
+     glare eats effective contrast. Note the deliberate absence of pure #ffffff
+     at page level: full white in direct sun is its own glare source.
+     Values are DESIGN.md §1 verbatim. */
+  --d-bg:        #F2F3F0;  /* page — warm neutral, kills glare */
+  --d-surface:   #FBFBF9;  /* cards */
+  --d-sunken:    #E7E9E4;  /* wells, inactive tabs */
+  --d-line:      #D3D6CF;  /* borders */
+  --d-line-str:  #ADB2A9;  /* emphasis borders */
+
+  --d-ink:       #14181C;  /* primary   — 16:1 on --d-bg */
+  --d-ink-2:     #41474E;  /* secondary — 8.2:1 */
+  /* Tertiary. DEVIATES from DESIGN.md's #565E66 (stated 6.6:1), deliberately:
+     that figure was computed against --d-bg only, and the real worst case on
+     --d-sunken measures 5.39:1. DESIGN.md also restricts the token to >=16px,
+     but this ported UI uses it at 10-14px almost exclusively (measured: 193
+     nodes at <16px, 0 at >=16px). Darkened to clear 7:1 on every surface at
+     the sizes actually in use — worst case now 7.11:1 on --d-sunken.
+     Re-lighten it if the Field type scale in DESIGN.md §2 ever lands. */
+  --d-ink-3:     #454C54;  /* tertiary  — 7.11:1 worst case */
+
+  --d-pos:       #0B6B3A;  /* safe / on-base / hit */
+  --d-neg:       #A4162B;  /* out / error */
+  --d-warn:      #8A5A00;  /* fairness warning — NOT #f59e0b (2.1:1) */
+  --d-sel:       #12457A;  /* selected / active */
+  --d-us:        #0f2044;  /* our team */
+  --d-them:      #5A6470;  /* opponent — neutral, never a second brand color */
+
   min-height: 100%;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background: var(--d-bg);
+  color: var(--d-ink);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    letter-spacing: -0.025em;
-    font-weight: 600;
+  /* Numerals must not jitter between re-renders of a live scoreboard. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Field gets no decorative motion — only short state transitions. Scoped to
+   the coach surface on purpose: /games keeps its one-shot celebrations. */
+@media (prefers-reduced-motion: reduce) {
+  .dugout-theme *,
+  .dugout-theme *::before,
+  .dugout-theme *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
   }
+}
 
-  p {
-    line-height: 1.6;
-    color: var(--text-secondary);
-  }
+/* ==============================================================
+   BASEBALL FIELD — AERIAL VIEW
+   ==============================================================
+   Deliberately NOT converted to light. The field graphic is a *photographic*
+   element, not chrome, so it is exempt from the light-surface rule the same
+   way a photo is — grass is green in sunlight too, and a washed-out field
+   would read worse, not better (DESIGN.md §5.8).
 
-  /* Smooth gradients */
-  .bg-gradient-primary {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  }
+   `.field-fair-wedge` uses clip-path, which the project's design principles
+   otherwise ban. That ban is about decorative section dividers; here the
+   clip-path is *geometry* — it is what makes fair territory a 90 degree fan
+   from home plate. Keep it. Do not "fix" it. (DESIGN.md DECISION-1.)
 
-  /* Glass effect for cards */
-  .glass {
-    background: rgba(30, 41, 59, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(51, 65, 85, 0.5);
-  }
+   Only `.baseball-field-canvas` and `.field-vignette` are currently referenced
+   (src/app/coach/page.tsx); the rest describe a CSS-drawn field that the live
+   page currently renders as a photo instead. Kept intact rather than pruned so
+   the graphic stays whole. */
 
-  /* Field with smooth shadows */
-  .baseball-field {
-    box-shadow:
-      0 20px 50px rgba(0, 0, 0, 0.5),
-      0 0 100px rgba(59, 130, 246, 0.1);
-  }
-
-  /* ==============================
-     BASEBALL FIELD — AERIAL VIEW
-     ============================== */
-
+.dugout-theme {
   /* Field container background (foul territory / outside fair territory) */
   .baseball-field-canvas {
     background: #0a1a0a;
@@ -184,172 +222,23 @@
     box-shadow: 0 0 5px rgba(255, 255, 255, 0.55);
   }
 
-  /* Dark edge vignette */
+  /* Edge vignette over the field photo. Softened from the dark theme's 0.5 —
+     on a light page the field is already a high-contrast island and does not
+     need heavy edge darkening to separate from its surroundings. */
   .field-vignette {
     background: radial-gradient(
       ellipse 100% 90% at 50% 87%,
-      transparent 42%,
-      rgba(0, 0, 0, 0.5) 100%
+      transparent 52%,
+      rgba(0, 0, 0, 0.28) 100%
     );
     pointer-events: none;
-  }
-
-  .animate-fade-in {
-    animation: coach-fadeIn 0.3s ease-out;
-  }
-
-  .animate-pulse-slow {
-    animation: coach-pulse 3s ease-in-out infinite;
-  }
-
-  .animate-pin-drop {
-    animation: coach-pinDrop 0.3s ease-out;
-  }
-
-  /* Button styles */
-  .btn-primary {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 12px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-    border: none;
-
-    &:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
-
-  /* Field hit feedback */
-  .hit-hit {
-    background: linear-gradient(135deg, var(--accent-emerald), var(--accent-emerald));
-    animation: coach-pulse 0.5s ease-out;
-  }
-
-  .hit-out {
-    background: linear-gradient(135deg, var(--accent-rose), var(--accent-rose));
-    animation: coach-pulse 0.5s ease-out;
-  }
-
-  /* Zone color classes */
-  .zone-left {
-    background: linear-gradient(90deg, #3b82f6, #1e40af);
-  }
-
-  .zone-center {
-    background: linear-gradient(90deg, #22c55e, #15803d);
-  }
-
-  .zone-right {
-    background: linear-gradient(90deg, #f59e0b, #d97706);
-  }
-
-  /* Stat card styling */
-  .stat-card {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.8));
-    border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 0.75rem;
-    text-align: center;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: var(--accent-primary);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-    }
-  }
-
-  /* Heat map styling */
-  .heatmap-zone {
-    background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.2), transparent 60%);
-    border-radius: 4px;
-    transition: all 0.3s ease;
-
-    &:hover {
-      background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.3), transparent 60%);
-      cursor: pointer;
-    }
-  }
-
-  /* Score display */
-  .score-display {
-    font-family: 'Courier New', monospace;
-    font-size: 2rem;
-    font-weight: bold;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-  }
-
-  /* Defensive rotation indicator */
-  .rotation-active {
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
-  }
-
-  /* Responsive grid */
-  .grid-glass {
-    background: rgba(30, 41, 59, 0.9);
-    backdrop-filter: blur(12px);
-    border: 1px solid var(--border-primary);
-    border-radius: 12px;
-    padding: 1rem;
-  }
-
-  /* Status indicators */
-  .status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    animation: coach-pulse 2s ease-in-out infinite;
-  }
-
-  .status-active {
-    background: var(--accent-emerald);
-  }
-
-  .status-loading {
-    background: var(--accent-amber);
-    animation: coach-pulse 1.5s ease-in-out infinite;
-  }
-
-  /* Message bubble styling */
-  .message-bubble {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(30, 41, 59, 0.8));
-    border-radius: 12px;
-    padding: 0.75rem;
-    border-left: 3px solid var(--accent-primary);
-  }
-
-  /* Integration badge */
-  .integration-badge {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    display: inline-block;
-  }
-
-  /* Footer styling */
-  .footer {
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-primary);
-    padding: 2rem 0;
   }
 }
 
 /* Standalone (installed PWA) uses viewportFit:cover — keep content clear of the
    notch, status bar, and home indicator instead of sliding under them. */
 @media (display-mode: standalone) {
-  .coach-theme {
+  .dugout-theme {
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
@@ -357,39 +246,12 @@
   }
 }
 
-/* NOTE: the three `!important` overrides that forced .rounded-lg/.rounded-xl/
-   .rounded-2xl to fixed pixel values in the original Outlaws globals.css were
-   intentionally dropped in this merge — nothing depended on them, and they
-   would have fought Tailwind's own utilities plus any future shadcn/ui install. */
-
-@keyframes coach-fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes coach-pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-@keyframes coach-pinDrop {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+/* REMOVED in the light-theme pass: ~200 lines of dark-surface chrome that this
+   file defined and nothing referenced — .glass, .stat-card, .btn-primary,
+   .grid-glass, .zone-*, .heatmap-zone, .message-bubble, .integration-badge,
+   .score-display, .rotation-active, .status-*, .hit-*, .footer,
+   .bg-gradient-primary, .animate-*, and the .baseball-field blue glow.
+   Verified dead before deleting: 40 class definitions, 2 referenced anywhere
+   in src/. They encoded dark-theme assumptions (frosted dark panels, glows)
+   with no light equivalent, so porting them would have meant inventing UI that
+   nothing uses. Recoverable from git history if ever wanted. */

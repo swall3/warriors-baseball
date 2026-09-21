@@ -236,23 +236,23 @@ export default function StatsPage() {
 
   return (
     <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-5 px-3 py-4 sm:px-6 lg:grid-cols-3">
-      <section className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/78 p-4 shadow-2xl lg:col-span-2">
+      <section className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl lg:col-span-2">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Spray Chart</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Spray Chart</p>
             <h1 className="text-2xl font-black tracking-tight">Play Statistics</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/coach" className="rounded-lg border border-cyan-300/40 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-500/30 min-h-[40px] flex items-center touch-manipulation">
+            <Link href="/coach" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel min-h-[40px] flex items-center touch-manipulation">
               Scoring
             </Link>
-            <Link href="/coach/dashboard" className="rounded-lg border border-emerald-300/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/30 min-h-[40px] flex items-center touch-manipulation">
+            <Link href="/coach/dashboard" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos min-h-[40px] flex items-center touch-manipulation">
               Dashboard
             </Link>
             <button
               type="button"
               onClick={handleExport}
-              className="rounded-lg bg-cyan-100 px-3 py-2 text-xs font-bold uppercase tracking-wide text-cyan-800 hover:bg-cyan-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] touch-manipulation"
+              className="rounded-lg bg-d-sel/12 px-3 py-2 text-xs font-bold uppercase tracking-wide text-d-sel disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] touch-manipulation"
               disabled={stats === null}
             >
               {exported ? 'Exported!' : 'Export'}
@@ -261,50 +261,50 @@ export default function StatsPage() {
         </header>
 
         <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2">
-            <p className="text-[11px] text-slate-400">Total Plays</p>
-            <p className="text-2xl font-black text-cyan-100">{stats?.totalPlays || 0}</p>
+          <div className="rounded-xl border border-d-line bg-d-surface px-3 py-2">
+            <p className="text-[11px] text-d-ink-3">Total Plays</p>
+            <p className="text-2xl font-black text-d-sel">{stats?.totalPlays || 0}</p>
           </div>
-          <div className="rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2">
-            <p className="text-[11px] text-slate-400">Hits</p>
-            <p className="text-2xl font-black text-emerald-400">{stats?.hits || 0}</p>
+          <div className="rounded-xl border border-d-line bg-d-surface px-3 py-2">
+            <p className="text-[11px] text-d-ink-3">Hits</p>
+            <p className="text-2xl font-black text-d-pos">{stats?.hits || 0}</p>
           </div>
-          <div className="rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2">
-            <p className="text-[11px] text-slate-400">Outs</p>
-            <p className="text-2xl font-black text-rose-400">{stats?.outs || 0}</p>
+          <div className="rounded-xl border border-d-line bg-d-surface px-3 py-2">
+            <p className="text-[11px] text-d-ink-3">Outs</p>
+            <p className="text-2xl font-black text-d-neg">{stats?.outs || 0}</p>
           </div>
-          <div className="rounded-xl border border-slate-600 bg-slate-800/50 px-3 py-2">
-            <p className="text-[11px] text-slate-400">Home Runs</p>
-            <p className="text-2xl font-black text-yellow-400">{stats?.homeRuns || 0}</p>
+          <div className="rounded-xl border border-d-line bg-d-surface px-3 py-2">
+            <p className="text-[11px] text-d-ink-3">Home Runs</p>
+            <p className="text-2xl font-black text-d-warn">{stats?.homeRuns || 0}</p>
           </div>
         </div>
 
         <div className="mb-4 grid grid-cols-4 gap-2 text-center">
-          <div className="rounded-xl bg-slate-800/50 px-2 py-1">
-            <p className="text-[10px] text-slate-400">Singles</p>
-            <p className="text-lg font-bold text-emerald-300">{stats?.singles || 0}</p>
+          <div className="rounded-xl bg-d-surface px-2 py-1">
+            <p className="text-[10px] text-d-ink-3">Singles</p>
+            <p className="text-lg font-bold text-d-pos">{stats?.singles || 0}</p>
           </div>
-          <div className="rounded-xl bg-slate-800/50 px-2 py-1">
-            <p className="text-[10px] text-slate-400">Doubles</p>
-            <p className="text-lg font-bold text-green-300">{stats?.doubles || 0}</p>
+          <div className="rounded-xl bg-d-surface px-2 py-1">
+            <p className="text-[10px] text-d-ink-3">Doubles</p>
+            <p className="text-lg font-bold text-d-pos">{stats?.doubles || 0}</p>
           </div>
-          <div className="rounded-xl bg-slate-800/50 px-2 py-1">
-            <p className="text-[10px] text-slate-400">Triples</p>
-            <p className="text-lg font-bold text-lime-300">{stats?.triples || 0}</p>
+          <div className="rounded-xl bg-d-surface px-2 py-1">
+            <p className="text-[10px] text-d-ink-3">Triples</p>
+            <p className="text-lg font-bold text-d-pos">{stats?.triples || 0}</p>
           </div>
-          <div className="rounded-xl bg-slate-800/50 px-2 py-1">
-            <p className="text-[10px] text-slate-400">Favorite Zone</p>
-            <p className="text-lg font-bold text-cyan-200">{getZoneLabel(stats?.favoriteZone || 'N/A')}</p>
+          <div className="rounded-xl bg-d-surface px-2 py-1">
+            <p className="text-[10px] text-d-ink-3">Favorite Zone</p>
+            <p className="text-lg font-bold text-d-sel">{getZoneLabel(stats?.favoriteZone || 'N/A')}</p>
           </div>
         </div>
 
-        <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900/50">
+        <div className="mb-4 rounded-xl border border-d-line bg-d-surface">
           <SprayChart events={sprayEvents} />
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-600 bg-slate-950">
+        <div className="overflow-hidden rounded-xl border border-d-line bg-d-bg">
           <table className="w-full text-left">
-            <thead className="bg-slate-800/50 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <thead className="bg-d-surface text-[10px] font-bold uppercase tracking-wider text-d-ink-3">
               <tr>
                 <th className="px-2 py-1">Inning</th>
                 <th className="px-2 py-1">Batter</th>
@@ -314,7 +314,7 @@ export default function StatsPage() {
             </thead>
             <tbody className="text-xs">
               {plays.map((play, idx) => (
-                <tr key={`${play.inning}-${play.batter}-${idx}`} className="border-t border-slate-800/50">
+                <tr key={`${play.inning}-${play.batter}-${idx}`} className="border-t border-d-line">
                   <td className="px-2 py-1">{play.inning}</td>
                   <td className="px-2 py-1">{play.batter}</td>
                   <td className="px-2 py-1">{play.result}</td>
@@ -326,20 +326,20 @@ export default function StatsPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/78 p-4 shadow-2xl">
+      <section className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl">
         <header>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Score</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Score</p>
           <h1 className="text-xl font-black tracking-tight">Game Score</h1>
         </header>
 
         <div className="mt-4 flex items-center justify-center gap-6">
           <div className="text-center">
-            <p className="text-[10px] text-slate-400">{brandTeam.name}</p>
-            <p className="text-3xl font-black text-cyan-100">{score.outlaws}</p>
+            <p className="text-[10px] text-d-ink-3">{brandTeam.name}</p>
+            <p className="text-3xl font-black text-d-sel">{score.outlaws}</p>
           </div>
           <div className="text-center">
-            <p className="text-[10px] text-slate-400">{opponentName}</p>
-            <p className="text-3xl font-black text-rose-400">{score.opponents}</p>
+            <p className="text-[10px] text-d-ink-3">{opponentName}</p>
+            <p className="text-3xl font-black text-d-neg">{score.opponents}</p>
           </div>
         </div>
       </section>

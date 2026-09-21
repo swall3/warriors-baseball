@@ -37,10 +37,10 @@ function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white px-6">
+    <main className="min-h-screen flex flex-col items-center justify-center bg-d-bg text-d-ink px-6">
       <div className="w-full max-w-xs text-center">
         <h1 className="text-2xl font-bold tracking-tight">{team.fullName}</h1>
-        <p className="mt-1 text-sm text-gray-400">Team access only</p>
+        <p className="mt-1 text-sm text-d-ink-3">Team access only</p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
           <input
@@ -51,20 +51,20 @@ function LoginForm() {
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
             placeholder="Passcode"
-            className="w-full rounded-xl bg-gray-800 border border-gray-700 px-4 py-3 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-green-500"
+            className="w-full rounded-xl bg-d-surface border border-d-line-str px-4 py-3 text-center text-lg tracking-widest text-d-ink placeholder:text-d-ink-3 focus:outline-none focus:ring-2 focus:ring-d-sel"
           />
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm font-semibold text-d-neg">{error}</p>}
           <button
             type="submit"
             disabled={busy || passcode.length === 0}
-            className="w-full rounded-xl bg-green-600 px-4 py-3 text-lg font-semibold disabled:opacity-50 active:bg-green-700"
+            className="w-full min-h-[56px] rounded-xl bg-d-sel px-4 py-3 text-lg font-semibold text-white disabled:opacity-50 active:bg-d-us"
             style={{ touchAction: "manipulation" }}
           >
             {busy ? "Checking…" : "Enter"}
           </button>
         </form>
 
-        <p className="mt-6 text-xs text-gray-500">Stays signed in on this device for 30 days.</p>
+        <p className="mt-6 text-xs text-d-ink-3">Stays signed in on this device for 30 days.</p>
       </div>
     </main>
   );

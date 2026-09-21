@@ -90,8 +90,11 @@ const lineupLink = page.locator('a[href="/coach/lineup"]').first();
 const canClick = (await lineupLink.count()) > 0;
 if (canClick) {
   await lineupLink.click();
-  await page.waitForLoadState("networkidle");
-  console.log(`  clicked dashboard lineup link -> ${page.url().replace(BASE, "")}`);
+  // App Router navigations are client-side: the URL changes without a load
+  // event, so waiting on "networkidle" here reports the old URL.
+  await page.waitForURL((u) => u.pathname === "/coach/lineup", { timeout: 15000 });
+  const heading = await page.locator("h1").first().textContent();
+  console.log(`  clicked dashboard lineup link -> ${page.url().replace(BASE, "")} ("${heading?.trim()}")`);
 } else {
   console.log("  NOTE: no a[href=/coach/lineup] on the dashboard");
 }

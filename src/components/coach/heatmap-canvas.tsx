@@ -259,14 +259,14 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
   return (
     <div className="flex flex-col gap-3">
       {/* Controls */}
-      <div className="flex flex-wrap gap-3 items-center bg-slate-900 p-3 rounded-lg">
+      <div className="flex flex-wrap gap-3 items-center bg-d-sunken p-3 rounded-lg">
         <div className="flex gap-1 flex-wrap">
           {(["all", "outlaws", "opponent"] as TeamFilter[]).map((f) => (
             <button
               key={f}
               onClick={() => setTeamFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold min-h-[40px] transition-all active:scale-[0.985] ${
-                teamFilter === f ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 active:bg-slate-600"
+                teamFilter === f ? "bg-d-sel text-white" : "bg-d-sunken text-d-ink-2"
               }`}
             >
               {f === "all" ? "All ABs" : f === "outlaws" ? brandTeam.name : "Opponent"}
@@ -280,7 +280,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
               key={f}
               onClick={() => setLayerFilter(f)}
               className={`px-3 py-1 rounded text-xs font-semibold transition-colors min-h-[32px] ${
-                layerFilter === f ? "bg-slate-500 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+                layerFilter === f ? "bg-d-sel text-white" : "bg-d-sunken text-d-ink-2"
               }`}
             >
               {f === "all" ? "All" : f === "hits" ? "Hits" : "Missed"}
@@ -288,7 +288,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
           ))}
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-300">
+        <div className="flex items-center gap-2 text-xs text-d-ink-2">
           <span>Spread</span>
           <input
             type="range" min={18} max={60} value={blobRadius}
@@ -298,9 +298,9 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
         </div>
 
         <div className="ml-auto flex gap-3 text-xs">
-          <span className="text-emerald-400 font-semibold">● {outlawsHits.length} OUT hits</span>
-          <span className="text-red-400 font-semibold">● {oppHits.length} OPP hits</span>
-          <span className="text-slate-400 font-semibold">● {missed.length} missed</span>
+          <span className="text-d-pos font-semibold">● {outlawsHits.length} OUT hits</span>
+          <span className="text-d-neg font-semibold">● {oppHits.length} OPP hits</span>
+          <span className="text-d-ink-3 font-semibold">● {missed.length} missed</span>
         </div>
       </div>
 
@@ -318,67 +318,67 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
         <canvas ref={heatCanvasRef} width={CW} height={CH} className="absolute inset-0 w-full h-full" />
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+          <div className="absolute inset-0 flex items-center justify-center bg-d-ink/60">
             <span className="text-white text-sm">Loading events…</span>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-            <span className="text-red-400 text-sm">{error}</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-d-ink/60">
+            <span className="text-rose-200 text-sm">{error}</span>
           </div>
         )}
         {!gameId && propEvents === undefined && !loading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-slate-400 text-sm">Select a game to view heatmap</span>
+            <span className="text-white/80 text-sm">Select a game to view heatmap</span>
           </div>
         )}
 
         {/* Legend */}
-        <div className="absolute bottom-3 left-3 bg-black/75 text-white rounded-lg px-3 py-1.5 text-xs flex items-center gap-4 backdrop-blur-sm border border-white/10">
+        <div className="absolute bottom-3 left-3 bg-d-ink/75 text-white rounded-lg px-3 py-1.5 text-xs flex items-center gap-4 backdrop-blur-sm border border-white/10">
           <div className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#28c85c]" /> {brandTeam.name} hits</div>
           <div className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#e43030]" /> Opponent hits</div>
-          <div className="flex items-center gap-1.5 text-slate-300"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#68748a]" /> Missed</div>
+          <div className="flex items-center gap-1.5 text-white/70"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#68748a]" /> Missed</div>
         </div>
       </div>
 
       {/* Contact summary (reference-style percentages) */}
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="rounded-lg bg-slate-900/70 border border-slate-700 px-2 py-1.5">
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">{brandTeam.name} Hits</div>
-          <div className="text-sm font-black text-emerald-400 tabular-nums">{outlawsHits.length} · {pct(outlawsHits.length)}%</div>
+        <div className="rounded-lg bg-d-surface border border-d-line px-2 py-1.5">
+          <div className="text-[10px] uppercase tracking-wide text-d-ink-3">{brandTeam.name} Hits</div>
+          <div className="text-sm font-black text-d-pos tabular-nums">{outlawsHits.length} · {pct(outlawsHits.length)}%</div>
         </div>
-        <div className="rounded-lg bg-slate-900/70 border border-slate-700 px-2 py-1.5">
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">Opponent Hits</div>
-          <div className="text-sm font-black text-red-400 tabular-nums">{oppHits.length} · {pct(oppHits.length)}%</div>
+        <div className="rounded-lg bg-d-surface border border-d-line px-2 py-1.5">
+          <div className="text-[10px] uppercase tracking-wide text-d-ink-3">Opponent Hits</div>
+          <div className="text-sm font-black text-d-neg tabular-nums">{oppHits.length} · {pct(oppHits.length)}%</div>
         </div>
-        <div className="rounded-lg bg-slate-900/70 border border-slate-700 px-2 py-1.5">
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">Missed</div>
-          <div className="text-sm font-black text-slate-300 tabular-nums">{missed.length} · {pct(missed.length)}%</div>
+        <div className="rounded-lg bg-d-surface border border-d-line px-2 py-1.5">
+          <div className="text-[10px] uppercase tracking-wide text-d-ink-3">Missed</div>
+          <div className="text-sm font-black text-d-ink-2 tabular-nums">{missed.length} · {pct(missed.length)}%</div>
         </div>
       </div>
 
       {/* Hover tooltip */}
       {hoveredEvent && (
         <div
-          className="fixed z-50 pointer-events-none bg-black/90 text-white rounded-lg shadow-2xl px-4 py-3 text-sm backdrop-blur-sm border border-white/10"
+          className="fixed z-50 pointer-events-none bg-d-surface text-d-ink rounded-lg shadow-xl px-4 py-3 text-sm border border-d-line-str"
           style={{ left: hoverPos.x + 14, top: hoverPos.y - 80 }}
         >
           <div className="font-bold text-base">
             {hoveredEvent.batter}
             <span className={`ml-2 text-xs px-1.5 py-0.5 rounded font-semibold ${
-              isHit(hoveredEvent.result) ? "bg-emerald-700 text-emerald-100"
-              : isOut(hoveredEvent.result) ? "bg-slate-600 text-slate-100" : "bg-indigo-700 text-indigo-100"
+              isHit(hoveredEvent.result) ? "bg-d-pos/12 text-d-pos"
+              : isOut(hoveredEvent.result) ? "bg-d-sunken text-d-ink" : "bg-d-sel/12 text-d-sel"
             }`}>
               {isHit(hoveredEvent.result) ? "HIT" : isOut(hoveredEvent.result) ? "OUT" : "ON BASE"}
             </span>
           </div>
-          <div className="text-yellow-300 font-semibold">{resultLabel(hoveredEvent)}</div>
-          <div className="text-slate-300 mt-1">
+          <div className="text-d-warn font-semibold">{resultLabel(hoveredEvent)}</div>
+          <div className="text-d-ink-2 mt-1">
             {hoveredEvent.battingTeam === "outlaws" ? brandTeam.name : "Opponent"} · Inning {hoveredEvent.inning}
           </div>
-          <div className="text-slate-400 text-xs mt-1">Zone: {hoveredEvent.zone?.replace(/_/g, " ")}</div>
+          <div className="text-d-ink-3 text-xs mt-1">Zone: {hoveredEvent.zone?.replace(/_/g, " ")}</div>
           {hoveredEvent.description && (
-            <div className="text-slate-300 text-xs mt-1 max-w-[220px]">{hoveredEvent.description}</div>
+            <div className="text-d-ink-2 text-xs mt-1 max-w-[220px]">{hoveredEvent.description}</div>
           )}
         </div>
       )}

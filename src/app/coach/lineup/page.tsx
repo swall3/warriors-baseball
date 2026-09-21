@@ -285,32 +285,32 @@ export default function LineupBuilderPage() {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6 text-slate-300">
+      <div className="min-h-screen bg-d-bg p-6 text-d-ink-2">
         <p className="text-sm">Loading lineup…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="border-b border-cyan-300/20 bg-slate-950/75 p-4 backdrop-blur-sm">
+    <div className="min-h-screen bg-d-bg text-d-ink">
+      <header className="border-b border-d-sel/40 bg-d-surface p-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-cyan-100">Lineup Builder</h1>
-            <p className="mt-1 text-sm text-slate-300">
+            <h1 className="text-2xl font-black tracking-tight text-d-sel">Lineup Builder</h1>
+            <p className="mt-1 text-sm text-d-ink-2">
               Players down, innings across. Tap any cell to set that kid&apos;s position for that inning.
             </p>
           </div>
           <nav className="flex flex-wrap gap-2">
             <Link
               href="/coach"
-              className="rounded-lg border border-cyan-300/30 bg-cyan-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-500/30 touch-manipulation active:scale-95"
+              className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95"
             >
               Back To Scoring
             </Link>
             <Link
               href="/coach/dashboard"
-              className="rounded-lg border border-sky-300/40 bg-sky-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-sky-100 hover:bg-sky-500/30 touch-manipulation active:scale-95"
+              className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95"
             >
               Dashboard
             </Link>
@@ -320,12 +320,12 @@ export default function LineupBuilderPage() {
 
       <main className="mx-auto max-w-6xl space-y-4 p-4 pb-40">
         {/* ---- Plan settings ---- */}
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+        <section className="rounded-xl border border-d-line bg-d-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Plan</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Plan</h2>
               <input
-                className="mt-2 w-56 rounded border border-slate-600 bg-slate-900 px-2 py-1 text-sm text-slate-100"
+                className="mt-2 w-56 rounded border border-d-line bg-d-sunken px-2 py-1 text-sm text-d-ink"
                 value={plan.label}
                 onChange={(e) =>
                   setPlan((prev) => (prev ? { ...prev, label: e.target.value, updatedAt: new Date().toISOString() } : prev))
@@ -335,7 +335,7 @@ export default function LineupBuilderPage() {
             </div>
 
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Format</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Format</h2>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 {(["coach_pitch", "kid_pitch"] as GameFormat[]).map((value) => (
                   <button
@@ -344,44 +344,44 @@ export default function LineupBuilderPage() {
                     onClick={() => onSetFormat(value)}
                     className={`rounded-lg border px-3 py-2 text-xs font-semibold uppercase tracking-wide touch-manipulation active:scale-95 ${
                       plan.format === value
-                        ? "border-cyan-300 bg-cyan-400 text-slate-900"
-                        : "border-slate-600 bg-slate-900 text-slate-200"
+                        ? "border-d-sel bg-d-sel text-white"
+                        : "border-d-line bg-d-sunken text-d-ink"
                     }`}
                   >
                     {value === "coach_pitch" ? "Coach Pitch" : "Kid Pitch"}
                   </button>
                 ))}
               </div>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-d-ink-3">
                 Coach pitch uses LCF/RCF (4 outfielders); kid pitch uses CF (3).
               </p>
             </div>
 
             <div className="text-right">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Saved</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Saved</h2>
               <p className="mt-2 text-xs">
-                {syncState === "saving" && <span className="text-amber-300">Saving…</span>}
-                {syncState === "saved" && <span className="text-emerald-300">Synced to database</span>}
-                {syncState === "local" && <span className="text-slate-400">On this phone only</span>}
-                {syncState === "error" && <span className="text-rose-300">On this phone only — sync failed</span>}
-                {syncState === "idle" && <span className="text-slate-400">On this phone</span>}
+                {syncState === "saving" && <span className="text-d-warn">Saving…</span>}
+                {syncState === "saved" && <span className="text-d-pos">Synced to database</span>}
+                {syncState === "local" && <span className="text-d-ink-3">On this phone only</span>}
+                {syncState === "error" && <span className="text-d-neg">On this phone only — sync failed</span>}
+                {syncState === "idle" && <span className="text-d-ink-3">On this phone</span>}
               </p>
-              <p className="mt-1 max-w-[220px] text-[11px] text-slate-500">
+              <p className="mt-1 max-w-[220px] text-[11px] text-d-ink-3">
                 {syncState === "error" ? syncError : "Every change saves locally first. Sync never blocks the game."}
               </p>
             </div>
           </div>
 
           {serverPlan && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded border border-amber-400/40 bg-amber-500/10 px-3 py-2">
-              <span className="text-xs text-amber-100">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded border border-d-warn/40 bg-d-warn/10 px-3 py-2">
+              <span className="text-xs text-d-warn">
                 A newer plan for this team is saved on the server (
                 {new Date(serverPlan.updatedAt).toLocaleString()}).
               </span>
               <button
                 type="button"
                 onClick={onAdoptServerPlan}
-                className="rounded border border-amber-300/50 bg-amber-500/20 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-100 touch-manipulation active:scale-95"
+                className="rounded border border-d-warn/40 bg-d-warn/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-d-warn touch-manipulation active:scale-95"
               >
                 Load It
               </button>
@@ -391,11 +391,11 @@ export default function LineupBuilderPage() {
 
         {/* ---- Conflicts ---- */}
         {conflicts.length > 0 && (
-          <section className="rounded-xl border border-rose-400/50 bg-rose-500/10 p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-rose-200">
+          <section className="rounded-xl border border-d-neg/40 bg-d-neg/10 p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-d-neg">
               {conflicts.length} Conflict{conflicts.length === 1 ? "" : "s"}
             </h2>
-            <ul className="mt-2 space-y-1 text-xs text-rose-100">
+            <ul className="mt-2 space-y-1 text-xs text-d-neg">
               {conflicts.map((conflict, idx) => (
                 <li key={`conflict-${idx}`}>• {conflict.detail}</li>
               ))}
@@ -404,9 +404,9 @@ export default function LineupBuilderPage() {
         )}
 
         {shared.length > 0 && (
-          <section className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-200">Shared Rotation Groups</h2>
-            <ul className="mt-2 space-y-1 text-xs text-amber-100">
+          <section className="rounded-xl border border-d-warn/40 bg-d-warn/10 p-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-d-warn">Shared Rotation Groups</h2>
+            <ul className="mt-2 space-y-1 text-xs text-d-warn">
               {shared.map((entry) => (
                 <li key={`shared-${entry.group}`}>
                   • Innings {entry.innings.join(", ")} all use group {entry.group} — editing one changes them all.
@@ -417,11 +417,11 @@ export default function LineupBuilderPage() {
         )}
 
         {/* ---- The grid ---- */}
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+        <section className="rounded-xl border border-d-line bg-d-surface p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Defense By Inning</h2>
-              <p className="mt-1 text-xs text-slate-400">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Defense By Inning</h2>
+              <p className="mt-1 text-xs text-d-ink-3">
                 Blank cell = on the bench that inning. Amber = sitting more than {BENCH_TOTAL_LIMIT} inning or more
                 than {BENCH_CONSECUTIVE_LIMIT} in a row.
               </p>
@@ -429,7 +429,7 @@ export default function LineupBuilderPage() {
             <button
               type="button"
               onClick={() => setShowGroupMap((v) => !v)}
-              className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-200 touch-manipulation active:scale-95"
+              className="rounded-lg border border-d-line bg-d-sunken px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-ink touch-manipulation active:scale-95"
             >
               {showGroupMap ? "Hide" : "Show"} Rotation Groups
             </button>
@@ -438,10 +438,10 @@ export default function LineupBuilderPage() {
           {showGroupMap && (
             <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
               {INNINGS.map((inning) => (
-                <label key={`map-${inning}`} className="flex flex-col gap-1 rounded border border-slate-700 bg-slate-950/60 p-2 text-xs">
-                  <span className="font-semibold text-slate-300">Inning {inning}</span>
+                <label key={`map-${inning}`} className="flex flex-col gap-1 rounded border border-d-line bg-d-surface p-2 text-xs">
+                  <span className="font-semibold text-d-ink-2">Inning {inning}</span>
                   <select
-                    className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100"
+                    className="rounded border border-d-line bg-d-sunken px-2 py-1 text-d-ink"
                     value={groupForInning(plan.inningMap, inning)}
                     onChange={(e) =>
                       setPlan((prev) => (prev ? setInningGroup(prev, inning, e.target.value as DefenseGroupName) : prev))
@@ -459,19 +459,19 @@ export default function LineupBuilderPage() {
           )}
 
           {roster.length === 0 ? (
-            <p className="mt-4 rounded border border-slate-700 bg-slate-950/40 px-3 py-6 text-center text-sm text-slate-400">
+            <p className="mt-4 rounded border border-d-line bg-d-surface px-3 py-6 text-center text-sm text-d-ink-3">
               No players yet. Add them below, or set the batting order in Game Setup on the scoring screen.
             </p>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="min-w-full border-separate border-spacing-0 text-left text-xs text-slate-200">
+              <table className="min-w-full border-separate border-spacing-0 text-left text-xs text-d-ink">
                 <thead>
-                  <tr className="text-slate-400">
-                    <th className="sticky left-0 z-10 bg-slate-900 py-2 pr-2 text-left">Player</th>
+                  <tr className="text-d-ink-3">
+                    <th className="sticky left-0 z-10 bg-d-sunken py-2 pr-2 text-left">Player</th>
                     {INNINGS.map((inning) => (
                       <th key={`h-${inning}`} className="px-1 py-2 text-center">
-                        <div className="font-semibold text-slate-300">I{inning}</div>
-                        <div className="text-[10px] font-normal text-slate-500">
+                        <div className="font-semibold text-d-ink-2">I{inning}</div>
+                        <div className="text-[10px] font-normal text-d-ink-3">
                           {groupForInning(plan.inningMap, inning)}
                         </div>
                       </th>
@@ -484,14 +484,14 @@ export default function LineupBuilderPage() {
                     const row = fairnessByPlayer.get(player);
                     const flagged = Boolean(row?.overBenchTotal || row?.overBenchStreak);
                     return (
-                      <tr key={`row-${player}`} className="border-t border-slate-800">
+                      <tr key={`row-${player}`} className="border-t border-d-line">
                         <td
-                          className={`sticky left-0 z-10 bg-slate-900 py-1.5 pr-2 font-semibold ${
-                            flagged ? "text-amber-200" : "text-cyan-100"
+                          className={`sticky left-0 z-10 bg-d-sunken py-1.5 pr-2 font-semibold ${
+                            flagged ? "text-d-warn" : "text-d-sel"
                           }`}
                         >
                           {player}
-                          {flagged && <span className="ml-1 text-[10px] text-amber-400">●</span>}
+                          {flagged && <span className="ml-1 text-[10px] text-d-warn">●</span>}
                         </td>
                         {INNINGS.map((inning) => {
                           const spot = assignmentFor(plan, player, inning);
@@ -505,12 +505,12 @@ export default function LineupBuilderPage() {
                                 aria-label={`${player}, inning ${inning}: ${spot || "bench"}`}
                                 className={`h-9 w-full min-w-[42px] rounded border text-[11px] font-bold touch-manipulation active:scale-95 ${
                                   isSelected
-                                    ? "border-cyan-300 bg-cyan-400 text-slate-900"
+                                    ? "border-d-sel bg-d-sel text-white"
                                     : hasConflict
-                                      ? "border-rose-400 bg-rose-500/25 text-rose-100"
+                                      ? "border-d-neg bg-d-neg/10 text-d-neg"
                                       : spot
-                                        ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-100"
-                                        : "border-slate-700 bg-slate-950/60 text-slate-600"
+                                        ? "border-d-pos/40 bg-d-pos/10 text-d-pos"
+                                        : "border-d-line bg-d-surface text-d-ink-3"
                                 }`}
                               >
                                 {spot || "—"}
@@ -519,9 +519,9 @@ export default function LineupBuilderPage() {
                           );
                         })}
                         <td className="px-1 py-1 text-center tabular-nums">
-                          <span className="text-emerald-300">{row?.fieldInnings ?? 0}</span>
-                          <span className="text-slate-600"> / </span>
-                          <span className={flagged ? "text-amber-300" : "text-slate-400"}>
+                          <span className="text-d-pos">{row?.fieldInnings ?? 0}</span>
+                          <span className="text-d-ink-3"> / </span>
+                          <span className={flagged ? "text-d-warn" : "text-d-ink-3"}>
                             {row?.benchInnings ?? 0}
                           </span>
                         </td>
@@ -535,7 +535,7 @@ export default function LineupBuilderPage() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <input
-              className="w-44 rounded border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-slate-100"
+              className="w-44 rounded border border-d-line bg-d-sunken px-2 py-1.5 text-sm text-d-ink"
               placeholder="Add player"
               value={newPlayer}
               onChange={(e) => setNewPlayer(e.target.value)}
@@ -549,7 +549,7 @@ export default function LineupBuilderPage() {
             <button
               type="button"
               onClick={onAddPlayer}
-              className="rounded-lg border border-emerald-400/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-100 touch-manipulation active:scale-95"
+              className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95"
             >
               Add
             </button>
@@ -557,9 +557,9 @@ export default function LineupBuilderPage() {
         </section>
 
         {/* ---- Bench fairness detail ---- */}
-        <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Bench Fairness</h2>
-          <p className="mt-1 text-xs text-slate-400">
+        <section className="rounded-xl border border-d-line bg-d-surface p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Bench Fairness</h2>
+          <p className="mt-1 text-xs text-d-ink-3">
             Counted from empty cells, so it covers every kid sitting — not just whoever is in the single BENCH slot.
           </p>
           <ul className="mt-3 space-y-1 text-xs">
@@ -569,41 +569,41 @@ export default function LineupBuilderPage() {
                 <li
                   key={`fair-${row.player}`}
                   className={`flex flex-wrap items-center justify-between gap-2 rounded border px-3 py-1.5 ${
-                    flagged ? "border-amber-400/40 bg-amber-500/10" : "border-slate-800 bg-slate-950/40"
+                    flagged ? "border-d-warn/40 bg-d-warn/10" : "border-d-line bg-d-surface"
                   }`}
                 >
-                  <span className={`font-medium ${flagged ? "text-amber-100" : "text-slate-100"}`}>{row.player}</span>
-                  <span className="tabular-nums text-slate-400">
-                    <span className="text-emerald-300">{row.fieldInnings}</span> in field /{" "}
-                    <span className={row.overBenchTotal ? "text-amber-300" : "text-slate-400"}>{row.benchInnings}</span>{" "}
+                  <span className={`font-medium ${flagged ? "text-d-warn" : "text-d-ink"}`}>{row.player}</span>
+                  <span className="tabular-nums text-d-ink-3">
+                    <span className="text-d-pos">{row.fieldInnings}</span> in field /{" "}
+                    <span className={row.overBenchTotal ? "text-d-warn" : "text-d-ink-3"}>{row.benchInnings}</span>{" "}
                     benched
                     {row.overBenchStreak && (
-                      <span className="ml-2 text-rose-300">{row.longestBenchStreak} in a row</span>
+                      <span className="ml-2 text-d-neg">{row.longestBenchStreak} in a row</span>
                     )}
                   </span>
                 </li>
               );
             })}
-            {fairness.length === 0 && <li className="text-slate-500">No players on the plan yet.</li>}
+            {fairness.length === 0 && <li className="text-d-ink-3">No players on the plan yet.</li>}
           </ul>
         </section>
       </main>
 
       {/* ---- Position picker ---- */}
       {selected && (
-        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-cyan-300/30 bg-slate-900/95 p-4 backdrop-blur-sm">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-d-sel/40 bg-d-surface p-4 backdrop-blur-sm">
           <div className="mx-auto max-w-6xl">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-bold text-cyan-100">
+              <h3 className="text-sm font-bold text-d-sel">
                 {selected.player} · Inning {selected.inning}
-                <span className="ml-2 text-[11px] font-normal text-slate-400">
+                <span className="ml-2 text-[11px] font-normal text-d-ink-3">
                   group {groupForInning(plan.inningMap, selected.inning)}
                 </span>
               </h3>
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                className="rounded border border-slate-600 bg-slate-900 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-300 touch-manipulation active:scale-95"
+                className="rounded border border-d-line bg-d-sunken px-3 py-1 text-xs font-semibold uppercase tracking-wide text-d-ink-2 touch-manipulation active:scale-95"
               >
                 Close
               </button>
@@ -620,10 +620,10 @@ export default function LineupBuilderPage() {
                     onClick={() => onAssign(spot.code)}
                     className={`rounded-lg border px-2 py-2 text-xs font-bold touch-manipulation active:scale-95 ${
                       isMine
-                        ? "border-cyan-300 bg-cyan-400 text-slate-900"
+                        ? "border-d-sel bg-d-sel text-white"
                         : heldBy
-                          ? "border-amber-400/50 bg-amber-500/10 text-amber-100"
-                          : "border-slate-600 bg-slate-950/60 text-slate-200"
+                          ? "border-d-warn/40 bg-d-warn/10 text-d-warn"
+                          : "border-d-line bg-d-surface text-d-ink"
                     }`}
                   >
                     <div>{spot.code}</div>
@@ -636,13 +636,13 @@ export default function LineupBuilderPage() {
               <button
                 type="button"
                 onClick={() => onAssign(null)}
-                className="rounded-lg border border-slate-600 bg-slate-800 px-2 py-2 text-xs font-bold text-slate-200 touch-manipulation active:scale-95"
+                className="rounded-lg border border-d-line bg-d-sunken px-2 py-2 text-xs font-bold text-d-ink touch-manipulation active:scale-95"
               >
                 <div>BENCH</div>
                 <div className="mt-0.5 text-[10px] font-normal opacity-80">Sit this inning</div>
               </button>
             </div>
-            <p className="mt-2 text-[11px] text-slate-500">
+            <p className="mt-2 text-[11px] text-d-ink-3">
               Picking a spot someone else holds moves them to the bench for that inning.
             </p>
           </div>

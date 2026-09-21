@@ -13,6 +13,28 @@
   --color-crimson:  #8b1a2e;
   --color-crimson-2:#a82037;
   --color-gold:     #c9a84c;
+
+  /* Dugout (coach / "Field" surface) sunlight palette — generates bg-d-*,
+     text-d-*, border-d-* utilities for the /coach pages.
+     These live here rather than in coach.css because Tailwind only reads
+     `@theme` from the entry stylesheet that imports tailwindcss. The same
+     values are declared as CSS variables on `.dugout-theme` in
+     src/app/coach/coach.css; keep the two blocks in sync. Rationale and
+     contrast ratios are documented there. */
+  --color-d-bg:       #F2F3F0;
+  --color-d-surface:  #FBFBF9;
+  --color-d-sunken:   #E7E9E4;
+  --color-d-line:     #D3D6CF;
+  --color-d-line-str: #ADB2A9;
+  --color-d-ink:      #14181C;
+  --color-d-ink-2:    #41474E;
+  --color-d-ink-3:    #454C54;   /* darkened vs DESIGN.md — see coach.css */
+  --color-d-pos:      #0B6B3A;
+  --color-d-neg:      #A4162B;
+  --color-d-warn:     #8A5A00;
+  --color-d-sel:      #12457A;
+  --color-d-us:       #0f2044;
+  --color-d-them:     #5A6470;
 }
 
 html { scroll-behavior: smooth; }

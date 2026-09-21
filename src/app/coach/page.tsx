@@ -259,16 +259,16 @@ const zoneByPoint = (x: number, y: number): FieldZone => {
 };
 
 const resultStyles: Record<PlayResult, string> = {
-  single: "bg-emerald-100 text-emerald-800 border-emerald-300",
-  double: "bg-green-100 text-green-800 border-green-300",
-  triple: "bg-lime-100 text-lime-800 border-lime-300",
-  home_run: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  out: "bg-rose-100 text-rose-800 border-rose-300",
-  error: "bg-orange-100 text-orange-800 border-orange-300",
-  fielders_choice: "bg-sky-100 text-sky-800 border-sky-300",
-  walk: "bg-indigo-100 text-indigo-800 border-indigo-300",
-  strikeout: "bg-red-200 text-red-900 border-red-400",
-  foul: "bg-zinc-200 text-zinc-900 border-zinc-400",
+  single: "bg-d-pos/12 text-d-pos border-d-pos/40",
+  double: "bg-d-pos/12 text-d-pos border-d-pos/40",
+  triple: "bg-d-pos/12 text-d-pos border-d-pos/40",
+  home_run: "bg-d-warn/12 text-d-warn border-d-warn/40",
+  out: "bg-d-neg/12 text-d-neg border-d-neg/40",
+  error: "bg-d-warn/12 text-d-warn border-d-warn/40",
+  fielders_choice: "bg-d-sel/12 text-d-sel border-d-sel/40",
+  walk: "bg-d-sel/12 text-d-sel border-d-sel/40",
+  strikeout: "bg-d-neg/12 text-d-neg border-d-neg/40",
+  foul: "bg-d-sunken text-d-ink-2 border-d-line-str",
 };
 
 const resultLabel: Record<PlayResult, string> = {
@@ -859,27 +859,27 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen app-shell text-slate-100 touch-manipulation">
+    <div className="min-h-screen app-shell text-d-ink touch-manipulation">
       <main className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 py-4 sm:px-6 lg:flex-row lg:items-start">
-        <section className="w-full rounded-2xl border border-cyan-300/20 bg-slate-900/78 p-4 shadow-2xl lg:w-2/3">
+        <section className="w-full rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl lg:w-2/3">
           <header className="mb-3 flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">{brandTeam.name} · Inning {inning} · {currentDefenseGroup}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">{brandTeam.name} · Inning {inning} · {currentDefenseGroup}</p>
               <h1 className="text-2xl font-black tracking-tight">Game Logger</h1>
-              {lastPlay && <p className="mt-1 truncate text-sm text-cyan-100/85">{lastPlay}</p>}
+              {lastPlay && <p className="mt-1 truncate text-sm text-d-sel">{lastPlay}</p>}
             </div>
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
-                className="rounded-lg border border-emerald-300/40 bg-emerald-500/20 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/35 min-h-[44px] touch-manipulation"
+                className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-d-pos min-h-[44px] touch-manipulation"
                 onClick={() => setShowSetup((v) => !v)}
               >
                 {showSetup ? "Close" : "Setup"}
               </button>
-              <Link href="/coach/lineup" className="rounded-lg border border-emerald-300/40 bg-emerald-500/20 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/35 min-h-[44px] flex items-center touch-manipulation">
+              <Link href="/coach/lineup" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-d-pos min-h-[44px] flex items-center touch-manipulation">
                 Lineup
               </Link>
-              <Link href="/coach/dashboard" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-500/35 min-h-[44px] flex items-center touch-manipulation">
+              <Link href="/coach/dashboard" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-d-sel min-h-[44px] flex items-center touch-manipulation">
                 Stats
               </Link>
             </div>
@@ -896,15 +896,15 @@ export default function Home() {
             <BasesDiamond bases={bases} onClearBase={clearBase} onClearAll={clearAllBases} />
           </div>
 
-          <div className="mb-3 flex items-center justify-between rounded-lg border border-cyan-300/25 bg-slate-950/60 px-3 py-2 text-xs text-cyan-100">
+          <div className="mb-3 flex items-center justify-between rounded-lg border border-d-sel/40 bg-d-surface px-3 py-2 text-xs text-d-sel">
             <div>
-              <span className="font-semibold">Defense:</span> {currentDefenseGroup} · {gameFormat === "coach_pitch" ? "Coach Pitch" : "Kid Pitch"} · <span className="text-slate-300">{summary.total} plays</span>
+              <span className="font-semibold">Defense:</span> {currentDefenseGroup} · {gameFormat === "coach_pitch" ? "Coach Pitch" : "Kid Pitch"} · <span className="text-d-ink-2">{summary.total} plays</span>
             </div>
             <button
               type="button"
               disabled={undoStack.length === 0}
               onClick={undoLastAction}
-              className="rounded-md border border-slate-600 bg-slate-800 px-3 py-1 text-[10px] font-semibold active:bg-slate-700 disabled:opacity-40"
+              className="rounded-md border border-d-line bg-d-sunken px-3 py-1 text-[10px] font-semibold disabled:opacity-40"
             >
               UNDO
             </button>
@@ -913,14 +913,14 @@ export default function Home() {
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <button
               type="button"
-              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "outlaws" ? "border-emerald-400 bg-emerald-500/25" : "border-slate-600 bg-slate-800"}`}
+              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "outlaws" ? "border-d-pos bg-d-pos/10" : "border-d-line bg-d-sunken"}`}
               onClick={() => setTeamAtBat("outlaws")}
             >
               {brandTeam.name} Batting
             </button>
             <button
               type="button"
-              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "opponent" ? "border-rose-400 bg-rose-500/25" : "border-slate-600 bg-slate-800"}`}
+              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "opponent" ? "border-d-neg bg-d-neg/10" : "border-d-line bg-d-sunken"}`}
               onClick={() => setTeamAtBat("opponent")}
             >
               {opponentLabel} Batting
@@ -935,12 +935,12 @@ export default function Home() {
           </div>
 
           {scoringStep === "advance" && (
-            <div className="mb-3 rounded-xl border border-sky-300/35 bg-sky-950/45 p-3">
+            <div className="mb-3 rounded-xl border border-d-sel/40 bg-d-sel/10 p-3">
               <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-sky-100">
+                <p className="text-xs font-semibold uppercase tracking-wide text-d-sel">
                   {pendingContact ? `${pendingContact} · ` : ""}Pick result, then tap the field
                 </p>
-                <button type="button" className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-[10px] font-semibold text-slate-200" onClick={cancelScoringFlow}>
+                <button type="button" className="rounded-md border border-d-line bg-d-sunken px-2 py-1 text-[10px] font-semibold text-d-ink" onClick={cancelScoringFlow}>
                   Cancel
                 </button>
               </div>
@@ -951,7 +951,7 @@ export default function Home() {
                     <button
                       key={result}
                       type="button"
-                      className={`rounded-lg border px-3 py-2.5 text-sm font-black touch-manipulation min-h-[44px] active:scale-[0.985] transition-all ${active ? resultStyles[result] : "border-slate-600 bg-slate-900 text-slate-100"}`}
+                      className={`rounded-lg border px-3 py-2.5 text-sm font-black touch-manipulation min-h-[44px] active:scale-[0.985] transition-all ${active ? resultStyles[result] : "border-d-line bg-d-sunken text-d-ink"}`}
                       onClick={() => setSelectedResult(result)}
                     >
                       {resultLabel[result]}
@@ -960,7 +960,7 @@ export default function Home() {
                 })}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-sky-100/80">Runs</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-d-sel">Runs</span>
                 {RUN_OVERRIDE_OPTIONS.map((value) => {
                   const active = runOverride === value;
                   const label = value === null ? "Auto" : `+${value}`;
@@ -969,7 +969,7 @@ export default function Home() {
                       key={label}
                       type="button"
                       className={`rounded-full border px-3 py-1.5 text-xs font-black touch-manipulation active:scale-[0.985] ${
-                        active ? "border-amber-200 bg-amber-300 text-slate-950" : "border-slate-600 bg-slate-900 text-slate-100"
+                        active ? "border-d-warn bg-d-warn text-white" : "border-d-line bg-d-sunken text-d-ink"
                       }`}
                       onClick={() => setRunOverride(value)}
                     >
@@ -979,8 +979,8 @@ export default function Home() {
                 })}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-wide text-sky-100/80">Contact</span>
-                <span className="text-[10px] text-sky-100/50">(optional)</span>
+                <span className="text-[10px] font-bold uppercase tracking-wide text-d-sel">Contact</span>
+                <span className="text-[10px] text-d-sel">(optional)</span>
                 {CONTACT_TYPES.map((contact) => {
                   const active = pendingContact === contact;
                   return (
@@ -988,7 +988,7 @@ export default function Home() {
                       key={contact}
                       type="button"
                       className={`rounded-full border px-3 py-1.5 text-xs font-bold touch-manipulation active:scale-[0.985] ${
-                        active ? "border-sky-200 bg-sky-300 text-slate-950" : "border-slate-600 bg-slate-900 text-slate-100"
+                        active ? "border-d-sel bg-d-sel text-white" : "border-d-line bg-d-sunken text-d-ink"
                       }`}
                       onClick={() => handleContactSelect(contact)}
                     >
@@ -1001,7 +1001,7 @@ export default function Home() {
           )}
 
           <div
-            className="baseball-field-canvas relative mx-auto aspect-square w-full max-w-[680px] touch-manipulation overflow-hidden rounded-2xl border-2 border-cyan-300/40 cursor-crosshair select-none sm:aspect-[3/2]"
+            className="baseball-field-canvas relative mx-auto aspect-square w-full max-w-[680px] touch-manipulation overflow-hidden rounded-2xl border-2 border-d-sel/40 cursor-crosshair select-none sm:aspect-[3/2]"
             onPointerUp={onFieldTap}
             role="button"
             aria-label="Baseball field hit map"
@@ -1013,7 +1013,7 @@ export default function Home() {
               className="absolute inset-0 object-cover object-[center_36%]"
               sizes="(max-width: 768px) 100vw, 560px"
             />
-            <div className="absolute inset-0 bg-black/10" />
+            <div className="absolute inset-0 bg-d-ink/10" />
             <FieldDot x={FIELD_DOT_POSITIONS.H.x} y={FIELD_DOT_POSITIONS.H.y} label="H" />
             <FieldDot x={FIELD_DOT_POSITIONS.P.x} y={FIELD_DOT_POSITIONS.P.y} label="P" player={currentDefense.P} />
             <FieldDot x={FIELD_DOT_POSITIONS["3B"].x} y={FIELD_DOT_POSITIONS["3B"].y} label="3B" player={currentDefense["3B"]} />
@@ -1053,34 +1053,34 @@ export default function Home() {
             ))}
 
             {scoringStep === "advance" ? (
-              <p className="absolute bottom-2 left-2 right-2 rounded bg-sky-950/85 px-2 py-1 text-center text-[11px] font-bold text-sky-50">
+              <p className="absolute bottom-2 left-2 right-2 rounded bg-d-ink/80 px-2 py-1 text-center text-[11px] font-bold text-white">
                 {pendingContact} · {resultLabel[selectedResult]} · {runOverride === null ? "auto runs" : `+${runOverride} runs`}
               </p>
             ) : (
-              <p className="absolute bottom-2 left-2 rounded bg-black/45 px-2 py-1 text-[11px] font-medium text-white">Ready</p>
+              <p className="absolute bottom-2 left-2 rounded bg-d-ink/70 px-2 py-1 text-[11px] font-medium text-white">Ready</p>
             )}
           </div>
 
-          <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-slate-700 bg-slate-950/96 px-4 py-3 shadow-[0_-12px_30px_rgba(0,0,0,0.35)] backdrop-blur">
+          <div className="sticky bottom-0 z-30 -mx-4 mt-4 border-t border-d-line bg-d-surface px-4 py-3 shadow-[0_-8px_20px_rgba(20,24,28,0.10)] backdrop-blur">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("ball")}>Ball</button>
-              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("called_strike")}>Called Strike</button>
-              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("swinging_strike")}>Swing & Miss</button>
-              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("foul")}>Foul Ball</button>
-              <button type="button" disabled={scoringStep !== "idle"} className="col-span-2 rounded-lg border border-emerald-300/70 bg-emerald-500 px-3 py-3 text-sm font-black text-slate-950 min-h-[48px] active:scale-[0.985] disabled:opacity-40 sm:col-span-1" onClick={() => handlePitch("in_play")}>Ball In Play</button>
+              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-d-line bg-d-sunken px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("ball")}>Ball</button>
+              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-d-line bg-d-sunken px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("called_strike")}>Called Strike</button>
+              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-d-line bg-d-sunken px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("swinging_strike")}>Swing & Miss</button>
+              <button type="button" disabled={scoringStep !== "idle"} className="rounded-lg border border-d-line bg-d-sunken px-3 py-3 text-sm font-black min-h-[48px] active:scale-[0.985] disabled:opacity-40" onClick={() => handlePitch("foul")}>Foul Ball</button>
+              <button type="button" disabled={scoringStep !== "idle"} className="col-span-2 rounded-lg border border-d-pos/40 bg-d-pos px-3 py-3 text-sm font-black text-white min-h-[48px] active:scale-[0.985] disabled:opacity-40 sm:col-span-1" onClick={() => handlePitch("in_play")}>Ball In Play</button>
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <button type="button" className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOurRuns((v) => v + 1)}>+ {brandTeam.name} Run</button>
-            <button type="button" className="rounded-lg bg-slate-700 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOppRuns((v) => v + 1)}>+ {opponentLabel.split(" ")[0]} Run</button>
-            <button type="button" className="rounded-lg bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-900 active:scale-95 touch-manipulation" onClick={advanceHalfInning}>Next Half-Inning</button>
-            <button type="button" className="rounded-lg bg-rose-600 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={resetGame}>End & Save Game</button>
+            <button type="button" className="rounded-lg bg-d-pos px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOurRuns((v) => v + 1)}>+ {brandTeam.name} Run</button>
+            <button type="button" className="rounded-lg bg-d-sunken px-4 py-3 text-sm font-semibold text-d-ink active:scale-95 touch-manipulation" onClick={() => setOppRuns((v) => v + 1)}>+ {opponentLabel.split(" ")[0]} Run</button>
+            <button type="button" className="rounded-lg bg-d-warn px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={advanceHalfInning}>Next Half-Inning</button>
+            <button type="button" className="rounded-lg bg-d-neg px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={resetGame}>End & Save Game</button>
           </div>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <button
               type="button"
-              className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white active:scale-95 touch-manipulation disabled:opacity-40"
+              className="rounded-lg bg-d-sel px-4 py-2 text-sm font-semibold text-white active:scale-95 touch-manipulation disabled:opacity-40"
               disabled={undoStack.length === 0}
               onClick={undoLastAction}
             >
@@ -1088,7 +1088,7 @@ export default function Home() {
             </button>
             <button
               type="button"
-              className="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-semibold text-white active:scale-95 touch-manipulation"
+              className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-4 py-2 text-sm font-semibold text-d-neg active:scale-95 touch-manipulation"
               onClick={() => {
                 if (typeof window !== "undefined" && window.confirm("Clear current game events and score? This does NOT save to history.")) {
                   clearCurrentGameNoSave();
@@ -1099,7 +1099,7 @@ export default function Home() {
             </button>
             <button
               type="button"
-              className="rounded-lg bg-zinc-800 px-4 py-2 text-sm font-semibold text-slate-200 active:scale-95 touch-manipulation"
+              className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-4 py-2 text-sm font-semibold text-d-neg active:scale-95 touch-manipulation"
               onClick={() => {
                 if (typeof window !== "undefined" && window.confirm("Clear all saved game history from this browser?")) {
                   window.localStorage.removeItem(HISTORY_KEY);
@@ -1111,7 +1111,7 @@ export default function Home() {
             </button>
           </div>
           {lastSavedGameId && (
-            <div className="mt-2 rounded-lg border border-cyan-300/25 bg-slate-950/60 p-2 text-xs text-cyan-100">
+            <div className="mt-2 rounded-lg border border-d-sel/40 bg-d-surface p-2 text-xs text-d-sel">
               <div className="font-semibold">Read-only share link ready:</div>
               <a className="underline break-all" href={`/coach/game/${lastSavedGameId}`} target="_blank" rel="noreferrer">
                 /game/{lastSavedGameId}
@@ -1119,18 +1119,18 @@ export default function Home() {
             </div>
           )}
           {shareSyncStatus && !lastSavedGameId && (
-            <div className="mt-2 rounded-lg border border-amber-300/25 bg-slate-950/60 p-2 text-xs text-amber-100">
+            <div className="mt-2 rounded-lg border border-d-warn/40 bg-d-surface p-2 text-xs text-d-warn">
               {shareSyncStatus}
             </div>
           )}
           {(linescore.length > 0 || boxScore.length > 0) && (
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">Line Score</h3>
+              <div className="rounded-xl border border-d-line bg-d-surface p-3">
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-d-ink">Line Score</h3>
                 <div className="overflow-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-slate-400">
+                      <tr className="text-d-ink-3">
                         <th className="px-2 py-1 text-left">Team</th>
                         {linescore.map(([inn]) => <th key={`inn-h-${inn}`} className="px-2 py-1">{inn}</th>)}
                         <th className="px-2 py-1">R</th>
@@ -1151,12 +1151,12 @@ export default function Home() {
                   </table>
                 </div>
               </div>
-              <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">{brandTeam.name} Box</h3>
+              <div className="rounded-xl border border-d-line bg-d-surface p-3">
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-d-ink">{brandTeam.name} Box</h3>
                 <div className="max-h-40 overflow-auto">
                   <table className="w-full text-xs">
                     <thead>
-                      <tr className="text-slate-400">
+                      <tr className="text-d-ink-3">
                         <th className="px-1 py-1 text-left">Batter</th>
                         <th className="px-1 py-1">PA</th>
                         <th className="px-1 py-1">AB</th>
@@ -1177,7 +1177,7 @@ export default function Home() {
                         </tr>
                       ))}
                       {boxScore.length === 0 && (
-                        <tr><td colSpan={6} className="px-1 py-2 text-slate-400">No plate appearances yet.</td></tr>
+                        <tr><td colSpan={6} className="px-1 py-2 text-d-ink-3">No plate appearances yet.</td></tr>
                       )}
                     </tbody>
                   </table>
@@ -1187,18 +1187,18 @@ export default function Home() {
           )}
         </section>
 
-        <section className="w-full rounded-2xl border border-cyan-300/20 bg-slate-900/78 p-4 shadow-xl lg:w-1/3">
-          <h2 className="mb-3 text-lg font-extrabold tracking-tight text-cyan-100">Current Defense Group</h2>
+        <section className="w-full rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-xl lg:w-1/3">
+          <h2 className="mb-3 text-lg font-extrabold tracking-tight text-d-sel">Current Defense Group</h2>
           <div className="grid grid-cols-1 gap-2 text-xs">
             {activeDefenseSpots.map((spot) => (
-              <div key={spot.code} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-slate-700 bg-slate-950/60 px-2 py-2">
-                <span className="font-bold text-cyan-200">{spot.code} · {spot.label}</span>
-                <span className="text-slate-100">{currentDefense[spot.code] || "-"}</span>
+              <div key={spot.code} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-d-line bg-d-surface px-2 py-2">
+                <span className="font-bold text-d-sel">{spot.code} · {spot.label}</span>
+                <span className="text-d-ink">{currentDefense[spot.code] || "-"}</span>
               </div>
             ))}
           </div>
 
-          <h3 className="mb-2 mt-4 text-sm font-bold uppercase tracking-wide text-slate-200">Live Feed</h3>
+          <h3 className="mb-2 mt-4 text-sm font-bold uppercase tracking-wide text-d-ink">Live Feed</h3>
           <ul className="max-h-52 space-y-2 overflow-auto pr-1 text-xs">
             {(eventLog.length > 0 ? eventLog.slice(0, 10) : pins.slice(0, 8).map((pin) => ({
               id: `fallback-${pin.id}`,
@@ -1209,54 +1209,54 @@ export default function Home() {
               description: `${pin.batter} · ${resultLabel[pin.result]} · ${pin.zone.replaceAll("_", " ")}`,
               stateAfter: { outs, outlawsRuns: ourRuns, opponentRuns: oppRuns, bases },
             }))).map((event) => (
-              <li key={`recent-${event.id}`} className="rounded-lg border border-slate-700 bg-slate-950/50 p-2">
+              <li key={`recent-${event.id}`} className="rounded-lg border border-d-line bg-d-surface p-2">
                 <div className="font-semibold">{event.batter} · {resultLabel[event.result]} · Inning {event.inning}</div>
-                <div className="text-slate-300">{event.battingTeam === "outlaws" ? brandTeam.name : opponentLabel} · {event.description}</div>
-                <div className="text-slate-400">Outs {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
+                <div className="text-d-ink-2">{event.battingTeam === "outlaws" ? brandTeam.name : opponentLabel} · {event.description}</div>
+                <div className="text-d-ink-3">Outs {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
               </li>
             ))}
-            {pins.length === 0 && <li className="text-slate-400">No plays logged yet.</li>}
+            {pins.length === 0 && <li className="text-d-ink-3">No plays logged yet.</li>}
           </ul>
         </section>
       </main>
 
       {showSetup && (
-        <section ref={setupRef} className="mx-auto mb-6 w-full max-w-7xl rounded-2xl border border-emerald-300/25 bg-slate-900/85 p-4 shadow-2xl">
-          <h2 className="mb-3 text-lg font-black tracking-tight text-emerald-100">Game Setup (Lineups + Defense Groups)</h2>
+        <section ref={setupRef} className="mx-auto mb-6 w-full max-w-7xl rounded-2xl border border-d-pos/40 bg-d-surface p-4 shadow-2xl">
+          <h2 className="mb-3 text-lg font-black tracking-tight text-d-pos">Game Setup (Lineups + Defense Groups)</h2>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="space-y-3">
-              <div className="rounded-xl border border-cyan-300/20 bg-slate-950/55 p-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-300">Game Format</span>
+              <div className="rounded-xl border border-d-sel/40 bg-d-surface p-3">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-d-ink-2">Game Format</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${gameFormat === "coach_pitch" ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${gameFormat === "coach_pitch" ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => setGameFormat("coach_pitch")}
                   >
                     Coach Pitch
                   </button>
                   <button
                     type="button"
-                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${gameFormat === "kid_pitch" ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${gameFormat === "kid_pitch" ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => setGameFormat("kid_pitch")}
                   >
                     Kid Pitch
                   </button>
                 </div>
               </div>
-              <div className="rounded-xl border border-cyan-300/20 bg-slate-950/55 p-3">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-300">Mode</span>
+              <div className="rounded-xl border border-d-sel/40 bg-d-surface p-3">
+                <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-d-ink-2">Mode</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${!isTestMode ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${!isTestMode ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => setIsTestMode(false)}
                   >
                     Live Game
                   </button>
                   <button
                     type="button"
-                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${isTestMode ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-lg border px-3 py-2 text-xs font-semibold ${isTestMode ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => setIsTestMode(true)}
                   >
                     Test Mode
@@ -1264,10 +1264,10 @@ export default function Home() {
                 </div>
                 {isTestMode && (
                   <div className="mt-2 space-y-2">
-                    <p className="text-[11px] text-cyan-100/80">Test mode lets you practice flow without relying on real game data.</p>
+                    <p className="text-[11px] text-d-sel">Test mode lets you practice flow without relying on real game data.</p>
                     <button
                       type="button"
-                      className="w-full rounded-lg border border-cyan-400/40 bg-cyan-600/25 px-3 py-2 text-xs font-semibold text-cyan-50"
+                      className="w-full rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold text-d-sel"
                       onClick={loadTestModeGame}
                     >
                       Load Demo Test Game
@@ -1276,21 +1276,21 @@ export default function Home() {
                 )}
               </div>
               <label className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Opponent Team Name</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-d-ink-2">Opponent Team Name</span>
                 <input
-                  className="rounded-xl border border-rose-500/40 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+                  className="rounded-xl border border-d-neg/40 bg-d-bg px-3 py-2 text-sm text-d-ink"
                   placeholder="Opponents (e.g. Oregon Park Wahoos)"
                   value={opponentTeamName}
                   onChange={(e) => setOpponentTeamName(e.target.value)}
                 />
               </label>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">{brandTeam.name} Are</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-d-ink-2">{brandTeam.name} Are</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     disabled={pins.length > 0}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${!outlawsAreHome ? "border-cyan-300 bg-cyan-500/25 text-cyan-50" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${!outlawsAreHome ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => toggleOutlawsHome(false)}
                   >
                     Away (bat first)
@@ -1298,13 +1298,13 @@ export default function Home() {
                   <button
                     type="button"
                     disabled={pins.length > 0}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${outlawsAreHome ? "border-emerald-300 bg-emerald-500/25 text-emerald-50" : "border-slate-600 bg-slate-900 text-slate-300"}`}
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${outlawsAreHome ? "border-d-pos bg-d-pos/10 text-d-pos" : "border-d-line bg-d-sunken text-d-ink-2"}`}
                     onClick={() => toggleOutlawsHome(true)}
                   >
                     Home (bat last)
                   </button>
                 </div>
-                <span className="text-[11px] text-slate-400">
+                <span className="text-[11px] text-d-ink-3">
                   {outlawsAreHome
                     ? `${opponentLabel} bats top, ${brandTeam.name} bat bottom.`
                     : `${brandTeam.name} bat top, ${opponentLabel} bats bottom.`}
@@ -1330,13 +1330,13 @@ export default function Home() {
 
             <div className="space-y-3">
               <div>
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">Inning To Defense Group</h3>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-d-ink">Inning To Defense Group</h3>
                 <div className="grid grid-cols-3 gap-2">
                   {Array.from({ length: 6 }, (_, idx) => idx + 1).map((n) => (
-                    <label key={n} className="flex flex-col gap-1 rounded border border-slate-700 bg-slate-950/60 p-2 text-xs">
-                      <span className="font-semibold text-slate-300">Inning {n}</span>
+                    <label key={n} className="flex flex-col gap-1 rounded border border-d-line bg-d-surface p-2 text-xs">
+                      <span className="font-semibold text-d-ink-2">Inning {n}</span>
                       <select
-                        className="rounded border border-slate-600 bg-slate-900 px-2 py-1"
+                        className="rounded border border-d-line bg-d-sunken px-2 py-1"
                         value={inningDefenseGroup[n] || "A1"}
                         onChange={(e) => setInningDefenseGroup((prev) => ({ ...prev, [n]: e.target.value as DefenseGroupName }))}
                       >
@@ -1348,13 +1348,13 @@ export default function Home() {
               </div>
 
               <div>
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">Edit Defense Group</h3>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-d-ink">Edit Defense Group</h3>
                 <div className="mb-2 grid grid-cols-3 gap-2">
                   {DEFENSE_GROUPS.map((group) => (
                     <button
                       key={group}
                       type="button"
-                      className={`rounded border px-2 py-1 text-xs font-semibold ${setupGroup === group ? "border-emerald-400 bg-emerald-500/30" : "border-slate-600 bg-slate-900"}`}
+                      className={`rounded border px-2 py-1 text-xs font-semibold ${setupGroup === group ? "border-d-pos bg-d-pos/10" : "border-d-line bg-d-sunken"}`}
                       onClick={() => setSetupGroup(group)}
                     >
                       {group}
@@ -1379,10 +1379,10 @@ export default function Home() {
                     const current = assigned === "Unknown" ? "" : assigned;
                     const unlisted = current !== "" && !defenseRosterOptions.includes(current);
                     return (
-                      <label key={`${setupGroup}-${spot.code}`} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-slate-700 bg-slate-950/60 px-2 py-2">
-                        <span className="font-bold text-emerald-200">{spot.code} · {spot.label}</span>
+                      <label key={`${setupGroup}-${spot.code}`} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-d-line bg-d-surface px-2 py-2">
+                        <span className="font-bold text-d-pos">{spot.code} · {spot.label}</span>
                         <select
-                          className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100"
+                          className="rounded border border-d-line bg-d-sunken px-2 py-1 text-d-ink"
                           aria-label={`${spot.label} — ${setupGroup}`}
                           value={current}
                           onChange={(e) => {
@@ -1429,25 +1429,25 @@ function SavedGamesCheck() {
   }, []);
 
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-2">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">Saved Games In This Browser</p>
-      <ul className="mt-1 max-h-24 overflow-auto text-[11px] text-slate-200">
+    <div className="rounded-xl border border-d-line bg-d-surface p-2">
+      <p className="text-xs font-semibold uppercase tracking-wide text-d-ink-2">Saved Games In This Browser</p>
+      <ul className="mt-1 max-h-24 overflow-auto text-[11px] text-d-ink">
         {games.slice(0, 6).map((g) => (
           <li key={g.id}>{g.label}</li>
         ))}
-        {games.length === 0 && <li className="text-slate-400">No saved games found yet.</li>}
+        {games.length === 0 && <li className="text-d-ink-3">No saved games found yet.</li>}
       </ul>
-      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-300">Loaded Games From App DB</p>
-      <ul className="mt-1 max-h-24 overflow-auto text-[11px] text-slate-200">
+      <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-d-ink-2">Loaded Games From App DB</p>
+      <ul className="mt-1 max-h-24 overflow-auto text-[11px] text-d-ink">
         {serverGames.slice(0, 6).map((g) => (
           <li key={g.id}>
-            <Link className="text-cyan-200 underline-offset-2 hover:underline" href={`/coach/game/${g.id}`}>
+            <Link className="text-d-sel underline-offset-2 hover:underline" href={`/coach/game/${g.id}`}>
               {g.label || g.id}
             </Link>
-            <span className="text-slate-400"> ({g.pinCount ?? 0} events)</span>
+            <span className="text-d-ink-3"> ({g.pinCount ?? 0} events)</span>
           </li>
         ))}
-        {serverGames.length === 0 && <li className="text-slate-400">No app DB games loaded.</li>}
+        {serverGames.length === 0 && <li className="text-d-ink-3">No app DB games loaded.</li>}
       </ul>
     </div>
   );
@@ -1487,12 +1487,12 @@ function BatterPicker({
 
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Batter</span>
+      <span className="text-xs font-semibold uppercase tracking-wide text-d-ink-2">Batter</span>
       {adding ? (
         <div className="flex items-center gap-1.5">
           <input
             ref={inputRef}
-            className="min-h-[44px] flex-1 rounded-xl border border-amber-400/50 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-100"
+            className="min-h-[44px] flex-1 rounded-xl border border-d-warn/40 bg-d-sunken px-3 py-2 text-sm font-medium text-d-ink"
             placeholder="Number or name"
             value={draft}
             inputMode="text"
@@ -1505,7 +1505,7 @@ function BatterPicker({
           />
           <button
             type="button"
-            className="min-h-[44px] shrink-0 rounded-xl border border-emerald-400/60 bg-emerald-500/25 px-3 text-sm font-bold text-emerald-50 touch-manipulation active:scale-95"
+            className="min-h-[44px] shrink-0 rounded-xl border border-d-pos/40 bg-d-pos/10 px-3 text-sm font-bold text-d-pos touch-manipulation active:scale-95"
             onClick={confirmAdd}
           >
             Add
@@ -1513,7 +1513,7 @@ function BatterPicker({
           <button
             type="button"
             aria-label="Cancel add batter"
-            className="min-h-[44px] w-11 shrink-0 rounded-xl border border-slate-600 bg-slate-900 text-lg text-slate-300 touch-manipulation active:scale-95"
+            className="min-h-[44px] w-11 shrink-0 rounded-xl border border-d-line bg-d-sunken text-lg text-d-ink-2 touch-manipulation active:scale-95"
             onClick={() => { setDraft(""); setAdding(false); }}
           >
             ×
@@ -1522,7 +1522,7 @@ function BatterPicker({
       ) : (
         <div className="flex items-center gap-1.5">
           <select
-            className="min-h-[44px] flex-1 rounded-xl border border-slate-600 bg-slate-900 px-3 py-2 text-sm font-medium"
+            className="min-h-[44px] flex-1 rounded-xl border border-d-line bg-d-sunken px-3 py-2 text-sm font-medium"
             value={lineup.includes(activeBatter) ? activeBatter : ""}
             onChange={(e) => onSelect(e.target.value)}
           >
@@ -1535,7 +1535,7 @@ function BatterPicker({
           <button
             type="button"
             aria-label={`Add batter to ${teamLabel} lineup`}
-            className="min-h-[44px] shrink-0 rounded-xl border border-amber-400/50 bg-amber-500/20 px-3 text-sm font-bold text-amber-100 touch-manipulation active:scale-95"
+            className="min-h-[44px] shrink-0 rounded-xl border border-d-warn/40 bg-d-warn/10 px-3 text-sm font-bold text-d-warn touch-manipulation active:scale-95"
             onClick={() => setAdding(true)}
           >
             + Add
@@ -1586,22 +1586,22 @@ function LineupEditor({
     commit([""]);
   };
 
-  const accentRing = accent === "cyan" ? "border-cyan-300/30" : "border-rose-400/30";
-  const accentChip = accent === "cyan" ? "bg-cyan-500/20 text-cyan-100" : "bg-rose-500/20 text-rose-100";
+  const accentRing = accent === "cyan" ? "border-d-sel/40" : "border-d-neg/40";
+  const accentChip = accent === "cyan" ? "bg-d-sel/10 text-d-sel" : "bg-d-neg/10 text-d-neg";
   const filled = rows.filter((v) => v.trim()).length;
   const atMax = rows.length >= MAX_LINEUP_PLAYERS;
 
   return (
-    <div className={`flex flex-col gap-2 rounded-xl border ${accentRing} bg-slate-950/55 p-3`}>
+    <div className={`flex flex-col gap-2 rounded-xl border ${accentRing} bg-d-surface p-3`}>
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">{label}</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-d-ink-2">{label}</span>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-400">{filled} batter{filled === 1 ? "" : "s"}</span>
+          <span className="text-[11px] text-d-ink-3">{filled} batter{filled === 1 ? "" : "s"}</span>
           {filled > 0 && (
             <button
               type="button"
               onClick={clearAll}
-              className="rounded-md border border-rose-400/40 bg-rose-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-rose-100 touch-manipulation hover:bg-rose-500/30"
+              className="rounded-md border border-d-neg/40 bg-d-neg/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-d-neg touch-manipulation"
             >
               Clear
             </button>
@@ -1613,7 +1613,7 @@ function LineupEditor({
           <div key={idx} className="flex items-center gap-2">
             <span className={`flex h-11 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${accentChip}`}>{idx + 1}</span>
             <input
-              className="min-h-[44px] flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-slate-100"
+              className="min-h-[44px] flex-1 rounded-lg border border-d-line bg-d-sunken px-3 py-2 text-sm text-d-ink"
               placeholder="Number or name"
               value={value}
               inputMode="text"
@@ -1629,7 +1629,7 @@ function LineupEditor({
             <button
               type="button"
               aria-label={`Remove batter ${idx + 1}`}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-600 bg-slate-900 text-lg text-slate-300 touch-manipulation hover:bg-rose-600/30 hover:text-rose-100"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-d-line bg-d-sunken text-lg text-d-ink-2 touch-manipulation hover:bg-d-neg/10 hover:text-d-neg"
               onClick={() => removeRow(idx)}
             >
               ×
@@ -1641,11 +1641,11 @@ function LineupEditor({
         type="button"
         onClick={addRow}
         disabled={atMax}
-        className="mt-1 min-h-[44px] rounded-lg border border-dashed border-slate-500 bg-slate-900/60 px-3 py-2 text-sm font-semibold text-slate-200 touch-manipulation hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+        className="mt-1 min-h-[44px] rounded-lg border border-dashed border-d-line-str bg-d-surface px-3 py-2 text-sm font-semibold text-d-ink touch-manipulation hover:bg-d-sunken disabled:cursor-not-allowed disabled:opacity-40"
       >
         + {addLabel}
       </button>
-      {atMax && <p className="text-[11px] text-amber-300/80">Max {MAX_LINEUP_PLAYERS} batters.</p>}
+      {atMax && <p className="text-[11px] text-d-warn">Max {MAX_LINEUP_PLAYERS} batters.</p>}
     </div>
   );
 }
@@ -1658,13 +1658,13 @@ function getDefenseGroupForInning(map: Record<number, DefenseGroupName>, inning:
 
 function StatCard({ label, value, big = false, accent }: { label: string; value: string; big?: boolean; accent?: "emerald" | "rose" }) {
   const valueColor =
-    accent === "emerald" ? "text-emerald-400" :
-    accent === "rose" ? "text-rose-400" :
-    "text-cyan-100";
+    accent === "emerald" ? "text-d-pos" :
+    accent === "rose" ? "text-d-neg" :
+    "text-d-sel";
 
   return (
-    <div className="rounded-xl border border-slate-600 bg-slate-900/75 px-3 py-2.5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
+    <div className="rounded-xl border border-d-line bg-d-surface px-3 py-2.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-d-ink-3">{label}</p>
       <p className={`font-black leading-none tabular-nums ${big ? "text-4xl mt-0.5" : "text-2xl"} ${valueColor}`}>{value}</p>
     </div>
   );
@@ -1672,10 +1672,10 @@ function StatCard({ label, value, big = false, accent }: { label: string; value:
 
 function BasesDiamond({ bases, onClearBase, onClearAll }: { bases: Bases; onClearBase: (which: keyof Bases) => void; onClearAll: () => void }) {
   const baseClass = (occupied: boolean) =>
-    `absolute h-7 w-7 rotate-45 border-2 transition touch-manipulation ${occupied ? "border-amber-200 bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.7)]" : "border-slate-500 bg-slate-800"}`;
+    `absolute h-7 w-7 rotate-45 border-2 transition touch-manipulation ${occupied ? "border-d-warn bg-d-warn" : "border-d-line-str bg-d-sunken"}`;
   return (
-    <div className="flex flex-col items-center gap-1 rounded-xl border border-cyan-300/25 bg-slate-950/60 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Bases</p>
+    <div className="flex flex-col items-center gap-1 rounded-xl border border-d-sel/40 bg-d-surface px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-d-ink-3">Bases</p>
       <div className="relative h-20 w-20">
         <button
           type="button"
@@ -1698,16 +1698,16 @@ function BasesDiamond({ bases, onClearBase, onClearAll }: { bases: Bases; onClea
           className={`${baseClass(!!bases.first)} right-0 top-1/2 -translate-y-1/2 active:scale-95 touch-manipulation`}
           onClick={() => bases.first && onClearBase("first")}
         />
-        <div className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 border-2 border-slate-400 bg-slate-700" />
+        <div className="absolute bottom-0 left-1/2 h-5 w-5 -translate-x-1/2 border-2 border-d-line-str bg-d-sunken" />
       </div>
-      <div className="flex h-4 items-center gap-2 text-[10px] font-bold text-amber-200">
-        <span className={bases.third ? "" : "text-slate-600"}>3B{bases.third ? `:${bases.third}` : ""}</span>
-        <span className={bases.second ? "" : "text-slate-600"}>2B{bases.second ? `:${bases.second}` : ""}</span>
-        <span className={bases.first ? "" : "text-slate-600"}>1B{bases.first ? `:${bases.first}` : ""}</span>
+      <div className="flex h-4 items-center gap-2 text-[10px] font-bold text-d-warn">
+        <span className={bases.third ? "" : "text-d-ink-3"}>3B{bases.third ? `:${bases.third}` : ""}</span>
+        <span className={bases.second ? "" : "text-d-ink-3"}>2B{bases.second ? `:${bases.second}` : ""}</span>
+        <span className={bases.first ? "" : "text-d-ink-3"}>1B{bases.first ? `:${bases.first}` : ""}</span>
       </div>
       <button
         type="button"
-        className="rounded-full border border-slate-600 bg-slate-900 px-2 py-0.5 text-[10px] font-semibold text-slate-300 active:scale-95 touch-manipulation"
+        className="rounded-full border border-d-line bg-d-sunken px-2 py-0.5 text-[10px] font-semibold text-d-ink-2 active:scale-95 touch-manipulation"
         onClick={onClearAll}
       >
         Clear All Bases
@@ -1720,7 +1720,7 @@ function RunnerTile({ x, y, label, player, active }: { x: number; y: number; lab
   return (
     <div
       className={`absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-md border px-2 py-1 text-[10px] font-black shadow-lg transition ${
-        active ? "border-sky-100 bg-sky-500 text-white shadow-sky-950/50" : "border-white/40 bg-slate-950/70 text-slate-200"
+        active ? "border-sky-100 bg-d-sel text-white" : "border-white/40 bg-d-ink/70 text-white"
       }`}
       style={{ left: `${x}%`, top: `${y}%` }}
     >
@@ -1732,7 +1732,7 @@ function RunnerTile({ x, y, label, player, active }: { x: number; y: number; lab
 function FieldDot({ x, y, label, player }: { x: number; y: number; label: string; player?: string }) {
   return (
     <div
-      className="absolute max-w-20 -translate-x-1/2 -translate-y-1/2 truncate rounded-full border border-white/80 bg-black/50 px-1.5 py-0.5 text-[10px] font-bold text-white"
+      className="absolute max-w-20 -translate-x-1/2 -translate-y-1/2 truncate rounded-full border border-white/80 bg-d-ink/50 px-1.5 py-0.5 text-[10px] font-bold text-white"
       style={{ left: `${x}%`, top: `${y}%` }}
       title={player ? `${label}: ${player}` : label}
     >
