@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import SprayChart from '@/components/coach/spray-chart';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
 import type { PlayEvent } from '@/lib/coach/types';
+import { team as brandTeam } from '@/lib/brand-config';
 
 type Play = {
   inning: number;
@@ -176,9 +177,9 @@ export default function StatsPage() {
   const handleExport = () => {
     try {
       const lines: string[] = [];
-      lines.push(`# Outlaws Stat Summary`);
+      lines.push(`# ${brandTeam.name} Stat Summary`);
       lines.push('');
-      lines.push(`**Score:** Outlaws ${score.outlaws} — ${opponentName} ${score.opponents}`);
+      lines.push(`**Score:** ${brandTeam.name} ${score.outlaws} — ${opponentName} ${score.opponents}`);
       if (stats) {
         lines.push(`**Total Plays:** ${stats.totalPlays} · **Hits:** ${stats.hits} · **Outs:** ${stats.outs} · **HR:** ${stats.homeRuns}`);
         lines.push(`**Singles/Doubles/Triples:** ${stats.singles}/${stats.doubles}/${stats.triples}`);
@@ -333,7 +334,7 @@ export default function StatsPage() {
 
         <div className="mt-4 flex items-center justify-center gap-6">
           <div className="text-center">
-            <p className="text-[10px] text-slate-400">Outlaws</p>
+            <p className="text-[10px] text-slate-400">{brandTeam.name}</p>
             <p className="text-3xl font-black text-cyan-100">{score.outlaws}</p>
           </div>
           <div className="text-center">

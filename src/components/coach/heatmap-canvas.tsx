@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback, useLayoutEffect } from "react";
 import type { PlayEvent } from "@/lib/coach/types";
 import { drawBaseballField } from "@/lib/coach/field-geometry";
+import { team as brandTeam } from "@/lib/brand-config";
 
 interface HeatmapCanvasProps {
   gameId?: string;
@@ -268,7 +269,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
                 teamFilter === f ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 active:bg-slate-600"
               }`}
             >
-              {f === "all" ? "All ABs" : f === "outlaws" ? "Outlaws" : "Opponent"}
+              {f === "all" ? "All ABs" : f === "outlaws" ? brandTeam.name : "Opponent"}
             </button>
           ))}
         </div>
@@ -334,7 +335,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
 
         {/* Legend */}
         <div className="absolute bottom-3 left-3 bg-black/75 text-white rounded-lg px-3 py-1.5 text-xs flex items-center gap-4 backdrop-blur-sm border border-white/10">
-          <div className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#28c85c]" /> Outlaws hits</div>
+          <div className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#28c85c]" /> {brandTeam.name} hits</div>
           <div className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#e43030]" /> Opponent hits</div>
           <div className="flex items-center gap-1.5 text-slate-300"><span className="inline-block w-2.5 h-2.5 rounded-full bg-[#68748a]" /> Missed</div>
         </div>
@@ -343,7 +344,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
       {/* Contact summary (reference-style percentages) */}
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-slate-900/70 border border-slate-700 px-2 py-1.5">
-          <div className="text-[10px] uppercase tracking-wide text-slate-400">Outlaws Hits</div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-400">{brandTeam.name} Hits</div>
           <div className="text-sm font-black text-emerald-400 tabular-nums">{outlawsHits.length} · {pct(outlawsHits.length)}%</div>
         </div>
         <div className="rounded-lg bg-slate-900/70 border border-slate-700 px-2 py-1.5">
@@ -373,7 +374,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
           </div>
           <div className="text-yellow-300 font-semibold">{resultLabel(hoveredEvent)}</div>
           <div className="text-slate-300 mt-1">
-            {hoveredEvent.battingTeam === "outlaws" ? "Outlaws" : "Opponent"} · Inning {hoveredEvent.inning}
+            {hoveredEvent.battingTeam === "outlaws" ? brandTeam.name : "Opponent"} · Inning {hoveredEvent.inning}
           </div>
           <div className="text-slate-400 text-xs mt-1">Zone: {hoveredEvent.zone?.replace(/_/g, " ")}</div>
           {hoveredEvent.description && (

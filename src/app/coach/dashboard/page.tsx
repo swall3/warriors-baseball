@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import HeatmapCanvas from '@/components/coach/heatmap-canvas';
 import type { PlayEvent } from '@/lib/coach/types';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
+import { team as brandTeam } from '@/lib/brand-config';
 
 type TeamKey = 'outlaws' | 'opponent';
 type Scope = 'current' | 'multiple' | 'all';
@@ -324,15 +325,15 @@ function buildMarkdownExport(game: StoredGame, snapshot: DefenseSnapshot): strin
   const opponentTeamName = game.opponentTeamName || snapshot.opponentTeamName || 'Opponents';
   const date = game.date ? toDateLabel(game.date) : toDateLabel(Date.now());
   const lines: string[] = [];
-  lines.push(`# Outlaws Game Summary — ${game.label || date}`);
+  lines.push(`# ${brandTeam.name} Game Summary — ${game.label || date}`);
   lines.push('');
   lines.push(`**Date:** ${date}`);
-  lines.push(`**Score:** Outlaws ${score.outlaws} — ${opponentTeamName} ${score.opponents}`);
+  lines.push(`**Score:** ${brandTeam.name} ${score.outlaws} — ${opponentTeamName} ${score.opponents}`);
   lines.push(`**Total Plays Logged:** ${pins.length}`);
   lines.push('');
 
   if (snapshot.outlawsLineup.length > 0) {
-    lines.push('## Outlaws Lineup');
+    lines.push(`## ${brandTeam.name} Lineup`);
     lines.push(snapshot.outlawsLineup.map((p, i) => `${i + 1}. ${p}`).join('\n'));
     lines.push('');
   }
@@ -480,7 +481,7 @@ export default function Dashboard() {
 
   const exportScopeGame = (): StoredGame => ({
     id: 'scope-export',
-    label: `Outlaws vs ${opponentTeamLabel} (${scope === 'all' ? 'all games' : scope === 'current' ? 'current game' : 'selected games'})`,
+    label: `${brandTeam.name} vs ${opponentTeamLabel} (${scope === 'all' ? 'all games' : scope === 'current' ? 'current game' : 'selected games'})`,
     date: new Date().toISOString(),
     pins: scopedPins,
     score: defenseSnapshot.score,
@@ -488,11 +489,11 @@ export default function Dashboard() {
   });
 
   const onExportMarkdown = () => {
-    downloadBlob('outlaws-game-summary.md', 'text/markdown', buildMarkdownExport(exportScopeGame(), defenseSnapshot));
+    downloadBlob(`${brandTeam.slug}-game-summary.md`, 'text/markdown', buildMarkdownExport(exportScopeGame(), defenseSnapshot));
   };
 
   const onExportCsv = () => {
-    downloadBlob('outlaws-plays.csv', 'text/csv', buildCsvExport(exportScopeGame()));
+    downloadBlob(`${brandTeam.slug}-plays.csv`, 'text/csv', buildCsvExport(exportScopeGame()));
   };
 
   return (
@@ -500,7 +501,7 @@ export default function Dashboard() {
       <header className="border-b border-cyan-300/20 bg-slate-950/75 p-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-cyan-100">Outlaws Heat Map Dashboard</h1>
+            <h1 className="text-2xl font-black tracking-tight text-cyan-100">{brandTeam.name} Heat Map Dashboard</h1>
             <p className="mt-1 text-sm text-slate-300">Scope by current game, selected games, or all recorded games.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
@@ -538,7 +539,7 @@ export default function Dashboard() {
                 className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'outlaws' ? 'border-emerald-500 bg-emerald-600 text-white' : 'border-slate-600 bg-slate-900 text-slate-200'}`}
                 onClick={() => setSelectedTeam('outlaws')}
               >
-                Outlaws
+                {brandTeam.name}
               </button>
               <button
                 className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'opponent' ? 'border-rose-500 bg-rose-500 text-white' : 'border-slate-600 bg-slate-900 text-slate-200'}`}
@@ -589,7 +590,7 @@ export default function Dashboard() {
               value={selectedPlayer}
               onChange={(e) => setSelectedPlayer(e.target.value)}
             >
-              <option value="all">All batters ({selectedTeam === 'outlaws' ? 'Outlaws' : opponentTeamLabel})</option>
+              <option value="all">All batters ({selectedTeam === 'outlaws' ? brandTeam.name : opponentTeamLabel})</option>
               {playerOptions.map((name) => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -624,7 +625,7 @@ export default function Dashboard() {
           <section className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 lg:col-span-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">Where Balls Are Finding Grass</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <ZoneList title={selectedTeam === 'outlaws' ? 'Outlaws Contact' : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
+              <ZoneList title={selectedTeam === 'outlaws' ? `${brandTeam.name} Contact` : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
               <ZoneList title="Defensive Gap Watch" rows={opponentGapReport} />
             </div>
           </section>

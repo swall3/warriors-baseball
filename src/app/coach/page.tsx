@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { isDatabaseSyncEnabled, syncGameToDatabase } from "@/lib/coach/db-sync";
 import type { Bases, EventPin, FieldZone, GameEventV2, PlayResult, TeamAtBat } from "@/lib/coach/game-types";
 import { canonicalPlayerName } from "@/lib/coach/player-name";
+import { team as brandTeam } from "@/lib/brand-config";
 
 type FieldPointerEvent = React.PointerEvent<HTMLDivElement>;
 type DefenseGroupName = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -357,7 +358,7 @@ export default function Home() {
   // Home/away: the away team always bats first (top of the inning).
   const awayTeam: TeamAtBat = outlawsAreHome ? "opponent" : "outlaws";
   const homeTeam: TeamAtBat = outlawsAreHome ? "outlaws" : "opponent";
-  const teamLabel = (t: TeamAtBat) => (t === "outlaws" ? "Outlaws" : opponentLabel);
+  const teamLabel = (t: TeamAtBat) => (t === "outlaws" ? brandTeam.name : opponentLabel);
   const halfLabel = (t: TeamAtBat) => (t === awayTeam ? "Top" : "Bottom");
 
   // Flip home/away before any plays are logged: move the leadoff team so the
@@ -863,7 +864,7 @@ export default function Home() {
         <section className="w-full rounded-2xl border border-cyan-300/20 bg-slate-900/78 p-4 shadow-2xl lg:w-2/3">
           <header className="mb-3 flex items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Outlaws · Inning {inning} · {currentDefenseGroup}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">{brandTeam.name} · Inning {inning} · {currentDefenseGroup}</p>
               <h1 className="text-2xl font-black tracking-tight">Game Logger</h1>
               {lastPlay && <p className="mt-1 truncate text-sm text-cyan-100/85">{lastPlay}</p>}
             </div>
@@ -889,7 +890,7 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-2">
               <StatCard label="Outs" value={String(outs)} big />
               <StatCard label="Count" value={`${balls}-${strikes}`} />
-              <StatCard label="Outlaws" value={String(ourRuns)} accent="emerald" />
+              <StatCard label={brandTeam.name} value={String(ourRuns)} accent="emerald" />
               <StatCard label={opponentLabel.length > 12 ? opponentLabel.split(" ").pop() ?? "Opp" : opponentLabel} value={String(oppRuns)} accent="rose" />
             </div>
             <BasesDiamond bases={bases} onClearBase={clearBase} onClearAll={clearAllBases} />
@@ -915,7 +916,7 @@ export default function Home() {
               className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "outlaws" ? "border-emerald-400 bg-emerald-500/25" : "border-slate-600 bg-slate-800"}`}
               onClick={() => setTeamAtBat("outlaws")}
             >
-              Outlaws Batting
+              {brandTeam.name} Batting
             </button>
             <button
               type="button"
@@ -1071,7 +1072,7 @@ export default function Home() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            <button type="button" className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOurRuns((v) => v + 1)}>+ Outlaws Run</button>
+            <button type="button" className="rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOurRuns((v) => v + 1)}>+ {brandTeam.name} Run</button>
             <button type="button" className="rounded-lg bg-slate-700 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={() => setOppRuns((v) => v + 1)}>+ {opponentLabel.split(" ")[0]} Run</button>
             <button type="button" className="rounded-lg bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-900 active:scale-95 touch-manipulation" onClick={advanceHalfInning}>Next Half-Inning</button>
             <button type="button" className="rounded-lg bg-rose-600 px-4 py-3 text-sm font-semibold text-white active:scale-95 touch-manipulation" onClick={resetGame}>End & Save Game</button>
@@ -1137,7 +1138,7 @@ export default function Home() {
                     </thead>
                     <tbody>
                       <tr>
-                        <td className="px-2 py-1 font-semibold">Outlaws</td>
+                        <td className="px-2 py-1 font-semibold">{brandTeam.name}</td>
                         {linescore.map(([inn, v]) => <td key={`o-${inn}`} className="px-2 py-1 text-center">{v.outlaws}</td>)}
                         <td className="px-2 py-1 text-center font-bold">{ourRuns}</td>
                       </tr>
@@ -1151,7 +1152,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-3">
-                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">Outlaws Box</h3>
+                <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-200">{brandTeam.name} Box</h3>
                 <div className="max-h-40 overflow-auto">
                   <table className="w-full text-xs">
                     <thead>
@@ -1210,7 +1211,7 @@ export default function Home() {
             }))).map((event) => (
               <li key={`recent-${event.id}`} className="rounded-lg border border-slate-700 bg-slate-950/50 p-2">
                 <div className="font-semibold">{event.batter} · {resultLabel[event.result]} · Inning {event.inning}</div>
-                <div className="text-slate-300">{event.battingTeam === "outlaws" ? "Outlaws" : opponentLabel} · {event.description}</div>
+                <div className="text-slate-300">{event.battingTeam === "outlaws" ? brandTeam.name : opponentLabel} · {event.description}</div>
                 <div className="text-slate-400">Outs {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
               </li>
             ))}
@@ -1284,7 +1285,7 @@ export default function Home() {
                 />
               </label>
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">Outlaws Are</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-300">{brandTeam.name} Are</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -1305,14 +1306,14 @@ export default function Home() {
                 </div>
                 <span className="text-[11px] text-slate-400">
                   {outlawsAreHome
-                    ? `${opponentLabel} bats top, Outlaws bat bottom.`
-                    : `Outlaws bat top, ${opponentLabel} bats bottom.`}
+                    ? `${opponentLabel} bats top, ${brandTeam.name} bat bottom.`
+                    : `${brandTeam.name} bat top, ${opponentLabel} bats bottom.`}
                   {pins.length > 0 ? " (Locked: plays already logged.)" : ""}
                 </span>
               </div>
               <SavedGamesCheck />
               <LineupEditor
-                label="Outlaws Lineup"
+                label={`${brandTeam.name} Lineup`}
                 lineup={outlawsLineup}
                 onChange={setOutlawsLineup}
                 accent="cyan"

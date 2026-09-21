@@ -1,6 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import "tailwindcss";
 
+/* Brand colors, CSS side.
+   Mirrors `colors` in src/lib/brand-config.ts — Tailwind can't interpolate a TS
+   constant into an arbitrary value, so a rebrand edits these two blocks rather
+   than the literals that were previously scattered across components. These are
+   additive: they define `bg-navy`/`text-gold`/etc. without altering any existing
+   rule, so nothing currently rendered changes. */
+@theme {
+  --color-navy:     #0f2044;
+  --color-navy-2:   #1a3160;
+  --color-crimson:  #8b1a2e;
+  --color-crimson-2:#a82037;
+  --color-gold:     #c9a84c;
+}
+
 html { scroll-behavior: smooth; }
 
 html, body {

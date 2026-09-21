@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { readDb, toV2EventFallback } from "@/lib/coach/local-db";
+import { team as brandTeam } from "@/lib/brand-config";
 
 export default async function ReadOnlyGamePage({ params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
@@ -28,7 +29,7 @@ export default async function ReadOnlyGamePage({ params }: { params: Promise<{ g
         <h1 className="text-2xl font-black">{game.label}</h1>
         <Link href="/coach" className="rounded border border-cyan-300/40 bg-cyan-500/20 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-cyan-100">Open Logger</Link>
       </div>
-      <p className="text-sm text-slate-300">{new Date(game.playedAt).toLocaleString()} · Outlaws {game.outlawsScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
+      <p className="text-sm text-slate-300">{new Date(game.playedAt).toLocaleString()} · {brandTeam.name} {game.outlawsScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
 
       <section className="mt-6 rounded-xl border border-slate-700 bg-slate-950/60 p-4">
         <h2 className="mb-3 text-lg font-bold">Live Feed</h2>

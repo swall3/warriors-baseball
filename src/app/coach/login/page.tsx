@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { team } from "@/lib/brand-config";
 
 function LoginForm() {
   const router = useRouter();
@@ -38,7 +39,7 @@ function LoginForm() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white px-6">
       <div className="w-full max-w-xs text-center">
-        <h1 className="text-2xl font-bold tracking-tight">East Cherokee Outlaws</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{team.fullName}</h1>
         <p className="mt-1 text-sm text-gray-400">Team access only</p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
