@@ -388,3 +388,13 @@
     scroll-behavior: auto !important;
   }
 }
+
+.training-player-target:focus-visible {
+  outline: none;
+  stroke: #162f25;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 3px white);
+}
+.training-player-target:hover {
+  stroke-width: 3;
+}

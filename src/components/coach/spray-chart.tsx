@@ -1,5 +1,7 @@
 "use client";
 
+import { FIELD_ART } from "@/lib/field-art";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { PlayEvent } from "@/lib/coach/types";
@@ -42,7 +44,7 @@ export default function SprayChart({ gameId, events: presetEvents }: SprayChartP
 
       <div className="relative mx-auto aspect-[16/9] w-full overflow-hidden rounded-2xl border border-d-line bg-d-ink">
         <Image
-          src="/coach/images/field-bg-combined-final.jpg?v=20260528-4"
+          src={FIELD_ART}
           alt="Baseball field spray chart background"
           fill
           className="absolute inset-0 object-cover object-[center_36%]"
