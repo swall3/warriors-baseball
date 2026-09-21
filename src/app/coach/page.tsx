@@ -818,6 +818,9 @@ export default function Home() {
               >
                 {showSetup ? "Close" : "Setup"}
               </button>
+              <Link href="/coach/lineup" className="rounded-lg border border-emerald-300/40 bg-emerald-500/20 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/35 min-h-[44px] flex items-center touch-manipulation">
+                Lineup
+              </Link>
               <Link href="/coach/dashboard" className="rounded-lg border border-cyan-300/40 bg-cyan-500/20 px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-cyan-100 hover:bg-cyan-500/35 min-h-[44px] flex items-center touch-manipulation">
                 Stats
               </Link>

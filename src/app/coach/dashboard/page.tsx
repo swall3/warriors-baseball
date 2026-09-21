@@ -510,6 +510,9 @@ export default function Dashboard() {
 <Link href="/coach/import" className="rounded-lg border border-rose-300/50 bg-rose-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-rose-100 hover:bg-rose-500/30 touch-manipulation active:scale-95">
               Import Game
             </Link>
+            <Link href="/coach/lineup" className="rounded-lg border border-emerald-300/40 bg-emerald-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-100 hover:bg-emerald-500/30 touch-manipulation active:scale-95">
+              Lineup
+            </Link>
             <Link href="/coach/intel" className="rounded-lg border border-purple-300/40 bg-purple-500/15 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-purple-100 hover:bg-purple-500/30 touch-manipulation active:scale-95">
               Intel
             </Link>
