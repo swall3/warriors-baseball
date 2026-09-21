@@ -26,9 +26,13 @@ create extension if not exists "pgcrypto";
 -- `public.players` with `team_id = 'team-outlaws'`. When 001 lands, move this
 -- insert there and delete it from this file.
 -- ---------------------------------------------------------------------------
+-- Bare `on conflict do nothing`, not `on conflict (id)`: `normalized_name` is
+-- also `not null unique`, so a pre-existing row named 'outlaws' under some
+-- other id would raise on the narrower form. This way the migration is safe to
+-- run blind against the live database either way.
 insert into public.teams (id, name, normalized_name)
 values ('team-outlaws', 'Outlaws', 'outlaws')
-on conflict (id) do nothing;
+on conflict do nothing;
 
 -- ---------------------------------------------------------------------------
 -- The plan itself. Column definitions are verbatim from MERGE-PLAN.md §Phase 3.

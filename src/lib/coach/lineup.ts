@@ -97,9 +97,23 @@ export function defaultInningMap(): Record<number, DefenseGroupName> {
   return map;
 }
 
+// The plan id MUST be derivable from (teamId, gameId) rather than random.
+//
+// It is the only key the client has to address its row: /api/coach/lineup is
+// queried by id, and the id itself lives in localStorage. A random id would be
+// device-local, which defeats the entire point of Phase 3 — a phone lost after
+// the game takes the only handle to the saved plan with it, and the dashboard
+// laptop mints a fresh id, misses, and writes a duplicate row instead of
+// loading the plan. Deterministic means every device addresses the same row.
+export function planIdFor(teamId: string, gameId: string | null): string {
+  return `lp-${teamId}-${gameId ?? "current"}`;
+}
+
 export function makeEmptyPlan(overrides: Partial<LineupPlan> = {}): LineupPlan {
+  const teamId = overrides.teamId || DEFAULT_TEAM_ID;
+  const gameId = overrides.gameId ?? null;
   return {
-    id: `lp-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    id: planIdFor(teamId, gameId),
     gameId: null,
     teamId: DEFAULT_TEAM_ID,
     label: "Game plan",

@@ -55,7 +55,11 @@ type SyncState = "idle" | "saving" | "saved" | "error" | "local";
 // way this page could break live scoring.
 // ---------------------------------------------------------------------------
 
-function readPlanFromStorage(): LineupPlan {
+// `fromStorage` is false only when this device has never seen a plan — neither
+// key present. That's the signal to adopt the server's copy outright instead of
+// offering it, which is what makes "lost the phone" and "opened the laptop"
+// actually work.
+function readPlanFromStorage(): { plan: LineupPlan; fromStorage: boolean } {
   const meta = (() => {
     try {
       const raw = window.localStorage.getItem(LINEUP_PLAN_KEY);
@@ -69,9 +73,9 @@ function readPlanFromStorage(): LineupPlan {
 
   try {
     const raw = window.localStorage.getItem(COACH_STORAGE_KEY);
-    if (!raw) return base;
+    if (!raw) return { plan: base, fromStorage: Boolean(meta) };
     const parsed = JSON.parse(raw) as Record<string, unknown>;
-    return {
+    const plan: LineupPlan = {
       ...base,
       // The live game blob wins for the defense itself — it is what the coach
       // last touched on the scoring screen.
@@ -84,8 +88,9 @@ function readPlanFromStorage(): LineupPlan {
         ? normalizeInningMap(parsed.inningDefenseGroup)
         : base.inningMap,
     };
+    return { plan, fromStorage: true };
   } catch {
-    return base;
+    return { plan: base, fromStorage: Boolean(meta) };
   }
 }
 
@@ -126,30 +131,49 @@ export default function LineupBuilderPage() {
   const [showGroupMap, setShowGroupMap] = useState(false);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextSync = useRef(true);
+  const hadLocalPlan = useRef(false);
+  const reconciled = useRef(false);
 
   // Load from localStorage after mount (never during render — the server has no
   // localStorage, and reading it in a state initializer desyncs hydration).
   useEffect(() => {
-    setPlan(readPlanFromStorage());
+    const { plan: local, fromStorage } = readPlanFromStorage();
+    hadLocalPlan.current = fromStorage;
+    setPlan(local);
   }, []);
 
-  // Opportunistic read-back. Never clobbers local state: if the server copy is
-  // newer, the coach is offered a button. Silent adoption could wipe defense
-  // changes made offline on the walk from the parking lot.
+  // One-shot reconcile with the server copy.
+  //
+  // Two different outcomes, and the difference matters:
+  //   - This device has no local plan at all (new phone, dashboard laptop):
+  //     adopt the server copy silently. There is nothing to lose, and this is
+  //     the case Phase 3 exists for.
+  //   - This device has a local plan: only OFFER the server copy, never take
+  //     it. Silent adoption would wipe defense changes made offline on the walk
+  //     from the parking lot.
   useEffect(() => {
-    if (!plan) return;
+    if (!plan || reconciled.current) return;
+    reconciled.current = true;
     let cancelled = false;
+
     fetchLineupPlan({ id: plan.id }).then((remote) => {
       if (cancelled || !remote) return;
+      if (!hadLocalPlan.current) {
+        skipNextSync.current = true;
+        setPlan(remote);
+        hadLocalPlan.current = true;
+        return;
+      }
       if (new Date(remote.updatedAt).getTime() > new Date(plan.updatedAt).getTime()) {
         setServerPlan(remote);
       }
     });
+
     return () => {
       cancelled = true;
     };
-    // Intentionally on mount-with-plan only: this is a one-shot reconcile, not
-    // a subscription. Re-running per edit would fight the coach's own typing.
+    // Runs once, when the local plan first lands. This is a reconcile, not a
+    // subscription — re-running per edit would fight the coach's own typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan?.id]);
 
@@ -242,6 +266,8 @@ export default function LineupBuilderPage() {
 
   const onAdoptServerPlan = () => {
     if (!serverPlan) return;
+    // No need to echo the server's own copy straight back at it.
+    skipNextSync.current = true;
     setPlan(serverPlan);
     setServerPlan(null);
   };
