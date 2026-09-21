@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import SprayChart from '@/components/coach/spray-chart';
+import { canonicalPlayerName } from '@/lib/coach/player-name';
 import type { PlayEvent } from '@/lib/coach/types';
 
 type Play = {
@@ -124,10 +125,20 @@ export default function StatsPage() {
       });
 
       // Set plays
+      //
+      // Both batter reads below go through canonicalPlayerName — fixes B3
+      // (MERGE-PLAN.md §0.3, §2.5). This file previously did not import it at
+      // all, so "Jack" and "Jackson" appeared as two hitters in the play table
+      // and as two series on the spray chart.
+      //
+      // Note: §2.5 describes this fix as "key `playerMap` on canonical name",
+      // matching analytics.ts. This page has no playerMap — it builds two flat
+      // arrays that are later grouped/rendered by batter string, so the
+      // equivalent fix is to canonicalize at the point the string enters them.
       const playData: Play[] = outlawsPins.map((pin) => ({
         inning: pin.inning ?? 1,
         outs: pin.outs ?? 0,
-        batter: pin.batter || 'Unknown',
+        batter: canonicalPlayerName(pin.batter),
         result: pin.result,
         zone: pin.zone || 'unknown',
         x: pin.x,
@@ -139,7 +150,7 @@ export default function StatsPage() {
       setSprayEvents(
         outlawsPins.map((pin, index) => ({
           id: `local-${index}`,
-          batter: pin.batter || 'Unknown',
+          batter: canonicalPlayerName(pin.batter),
           battingTeam: 'outlaws',
           result: pin.result as PlayEvent['result'],
           zone: (pin.zone || 'center_field') as PlayEvent['zone'],

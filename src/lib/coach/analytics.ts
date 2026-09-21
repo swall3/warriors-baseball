@@ -1,4 +1,5 @@
 import type { EventPin, PlayResult, TeamAtBat } from "./game-types";
+import { canonicalPlayerName } from "./player-name";
 
 export type ZoneStat = {
   zone: string;
@@ -96,10 +97,21 @@ export function computePlayerTendencies(pins: EventPin[], battingTeam: TeamAtBat
   const filtered = pins.filter(p => p.battingTeam === battingTeam);
 
   for (const pin of filtered) {
-    if (!playerMap[pin.batter]) {
-      playerMap[pin.batter] = { total: 0, onBase: 0, zones: {} };
+    // Key on the canonical name, not the raw string — fixes B2
+    // (MERGE-PLAN.md §0.3, §2.5). Keying on `pin.batter` made "Jack" and
+    // "Jackson" two separate hitters on /coach/intel, splitting one kid's
+    // spray data across two rows. 14 distinct batter strings exist for 11 kids.
+    //
+    // MERGE-PLAN.md §2.5 specifies `pin.batterPlayerId ?? canonicalPlayerName(...)`.
+    // `EventPin` has no `batterPlayerId` field (see game-types.ts) and the
+    // column it would come from is migration 002, which is unapplied. Adding
+    // the ?? half now would be dead code referencing a field that does not
+    // exist — wire it in when 002 lands and the pin type carries the id.
+    const player = canonicalPlayerName(pin.batter);
+    if (!playerMap[player]) {
+      playerMap[player] = { total: 0, onBase: 0, zones: {} };
     }
-    const p = playerMap[pin.batter];
+    const p = playerMap[player];
     p.total++;
     if (ON_BASE_RESULTS.includes(pin.result as PlayResult)) p.onBase++;
 

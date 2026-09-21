@@ -195,6 +195,11 @@ const ALL_DEFENSE_SPOTS: Array<{ code: string; label: string }> = [
 
 const MAX_LINEUP_PLAYERS = 20;
 
+// Sentinel <option> value for the defense picker's "＋ new player" escape
+// hatch. Deliberately a string no player name can collide with, since the
+// select's values are player names.
+const NEW_PLAYER_OPTION = "__new_player__";
+
 const getDefenseSpotsForFormat = (format: GameFormat) =>
   format === "kid_pitch" ? DEFENSE_SPOTS_KID_PITCH : DEFENSE_SPOTS_COACH_PITCH;
 
@@ -369,6 +374,43 @@ export default function Home() {
   const currentDefenseGroup = getDefenseGroupForInning(inningDefenseGroup, inning);
   const currentDefense = defenseGroups[currentDefenseGroup] || makeBlankDefense();
   const activeDefenseSpots = getDefenseSpotsForFormat(gameFormat);
+
+  // Roster options for the defense-spot picker — fixes B4 (MERGE-PLAN.md §0.3).
+  // The spot editor was a free-text <input placeholder="Player name">, so every
+  // assignment was a fresh chance to type a name the rest of the app had never
+  // seen. That is structurally how "Linc" and "Lincoln" became two players.
+  //
+  // Source is local state, not the database: `public.players` exists only in
+  // the unapplied migration 001. This is a validation fix and does not wait on
+  // the schema.
+  //
+  // The union is required, not defensive. `outlawsLineup` holds jersey numbers
+  // ("#00", "#3", …) while `defenseGroups` holds names ("Jack", "Linc") — that
+  // mismatch is B5, and the two sets do not intersect on a default install.
+  // Offering only the lineup would make every existing assignment an
+  // unrepresentable value and blank the grid on first render. Mirrors
+  // rosterFromPlan() in @/lib/coach/lineup.
+  const defenseRosterOptions = useMemo(() => {
+    const ordered: string[] = [];
+    const seen = new Set<string>();
+    for (const raw of outlawsLineup) {
+      const name = canonicalPlayerName(raw);
+      if (!name || name === "Unknown" || seen.has(name)) continue;
+      seen.add(name);
+      ordered.push(name);
+    }
+    const extras = new Set<string>();
+    for (const group of DEFENSE_GROUPS) {
+      const assignments = defenseGroups[group];
+      if (!assignments) continue;
+      for (const code of Object.keys(assignments)) {
+        const name = canonicalPlayerName(assignments[code] || "");
+        if (!name || name === "Unknown" || seen.has(name)) continue;
+        extras.add(name);
+      }
+    }
+    return [...ordered, ...[...extras].sort((a, b) => a.localeCompare(b))];
+  }, [outlawsLineup, defenseGroups]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -798,6 +840,21 @@ export default function Home() {
         [spot]: value,
       },
     }));
+  };
+
+  // The "＋ new player" escape hatch required by MERGE-PLAN.md §2.5. A coach
+  // must still be able to field a kid who isn't in the lineup yet — mid-game,
+  // one-handed, with the game running. Prompting once and adding to the lineup
+  // means the name enters the roster union, so the next spot offers it as an
+  // option instead of demanding it be retyped. Retyping is what B4 is.
+  const addDefensePlayer = (group: DefenseGroupName, spot: string) => {
+    const typed = typeof window === "undefined" ? null : window.prompt("New player name");
+    const name = (typed || "").trim();
+    if (!name) return;
+    setOutlawsLineup((prev) =>
+      prev.includes(name) ? prev : [...prev, name].slice(0, MAX_LINEUP_PLAYERS),
+    );
+    updateDefenseSpot(group, spot, name);
   };
 
   return (
@@ -1304,17 +1361,47 @@ export default function Home() {
                   ))}
                 </div>
                 <div className="grid grid-cols-1 gap-2 text-xs">
-                  {activeDefenseSpots.map((spot) => (
-                    <label key={`${setupGroup}-${spot.code}`} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-slate-700 bg-slate-950/60 px-2 py-2">
-                      <span className="font-bold text-emerald-200">{spot.code} · {spot.label}</span>
-                      <input
-                        className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100"
-                        placeholder="Player name"
-                        value={defenseGroups[setupGroup]?.[spot.code] ?? ""}
-                        onChange={(e) => updateDefenseSpot(setupGroup, spot.code, e.target.value)}
-                      />
-                    </label>
-                  ))}
+                  {/*
+                    Roster <select>, not a free-text input — fixes B4
+                    (MERGE-PLAN.md §0.3, §2.5). Options come from
+                    defenseRosterOptions; "＋ new player" is the escape hatch.
+
+                    The assigned value is canonicalized before comparison so an
+                    existing "Linc" assignment still matches the "Lincoln"
+                    option rather than falling off the list. Anything that
+                    somehow still doesn't match is rendered as its own option
+                    instead of being silently dropped — never lose a coach's
+                    assignment to a validation rule.
+                  */}
+                  {activeDefenseSpots.map((spot) => {
+                    const assigned = canonicalPlayerName(defenseGroups[setupGroup]?.[spot.code] ?? "");
+                    const current = assigned === "Unknown" ? "" : assigned;
+                    const unlisted = current !== "" && !defenseRosterOptions.includes(current);
+                    return (
+                      <label key={`${setupGroup}-${spot.code}`} className="grid grid-cols-[72px_1fr] items-center gap-2 rounded border border-slate-700 bg-slate-950/60 px-2 py-2">
+                        <span className="font-bold text-emerald-200">{spot.code} · {spot.label}</span>
+                        <select
+                          className="rounded border border-slate-600 bg-slate-900 px-2 py-1 text-slate-100"
+                          aria-label={`${spot.label} — ${setupGroup}`}
+                          value={current}
+                          onChange={(e) => {
+                            if (e.target.value === NEW_PLAYER_OPTION) {
+                              addDefensePlayer(setupGroup, spot.code);
+                              return;
+                            }
+                            updateDefenseSpot(setupGroup, spot.code, e.target.value);
+                          }}
+                        >
+                          <option value="">— empty —</option>
+                          {unlisted && <option value={current}>{current}</option>}
+                          {defenseRosterOptions.map((player) => (
+                            <option key={player} value={player}>{player}</option>
+                          ))}
+                          <option value={NEW_PLAYER_OPTION}>＋ new player…</option>
+                        </select>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>
