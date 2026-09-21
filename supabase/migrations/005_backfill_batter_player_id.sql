@@ -30,11 +30,13 @@
 -- Matching is `lower(btrim(e.batter)) = a.alias`, which relies on the 001
 -- invariant that every stored alias is already lower(btrim(x)).
 --
--- update public.play_events e
--- set batter_player_id = a.player_id
--- from public.player_aliases a
--- where lower(btrim(e.batter)) = a.alias
---   and e.batter_player_id is null;
+-- CONFIRMED 2026-09-21: all three pending alias pairs in 003 are resolved
+-- (Stuart confirmed directly). Backfill is now live.
+update public.play_events e
+set batter_player_id = a.player_id
+from public.player_aliases a
+where lower(btrim(e.batter)) = a.alias
+  and e.batter_player_id is null;
 
 -- ---------------------------------------------------------------------------
 -- Verification — MERGE-PLAN.md §2.4 and §3.4

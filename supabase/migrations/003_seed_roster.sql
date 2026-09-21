@@ -73,40 +73,15 @@ insert into public.player_aliases (alias, player_id) values
 on conflict (alias) do nothing;
 
 -- ===========================================================================
--- PENDING STUART CONFIRMATION — do not uncomment/apply until confirmed;
--- see MERGE-PLAN.md open item.
+-- CONFIRMED 2026-09-21 — Stuart confirmed directly, in this conversation:
+-- "your assumption is coorects these names should be merged". All three pairs
+-- are the same kid each. See memory/warriors-name-alias-confirmation.md.
 -- ===========================================================================
---
--- The three drift spellings below are the entire reason Phase 2 exists, and
--- they are the only alias rows that assert two different strings are the same
--- child. That assertion cannot be derived from the data — it is a fact about
--- real kids on a real roster, and only Stuart can supply it.
---
--- MERGE-PLAN.md §0.5 states this was already confirmed. Treat that line as
--- UNVERIFIED: it was written by an earlier agent and the confirmation behind it
--- has not been established. The live question is open and is being put to
--- Stuart directly. Do not apply these rows on the strength of §0.5.
---
--- Until they are applied, the system degrades safely rather than incorrectly:
--- 002 makes batter_player_id nullable, so a play logged as 'Jackson' still
--- records in full; it simply does not aggregate under Jack. Guessing wrong in
--- the other direction would merge two children's statistics into one row,
--- which is both harder to detect and harder to undo.
---
--- Each line needs an independent yes — they are three separate questions, not
--- one. Apply only the pairs actually confirmed.
---
--- insert into public.player_aliases (alias, player_id) values
---   ('jackson','plr-jack'),      -- PENDING: is Jackson the same kid as Jack?
---   ('linc','plr-lincoln'),      -- PENDING: is Linc the same kid as Lincoln?
---   ('aidan','plr-aiden')        -- PENDING: is Aidan the same kid as Aiden?
--- on conflict (alias) do nothing;
---
--- If any pair is NOT the same kid, that spelling is a separate player: add a
--- row to public.players for them instead, then alias their own name to it.
---
--- After applying any of the above, re-run the 005 backfill — it is written to
--- be re-runnable and only touches rows still holding a null batter_player_id.
+insert into public.player_aliases (alias, player_id) values
+  ('jackson','plr-jack'),
+  ('linc','plr-lincoln'),
+  ('aidan','plr-aiden')
+on conflict (alias) do nothing;
 -- ===========================================================================
 
 -- ---------------------------------------------------------------------------
