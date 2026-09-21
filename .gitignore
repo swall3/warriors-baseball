@@ -25,6 +25,7 @@ yarn-error.log*
 .vercel
 .env*
 .shots/
+supabase/.temp/
 
 # Local dev DB fallback (src/lib/coach/local-db.ts writes here when Supabase is
 # unconfigured). Per-machine scratch, never the source of truth — the bundled

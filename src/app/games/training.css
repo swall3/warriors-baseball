@@ -1,0 +1,400 @@
+/* Scoped to public training; coach and club pages keep their own themes. */
+.training-surface {
+  --training-green: #1b4d3e;
+  --training-cream: #f5f6f3;
+  font-family: var(--font-inter), Arial, sans-serif;
+}
+.training-surface :is(a, button):focus-visible {
+  outline: 3px solid #ee8d42;
+  outline-offset: 5px;
+}
+.training-hub {
+  background: var(--training-cream);
+  color: #182a25;
+  min-height: 100vh;
+}
+.training-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 5%;
+  background: #fff;
+  border-bottom: 1px solid #dce2dc;
+  font-size: 13px;
+  font-weight: 700;
+}
+.training-brand {
+  letter-spacing: 1.5px;
+  font-size: 18px;
+}
+.training-brand span {
+  color: #65766c;
+  font-size: 11px;
+}
+.training-content {
+  max-width: 1120px;
+  margin: auto;
+  padding: 52px 28px 24px;
+}
+.training-eyebrow {
+  color: #526c5e;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.training-intro h1 {
+  font-size: clamp(38px, 5vw, 64px);
+  letter-spacing: -2.5px;
+  line-height: 1.06;
+  font-weight: 850;
+  margin: 14px 0 18px;
+}
+.training-intro > p:last-child {
+  color: #58685f;
+  font-size: 16px;
+  margin-bottom: 32px;
+}
+.training-feature {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 38px;
+  background: #1b4d3e;
+  color: #fff;
+}
+.training-kicker {
+  letter-spacing: 2px;
+  color: #e9be85;
+  font-size: 11px;
+  font-weight: 800;
+}
+.training-feature h2 {
+  font-size: clamp(36px, 4vw, 52px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
+  font-weight: 800;
+  margin: 18px 0;
+}
+.training-feature p {
+  color: #d4e4d9;
+  font-size: 14px;
+  max-width: 320px;
+  line-height: 1.7;
+}
+.training-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 32px;
+  background: #f3bc77;
+  color: #253b2f;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 15px 19px;
+  border-radius: 10px;
+  margin-top: 24px;
+}
+.training-streak {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  border: 1px solid #759786;
+  border-radius: 30px;
+  padding: 7px 12px;
+  color: #e6efdf;
+  font-size: 12px;
+}
+.training-diamond {
+  width: 210px;
+  height: 210px;
+  justify-self: center;
+  position: relative;
+  border: 1px solid #739581;
+  transform: rotate(45deg);
+  background: repeating-linear-gradient(
+    90deg,
+    #285a47 0 28px,
+    #2e614d 28px 56px
+  );
+  border-radius: 22px;
+}
+.training-diamond i {
+  position: absolute;
+  inset: 50px;
+  border: 3px solid #d4ba88;
+  border-radius: 4px;
+}
+.training-diamond span {
+  position: absolute;
+  top: 60px;
+  left: 60px;
+  font-size: 64px;
+  transform: rotate(-45deg);
+  z-index: 1;
+}
+.training-diamond b {
+  position: absolute;
+  bottom: 0;
+  right: -35px;
+  transform: rotate(-45deg);
+  letter-spacing: 3px;
+  font-size: 9px;
+  color: #d2e1d4;
+}
+.training-section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 34px 0 18px;
+}
+.training-section-title h2 {
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.training-section-title > span {
+  color: #5c6c63;
+  font-size: 12px;
+}
+.training-activities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.training-card {
+  background: #fff;
+  border: 1px solid #d9e0d8;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
+}
+.training-card:hover {
+  transform: translateY(-3px);
+  border-color: #1b4d3e;
+}
+.training-card-top,
+.training-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.training-card-top {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #65756b;
+  font-weight: 700;
+}
+.training-card-icon {
+  font-size: 25px;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  background: #eff3ec;
+  border-radius: 12px;
+  color: #1b4d3e;
+}
+.training-card h3 {
+  font-size: 23px;
+  line-height: 1.15;
+  letter-spacing: -0.8px;
+  font-weight: 800;
+  margin: 22px 0 12px;
+}
+.training-card p {
+  font-size: 14px;
+  color: #59695f;
+  line-height: 1.65;
+  margin-bottom: 24px;
+}
+.training-card-bottom {
+  border-top: 1px solid #e6eae2;
+  padding-top: 16px;
+  margin-top: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1b4d3e;
+}
+.training-mastery {
+  border: 1px solid #d9e0d8;
+  border-radius: 18px;
+  padding: 24px;
+  margin-top: 24px;
+}
+.training-mastery .training-section-title {
+  margin: 0 0 22px;
+}
+.training-positions {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 8px;
+}
+.training-positions > div {
+  background: #e7ece4;
+  border-radius: 10px;
+  padding: 12px 4px;
+  text-align: center;
+}
+.training-positions strong {
+  display: block;
+  font-size: 15px;
+}
+.training-positions span {
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+}
+.training-positions .mastered {
+  background: #1b4d3e;
+  color: white;
+}
+.training-positions .practicing {
+  background: #f2d5ae;
+  color: #4e351b;
+}
+.training-mastery > p {
+  margin-top: 16px;
+  color: #5c6c63;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.training-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 0;
+  font-size: 12px;
+  color: #5c6c63;
+}
+/* Shared in-game skin. Preserve feedback semantics and field colors. */
+.training-surface > div.min-h-screen {
+  background: #153d32;
+}
+.training-surface .game-panel {
+  background: #214c3f;
+  border-color: #527364;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.training-surface .font-display {
+  font-family: var(--font-inter), Arial, sans-serif;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+.training-surface .tactile-dark {
+  background: #285445;
+  border: 1px solid #759184;
+  border-bottom-width: 3px;
+  border-radius: 14px;
+  min-height: 56px;
+}
+.training-surface .tactile-dark:not(:disabled):hover {
+  background: #346451;
+  border-color: #c6d8c6;
+}
+.training-surface .cta-gold {
+  background: #f3bc77;
+  color: #253b2f;
+  border-color: #ba8142;
+  box-shadow: none;
+  min-height: 48px;
+}
+.training-surface a[href="/games"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+.training-surface
+  :is(.text-white\/40, .text-white\/45, .text-white\/50, .text-white\/30) {
+  color: #b9cebf;
+}
+@media (max-width: 700px) {
+  .training-nav {
+    padding: 18px 20px;
+  }
+  .training-brand {
+    font-size: 14px;
+  }
+  .training-brand span {
+    display: block;
+    margin-top: 3px;
+    font-size: 9px;
+  }
+  .training-nav > a:last-child {
+    font-size: 11px;
+  }
+  .training-content {
+    padding: 30px 20px 16px;
+  }
+  .training-intro h1 {
+    letter-spacing: -1.7px;
+  }
+  .training-feature {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+  .training-diamond {
+    display: none;
+  }
+  .training-streak {
+    top: 24px;
+    right: 20px;
+    font-size: 10px;
+  }
+  .training-feature h2 {
+    margin-top: 24px;
+  }
+  .training-activities {
+    grid-template-columns: 1fr;
+  }
+  .training-card {
+    padding: 22px;
+  }
+  .training-card h3 {
+    margin-top: 12px;
+  }
+  .training-section-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .training-positions {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .training-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .training-mastery {
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .training-surface *,
+  .training-surface *::before,
+  .training-surface *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+.training-player-target:focus-visible {
+  outline: none;
+  stroke: #162f25;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 3px white);
+}
+.training-player-target:hover {
+  stroke-width: 3;
+}

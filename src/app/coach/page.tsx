@@ -1,5 +1,7 @@
 "use client";
 
+import { FIELD_ART } from "@/lib/field-art";
+
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -1022,7 +1024,7 @@ export default function Home() {
             aria-label="Baseball field hit map"
           >
             <Image
-              src="/images/field-bg-combined-final.jpg?v=20260528-4"
+              src={FIELD_ART}
               alt="Baseball field background"
               fill
               className="absolute inset-0 object-cover object-[center_36%]"
