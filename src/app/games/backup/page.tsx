@@ -24,7 +24,7 @@ function starRating(correct: number, total: number) {
 }
 
 // ── Streak-to-praise map ──
-const PRAISE = ["Nice! 👍", "Keep Rolling! 💪", "Hot Streak! 🔥", "On Fire! 🔥🔥", "WARRIOR! ⚡", "UNSTOPPABLE! ⭐"];
+const PRAISE = ["Nice! 👍", "Keep Rolling! 💪", "Hot Streak! 🔥", "On Fire! 🔥🔥", "ALL-STAR! ⚡", "UNSTOPPABLE! ⭐"];
 const getMultiplier = (streak: number) => streak >= 5 ? 3 : streak >= 3 ? 2 : streak >= 1 ? 1.5 : 1;
 
 export default function BackupPage() {
@@ -223,9 +223,9 @@ export default function BackupPage() {
           <Link href="/games" aria-label="Back to training games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
           </Link>
-          <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Warriors home">
-            <Image src="/images/warriors/mascot.png" alt="" width={22} height={22} className="object-contain" />
-            <span className="font-display text-white text-xs tracking-wide hidden sm:inline">WARRIORS</span>
+          <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Ninety Feet home">
+            <Image src="/ninety-feet.svg" alt="" width={22} height={22} className="object-contain" />
+            <span className="font-display text-white text-xs tracking-wide hidden sm:inline">NINETY FEET</span>
           </Link>
           <div className="flex-1" />
           {streak >= 2 ? (

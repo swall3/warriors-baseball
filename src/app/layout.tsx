@@ -1,34 +1,37 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
-import { assets, club, colors } from "@/lib/brand-config";
+
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const viewport: Viewport = {
-  themeColor: colors.navy,
+  themeColor: "#1b4d3e",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
-  title: `${club.shortName} Baseball — ${club.region}`,
-  description: `${club.name} — Elite Travel Baseball`,
+  title: "Ninety Feet",
+  description:
+    "Baseball training, team management, live scoring and player development.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: `${club.shortName} ⚾`,
+    title: "Ninety Feet",
     statusBarStyle: "black-translucent",
   },
   icons: {
-    apple: [{ url: assets.logo, sizes: "180x180", type: "image/png" }],
-    icon: assets.logo,
+    apple: [
+      { url: "/ninety-feet.svg", sizes: "180x180", type: "image/svg+xml" },
+    ],
+    icon: "/ninety-feet.svg",
   },
   openGraph: {
-    title: `${club.name} Baseball`,
-    description: `Join the ${club.shortName}. Elite travel ball. Tryouts now open.`,
-    images: [assets.logoJpg],
+    title: "Ninety Feet",
+    description: "Build better players and a stronger team.",
+    images: ["/ninety-feet.svg"],
   },
 };
 

@@ -52,7 +52,7 @@ export default function GamesPage() {
     <main className="training-hub">
       <nav className="training-nav" aria-label="Training navigation">
         <Link href="/" className="training-brand">
-          WARRIORS<span> / TRAINING</span>
+          NINETY FEET<span> / TRAINING</span>
         </Link>
         <Link href="/coach/today">Coach workspace ↗</Link>
       </nav>
@@ -152,7 +152,7 @@ export default function GamesPage() {
         </section>
         <footer className="training-footer">
           <span>Every teammate has a job. Learn yours.</span>
-          <Link href="/">Back to Warriors →</Link>
+          <Link href="/">Back to Ninety Feet →</Link>
         </footer>
       </div>
     </main>
