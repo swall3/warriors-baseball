@@ -173,6 +173,48 @@ async function layer1() {
       captured.at(-1).url,
     );
 
+    // --- every REAL call site names an org-scoped conflict target ---
+    //
+    // ⚠️ THIS CHECK EXISTS BECAUSE ITS ABSENCE HID A BUG. The sbUpsert
+    // assertion above passes because this file hands it "org_id,
+    // client_game_id" — it grades the shim, not the application, and it stayed
+    // green while api/coach/lineup/route.ts was still upserting lineup_plans on
+    // a bare "id". That was the one MT-2 path where a request body could reach
+    // across tenants: ON CONFLICT resolves inside Postgres, so the org filter
+    // cannot touch it, and a client-supplied plan.id matching another org's row
+    // would have UPDATEd that row and re-tenanted it.
+    //
+    // So this reads the conflict target out of the SOURCE instead of accepting
+    // one as a parameter. Any new sbUpsert on a tenant table has to name a
+    // unique whose leading column is org_id, or the harness fails.
+    const upsertSites = [];
+    const srcFiles = spawnSync("grep", ["-rl", "sbUpsert(", "src/"], { cwd: ROOT, encoding: "utf8" })
+      .stdout.split("\n").filter(Boolean).filter((f) => !f.endsWith("src/lib/supabase.ts"));
+    for (const file of srcFiles) {
+      const text = fs.readFileSync(path.join(ROOT, file), "utf8");
+      for (let i = text.indexOf("sbUpsert("); i !== -1; i = text.indexOf("sbUpsert(", i + 1)) {
+        // Walk to the matching close paren so multi-line calls are handled.
+        let depth = 0, end = i;
+        for (let j = text.indexOf("(", i); j < text.length; j += 1) {
+          if (text[j] === "(") depth += 1;
+          else if (text[j] === ")") { depth -= 1; if (depth === 0) { end = j; break; } }
+        }
+        const call = text.slice(i, end);
+        // The onConflict argument is the last string literal in the call.
+        const literals = call.match(/"[^"]*"/g) || [];
+        upsertSites.push({ file, onConflict: literals.at(-1) });
+      }
+    }
+    check("found every sbUpsert call site in src/", upsertSites.length === 3,
+      `${upsertSites.length} sites: ${upsertSites.map((u) => u.onConflict).join(" ")}`);
+    for (const site of upsertSites) {
+      check(
+        `${site.file} upserts on an org-scoped conflict target`,
+        /^"org_id[,"]/.test(site.onConflict || ""),
+        `onConflict = ${site.onConflict}`,
+      );
+    }
+
     // --- a missing scope must throw, never default (T6) ---
     for (const [label, fn] of [
       ["sbSelectAll", () => sb.sbSelectAll(undefined, "teams")],
@@ -381,6 +423,35 @@ async function layer3() {
       !crossEvent.ok && /foreign key|violates/i.test(crossEvent.error || ""),
       crossEvent.ok ? "INSERT SUCCEEDED — cross-tenant link allowed" : "rejected by play_events_org_game_fk",
     );
+
+    // --- 014: an upsert cannot steal another org's lineup plan -----------
+    // The concrete attack the global lineup_plans_pkey allowed: plan.id comes
+    // from the request body, so org B could name org A's plan id and have ON
+    // CONFLICT overwrite that row — flipping its org_id on the way past. This
+    // replays it as SQL, with the same conflict target the route now uses.
+    await runSql(`
+      insert into public.lineup_plans (id, game_id, team_id, label, format,
+                                       batting_order, groups, inning_map, org_id, updated_at)
+      values ('plan-mt2-shared', null, 'team-outlaws', 'OWNER PLAN', 'coach_pitch',
+              '[]'::jsonb, '{}'::jsonb, '{}'::jsonb, '${OWNER_ORG}', now());
+
+      insert into public.lineup_plans (id, game_id, team_id, label, format,
+                                       batting_order, groups, inning_map, org_id, updated_at)
+      values ('plan-mt2-shared', null, 'team-mt2-verify-own', 'ATTACKER PLAN', 'coach_pitch',
+              '[]'::jsonb, '{}'::jsonb, '{}'::jsonb, '${TEST_ORG}', now())
+      on conflict (org_id, id) do update set label = excluded.label;
+
+      select 1;`);
+
+    const plans = await runSql(`
+      select org_id, label from public.lineup_plans where id='plan-mt2-shared' order by org_id`);
+    eq("014: the same plan id in two orgs yields two rows, not one", plans.length, 2);
+    check(
+      "014: org-outlaws' plan is untouched by org-test's upsert",
+      plans.some((p) => p.org_id === OWNER_ORG && p.label === "OWNER PLAN"),
+      JSON.stringify(plans),
+    );
+    await runSql(`delete from public.lineup_plans where id='plan-mt2-shared'; select 1;`);
 
     // --- 013's policies, executed as a role RLS actually applies to -------
     console.log("\nLAYER 3 — RLS policies, run as anon/authenticated (not as postgres)");

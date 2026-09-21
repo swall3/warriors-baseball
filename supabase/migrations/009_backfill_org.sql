@@ -51,8 +51,18 @@ update public.tryout_signups set org_id = 'org-outlaws' where org_id is null;
 update public.teams set kind = 'own'
  where id = 'team-outlaws' and org_id = 'org-outlaws';
 
+-- ⚠️ `and kind is distinct from 'own'` is the guard that keeps this file
+-- genuinely re-runnable, which the rest of the migration set depends on
+-- (MERGE-PLAN §7.6). Without it the demotion reads "every org-outlaws team
+-- except the one hardcoded here is an opponent" — true exactly once, on the
+-- day this ran. The entire point of the org->teams model is that an org owns
+-- SEVERAL teams; the moment Stuart adds a second age group with kind='own',
+-- re-running 009 would silently demote it to a scouting record and detach it
+-- from its own roster in the UI. The guard makes the statement mean "classify
+-- teams not yet classified" rather than "reassert a snapshot of today".
 update public.teams set kind = 'opponent'
- where id <> 'team-outlaws' and org_id = 'org-outlaws';
+ where id <> 'team-outlaws' and org_id = 'org-outlaws'
+   and kind is distinct from 'own';
 
 -- ---------------------------------------------------------------------------
 -- Verification (MULTI-TENANT-PLAN §6.3 Block B — run AFTER 010):

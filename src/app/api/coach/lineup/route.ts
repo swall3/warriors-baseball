@@ -205,7 +205,22 @@ export async function POST(request: Request) {
           updated_at: now,
         },
       ],
-      "id",
+      // ⚠️ "org_id,id", not "id", and this is the one that mattered most.
+      //
+      // `plan.id` arrives in the REQUEST BODY — the client owns it on purpose,
+      // so an offline edit can be replayed without creating a duplicate row.
+      // Against the old global lineup_plans_pkey PRIMARY KEY (id), an upsert
+      // naming another org's plan id would have had ON CONFLICT fire and
+      // UPDATE that row, carrying this request's stamped org_id with it: org
+      // A's plan overwritten and re-tenanted to org B. sbUpsert's org filter
+      // cannot prevent that, because WHERE has no bearing on ON CONFLICT
+      // target resolution (011 §3, generalized). 012's composite FKs do not
+      // catch it either — org B's (org_id, team_id) pair is internally
+      // consistent — and 013's policies are inert on this path.
+      //
+      // Migration 014 rebuilt the primary key as (org_id, id) so the plan-id
+      // namespace is per tenant, and this is the matching call site.
+      "org_id,id",
     );
 
     return NextResponse.json({ ok: true, id: plan.id, updatedAt: now, persisted: true });

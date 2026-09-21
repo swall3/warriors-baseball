@@ -39,30 +39,43 @@ export function readMgmtToken() {
 // Runs SQL and returns the parsed response body. Throws on a non-2xx, with
 // the API's own error text — which is what makes a failed RLS check legible
 // (e.g. `new row violates row-level security policy`).
-export async function runSql(sql) {
-  const res = await fetch(
-    `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${readMgmtToken()}`,
-        "Content-Type": "application/json",
+//
+// Retries gateway-level 5xx (502/503/504) with backoff, but NEVER a 4xx.
+// The distinction matters for the verification harness: api.supabase.com sits
+// behind Cloudflare and returns transient 502s (observed during this work),
+// and retrying those is the difference between a flaky suite and a real
+// signal. A 4xx is Postgres rejecting the statement — which for half the
+// checks in verify-mt2.mjs is the PASSING outcome — so retrying one would turn
+// a proven RLS denial into three proven RLS denials and a slower run.
+export async function runSql(sql, { retries = 4 } = {}) {
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const res = await fetch(
+      `https://api.supabase.com/v1/projects/${PROJECT_REF}/database/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${readMgmtToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: sql }),
       },
-      body: JSON.stringify({ query: sql }),
-    },
-  );
-  const text = await res.text();
-  if (!res.ok) {
-    const err = new Error(`SQL failed (HTTP ${res.status}): ${text}`);
-    err.status = res.status;
-    err.body = text;
-    throw err;
+    );
+    const text = await res.text();
+    if (res.ok) {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return text;
+      }
+    }
+    lastErr = new Error(`SQL failed (HTTP ${res.status}): ${text.slice(0, 400)}`);
+    lastErr.status = res.status;
+    lastErr.body = text;
+    if (res.status < 500 || attempt === retries) throw lastErr;
+    await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
   }
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
+  throw lastErr;
 }
 
 // Same as runSql but never throws: returns { ok, rows } or { ok:false, error }.

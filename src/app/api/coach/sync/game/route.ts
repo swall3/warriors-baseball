@@ -91,7 +91,15 @@ async function syncToSupabase(game: PersistedGamePayload, scope: OrgScope) {
     ]);
   } else {
     // Keep the display name fresh without touching the id.
-    await sbUpsert(scope, "teams", [{ id: teamId, name: opponentTeamName, normalized_name: normalizedName }], "id");
+    //
+    // ⚠️ "org_id,id", not "id" — targeting teams_org_id_key (migration 012 §1)
+    // rather than the global teams_pkey. Same reasoning as the games upsert
+    // below and as 011 §3: ON CONFLICT resolution happens in Postgres, where
+    // sbUpsert's org filter cannot reach it, so a global conflict target would
+    // let one org's sync rewrite another org's scouting record. The exposure
+    // here is small — teamId is makeId("team"), never request-controlled — but
+    // the fix is one string and it closes the class rather than the instance.
+    await sbUpsert(scope, "teams", [{ id: teamId, name: opponentTeamName, normalized_name: normalizedName }], "org_id,id");
   }
 
   // 2) Resolve/create the game by its client id; preserve the existing row id.
