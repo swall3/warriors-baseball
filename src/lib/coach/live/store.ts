@@ -62,7 +62,7 @@ export async function listGames(orgId: string) {
 export async function createGame(session: CoachSession, config: Config) {
   if (session.role === "viewer")
     throw new LiveError("Only a coach can prepare a game.", 403);
-  const state = makeGame(randomUUID(), config, new Date().toISOString());
+  let state = makeGame(randomUUID(), config, new Date().toISOString());
   // Resolve team/player identity from the org's existing tables. Display names
   // submitted by a browser never rename or manufacture roster identities.
   const { data: team, error: teamError } = await client()
@@ -87,15 +87,14 @@ export async function createGame(session: CoachSession, config: Config) {
     id: p.id,
     name: players!.find((row) => row.id === p.id)!.display_name,
   }));
-  const { error } = await client()
-    .from("live_games")
-    .insert({
-      org_id: session.orgId,
-      id: state.id,
-      team_id: config.teamId,
-      state,
-      revision: 0,
-    });
+  state = makeGame(state.id, state.config, state.updatedAt);
+  const { error } = await client().from("live_games").insert({
+    org_id: session.orgId,
+    id: state.id,
+    team_id: config.teamId,
+    state,
+    revision: 0,
+  });
   check(error);
   return state;
 }

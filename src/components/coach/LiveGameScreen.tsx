@@ -19,6 +19,48 @@ import {
   type Result,
   type Lane,
 } from "@/lib/coach/live/model";
+function actionDescription(command: Command, game: LiveGame | null): string {
+  const name = (id: string) =>
+    [
+      ...(game?.config.roster ?? []),
+      ...(game?.config.opponentOrder ?? []),
+    ].find((player) => player.id === id)?.name ?? "Runner";
+  const moves = (items: Move[]) =>
+    items
+      .map(
+        (move) =>
+          `${name(move.id)}: ${move.to === "home" ? "scores" : move.to === "out" ? "out" : `base ${move.to}`}`,
+      )
+      .join("; ");
+  switch (command.type) {
+    case "pitch":
+      return `Pitch: ${command.outcome.replaceAll("_", " ")}`;
+    case "end_at_bat":
+      return `End at-bat: ${command.outcome}`;
+    case "result":
+      return `${command.result.replaceAll("_", " ")} to ${command.zone}. ${moves(command.moves)}`;
+    case "runners":
+      return moves(command.moves);
+    case "pitcher":
+      return `Change ${command.side === "us" ? "our" : "opposing"} pitcher to ${command.pitcher.name}`;
+    case "defense":
+      return `Positions ${command.when === "now" ? "now" : "next defensive inning"}: ${Object.entries(
+        command.positions,
+      )
+        .map(([position, id]) => `${position} — ${name(id!)}`)
+        .join(", ")}`;
+    case "configure":
+      return "Update game preparation";
+    case "start":
+      return "Start game";
+    case "advance":
+      return "Advance half inning";
+    case "finish":
+      return "Finish game";
+    case "undo":
+      return "Undo the previous action";
+  }
+}
 const coordinates: Record<Position, [number, number]> = {
   P: [50, 61],
   C: [50, 89],
@@ -597,19 +639,20 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
           </p>
           <details>
             <summary>Review unconfirmed actions</summary>
-            <pre>
-              {JSON.stringify(
-                live.queue.map((p) => p.command),
-                null,
-                2,
-              )}
-            </pre>
+            <ol>
+              {live.queue.map((pending) => (
+                <li key={pending.id}>
+                  {actionDescription(pending.command, live.game)}
+                </li>
+              ))}
+            </ol>
           </details>
           {!live.conflict && (
             <button onClick={() => void live.retry()}>Retry sync</button>
           )}
           <button
             className="nf-secondary"
+            disabled={!live.recordingAllowed}
             onClick={() =>
               void live.discardQueue().catch((e) => setActionError(e.message))
             }
@@ -626,9 +669,11 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
         <header>
           <strong>{game.config.teamName} dugout</strong>
           <span>
-            {live.stale
-              ? "Connection lost · last confirmed positions"
-              : "Live · read-only display"}
+            {live.conflict
+              ? "Action needs review"
+              : live.stale
+                ? "Connection lost · last confirmed positions"
+                : "Live · read-only display"}
           </span>
           <Link href={`/coach/live/${gameId}`}>Coach view</Link>
         </header>
@@ -706,7 +751,11 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
       </div>
     );
   return (
-    <Workspace catalog={catalog} active="Games">
+    <Workspace
+      catalog={catalog}
+      active="Games"
+      compact={game?.status === "live"}
+    >
       {catalogError && <LoadError error={catalogError} retry={retry} />}
       <section className="nf-intro">
         <p className="nf-eyebrow">{game?.status ?? "LOADING GAME"}</p>
@@ -733,11 +782,13 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
         <>
           <Score game={game} />
           <div className="nf-sync" role="status">
-            {live.stale
-              ? "Offline / stale"
-              : live.queue.length
-                ? "Confirming changes…"
-                : "Up to date"}{" "}
+            {live.conflict
+              ? "Action needs review"
+              : live.stale
+                ? "Offline / stale"
+                : live.queue.length
+                  ? "Confirming changes…"
+                  : "Up to date"}{" "}
             · {live.lane === "coach" ? "Coach" : `${live.lane} role`}
           </div>
           {game.status === "ready" ? (
@@ -881,7 +932,39 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
                             </button>
                           ))}
                         </div>
-                        {game.config.format==="coach_pitch" && <div className="nf-section"><p className="nf-muted">Coach-pitch counts are informational. End the at-bat according to your league’s rules; these buttons do not add a pitch.</p><button className="nf-secondary" disabled={!!game.pending} onClick={()=>void perform({type:"end_at_bat",outcome:"strikeout"})}>Batter out on strikes</button><button className="nf-secondary" disabled={!!game.pending} onClick={()=>void perform({type:"end_at_bat",outcome:"walk"})}>Award first base</button></div>}
+                        {game.config.format === "coach_pitch" && (
+                          <div className="nf-section">
+                            <p className="nf-muted">
+                              Coach-pitch counts are informational. End the
+                              at-bat according to your league’s rules; these
+                              buttons do not add a pitch.
+                            </p>
+                            <button
+                              className="nf-secondary"
+                              disabled={!!game.pending}
+                              onClick={() =>
+                                void perform({
+                                  type: "end_at_bat",
+                                  outcome: "strikeout",
+                                })
+                              }
+                            >
+                              Batter out on strikes
+                            </button>
+                            <button
+                              className="nf-secondary"
+                              disabled={!!game.pending}
+                              onClick={() =>
+                                void perform({
+                                  type: "end_at_bat",
+                                  outcome: "walk",
+                                })
+                              }
+                            >
+                              Award first base
+                            </button>
+                          </div>
+                        )}
                         {game.pending && (
                           <p className="nf-notice">
                             Pitch counted. Waiting for the play result.

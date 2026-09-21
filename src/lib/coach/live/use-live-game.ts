@@ -26,6 +26,7 @@ export function useLiveGame(
   const storageKey = useRef("");
   const draining = useRef(false);
   const stopped = useRef(false);
+  const generation = useRef(0);
   const conflictRef = useRef(false);
   const initialized = useRef(false);
   const writer = useRef(false);
@@ -73,6 +74,7 @@ export function useLiveGame(
     )
       return;
     draining.current = true;
+    const currentGeneration = generation.current;
     try {
       while (
         cache.current?.queue.length &&
@@ -90,6 +92,7 @@ export function useLiveGame(
           },
         );
         const data = await response.json();
+        if (stopped.current || generation.current !== currentGeneration) break;
         if (!response.ok) {
           setError(data.error ?? "Unable to confirm this action.");
           if (
@@ -118,7 +121,7 @@ export function useLiveGame(
         setError("");
       }
     } catch (e) {
-      if (!stopped.current) {
+      if (!stopped.current && generation.current === currentGeneration) {
         setOnline(false);
         setError(
           e instanceof Error && e.name === "QuotaExceededError"
@@ -127,11 +130,13 @@ export function useLiveGame(
         );
       }
     } finally {
-      draining.current = false;
+      if (generation.current === currentGeneration) draining.current = false;
     }
   }, [gameId, headers, readOnly]);
   useEffect(() => {
     if (!orgId) return;
+    generation.current += 1;
+    draining.current = false;
     stopped.current = false;
     initialized.current = false;
     conflictRef.current = false;
@@ -165,8 +170,12 @@ export function useLiveGame(
       );
     }
     let active = true;
+    let refreshing = false;
+    const lockRequest = new AbortController();
     let releaseLock: (() => void) | undefined;
     const refresh = async () => {
+      if (!active || refreshing) return;
+      refreshing = true;
       try {
         const response = await fetch(
           `/api/coach/live/${encodeURIComponent(gameId)}`,
@@ -202,10 +211,18 @@ export function useLiveGame(
             !cache.current ||
             data.game.revision >= cache.current.confirmed.revision
           )
-            persist({ confirmed: data.game, queue: [], lane: data.lane });
+            (writer.current || readOnly ? persist : publish)({
+              confirmed: data.game,
+              queue: [],
+              lane: data.lane,
+            });
         } else {
           cache.current = { ...cache.current, lane: data.lane };
-          setConfirmed(data.game);
+          setConfirmed((previous) =>
+            previous && previous.revision > data.game.revision
+              ? previous
+              : data.game,
+          );
         }
         if (!conflictRef.current) setError("");
         await drain();
@@ -214,25 +231,43 @@ export function useLiveGame(
           setOnline(false);
           setError("Connection lost. Showing the last confirmed game state.");
         }
+      } finally {
+        refreshing = false;
       }
     };
     if (!readOnly && navigator.locks) {
       // One tab owns a role's durable queue. Separate grants and separate
       // devices remain independent; an extra tab cannot overwrite unsent work.
-      void navigator.locks.request(
-        storageKey.current,
-        { ifAvailable: true },
-        async (lock) => {
-          if (!active || !lock) return;
-          writer.current = true;
-          setRecordingAllowed(true);
-          void refresh();
-          await new Promise<void>((resolve) => {
-            releaseLock = resolve;
-          });
-          writer.current = false;
-        },
-      );
+      void navigator.locks
+        .request(
+          storageKey.current,
+          { signal: lockRequest.signal },
+          async (lock) => {
+            if (!active || !lock) return;
+            // Another tab may have saved work while this tab waited for ownership.
+            const saved = localStorage.getItem(storageKey.current);
+            if (saved) {
+              const value = JSON.parse(saved) as Cache;
+              if (value.confirmed?.id === gameId && Array.isArray(value.queue))
+                publish(value);
+            }
+            writer.current = true;
+            setRecordingAllowed(true);
+            void refresh();
+            await new Promise<void>((resolve) => {
+              releaseLock = resolve;
+            });
+          },
+        )
+        .catch((error: unknown) => {
+          if (
+            active &&
+            !(error instanceof DOMException && error.name === "AbortError")
+          )
+            setError(
+              "Recording could not start. Check browser storage and reload this page.",
+            );
+        });
     }
     void refresh();
     const interval = setInterval(() => {
@@ -243,6 +278,9 @@ export function useLiveGame(
     return () => {
       active = false;
       stopped.current = true;
+      generation.current += 1;
+      writer.current = false;
+      lockRequest.abort();
       releaseLock?.();
       clearInterval(interval);
       window.removeEventListener("online", refresh);
@@ -284,13 +322,23 @@ export function useLiveGame(
     void drain();
   }
   async function discardQueue() {
+    if (!writer.current || readOnly)
+      throw new Error(
+        "Only the recording tab can clear its unconfirmed actions.",
+      );
     if (draining.current)
       throw new Error("Wait for the current request before clearing actions.");
+    const currentGeneration = generation.current;
     const response = await fetch(
       `/api/coach/live/${encodeURIComponent(gameId)}`,
-      { cache: "no-store", headers: headers() },
+      {
+        cache: "no-store",
+        headers: headers(),
+        signal: AbortSignal.timeout(10000),
+      },
     );
     const data = await response.json();
+    if (generation.current !== currentGeneration || !writer.current) return;
     if (!response.ok) throw new Error(data.error);
     conflictRef.current = false;
     setConflict(false);

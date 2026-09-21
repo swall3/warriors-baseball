@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
 import PracticeAssignment from "@/components/coach/PracticeAssignment";
@@ -23,6 +23,11 @@ export default function Training() {
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const [active, setActive] = useState<Assignment | null>(null);
+  const lessonHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (active) lessonHeading.current?.focus({ preventScroll: true });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [active]);
   const [answer, setAnswer] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{
     correct: boolean;
@@ -103,7 +108,9 @@ export default function Training() {
             {catalog?.organization.short_name ?? catalog?.organization.name} ·{" "}
             {name.toUpperCase()}’S PRACTICE
           </p>
-          <h1>{feedback?.correct ? "You’ve got it!" : scenario.question}</h1>
+          <h1 ref={lessonHeading} tabIndex={-1}>
+            {feedback?.correct ? "You’ve got it!" : scenario.question}
+          </h1>
           {active.note && (
             <p className="nf-coach-note">Coach says: {active.note}</p>
           )}

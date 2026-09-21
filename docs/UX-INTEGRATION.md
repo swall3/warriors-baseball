@@ -1,49 +1,83 @@
-# Ninety Feet integration — working record
+# Warriors / Ninety Feet integration handoff
 
-## Baseline and boundaries
+## Result and boundaries
 
-Isolated clone: `/home/swall/codex-work/ninety-feet-ux`, branch `codex/ninety-feet-ux`, based on MT-3 commit `b2bcac0`. No shared git directory or working files with OpenClaw. OpenClaw main and merge checkouts were clean at initial inspection and pointed to that commit.
+Ninety Feet is integrated into the existing Warriors Next.js app on local branch `codex/ninety-feet-ux`, based on MT-3 `b2bcac0`. This is a reviewable implementation, not a production deployment. The isolated WSL checkout is `/home/swall/codex-work/ninety-feet-ux`. OpenClaw's main and merge checkouts remain separate and still pointed to `b2bcac0` at final read-only inspection.
 
-Read-only session evidence: MT-3 implementation succeeded; its separate verify/deploy task failed because OpenClaw lacked a route-compatible OpenAI authentication source. Vercel's connected API returned 403 for the project's team scope, so the current deployed commit is unverified. Neither failure prevents local implementation. No production writes, migrations, merge, or deployment are authorized by this goal.
+Today, Team, game preparation, shared scoring, a read-only dugout display, postgame insights and persisted player practice now use the existing application's organization, team and roster data. Device-only scoring, historical analytics, imports, rotation planning, public training and MT-3 sessions remain available.
 
-## Architecture decisions
+No production data writes, migrations, push, merge or deployment occurred. OpenClaw agents were not interrupted. Its recorded MT-3 implementation succeeded; a separate verify/deploy task failed for an authentication-routing reason. The Vercel connector returned 403 for the project scope, so the deployed commit remains unverified.
 
-- Preserve legacy games and device storage. New shared games have their own aggregate and append-only command receipts. Whole-game imports cannot overwrite these aggregates.
-- Session org is the only tenant authority. All table queries include that org, and composite foreign keys bind game/team identity within it.
-- The existing MT-3 server-only service-role connection is retained. New tables enable RLS and deny anon/authenticated access; they expose no direct browser data API. This is server-enforced authorization, not a claim of per-user RLS enforcement on service-role traffic.
-- Each command includes an idempotency ID and expected revision. A short Postgres row lock checks receipt and revision, then atomically stores command and resulting state. A conflict requires review; it is not automatically rebased.
-- Pitch commands increment the active pitcher's count. A ball-in-play command creates a pending pitch ID. Its result must reference that ID and never increments the total again.
-- Corrections undo only the most recent action with its exact ID. The audit receipt remains. Finalization may be undone by a coach.
-- A recorder grant identifies a game assignment/device, not a verified person. MT-3 passcodes identify an organization/role only. Grant links require an existing session for the same org, expire after 18 hours, and can be revoked. A viewer session without a grant is read-only; pitch/play/all lanes cannot perform coach actions.
-- No default seeded roster or fictional analytics will be served as tenant data when the live database is unavailable. Shared-game requests fail explicitly; legacy device-only scoring remains available separately.
+## Connected behavior
 
-## Current progress
+- Prepare from the signed-in organization's actual roster, reorder batting, assign nine/ten positions, choose home/away and kid/coach pitch, and save. Prepare another game while one is active.
+- Score on one phone or assign separate pitch/play recorders. In-play increments the active pitcher's total once. Its result references that pitch and resolves every runner.
+- Display confirmed positions, batting order, bench, next batter, score and pitcher total on a fence iPad. The board cannot record and warns when updates stop.
+- Change pitchers while retaining totals, substitute bench players, schedule next-inning defense, advance a half inning for time/run limits, undo the latest action, and finish/reopen through the coach's correction control.
+- Persist commands locally before sending. Retry the same ID. Stale revisions stop for review rather than silently rebasing. Pending actions are readable baseball descriptions. Discard fetches the current game before clearing the queue.
+- Web Locks allow one queue writer per role/game in a browser. Another tab is read-only and acquires ownership when the previous tab leaves. Separate grants/devices remain independent. Old asynchronous responses cannot change a newly selected game's queue.
+- Review pitch totals and opponent contact locations, then assign an existing practice scenario. Server-side answer evaluation and idempotent attempts persist progress. Undo excludes that play from contact analysis; old receipts without context are explicitly excluded.
 
-Implemented the pure game command model, server routes, recorder grants, and unapplied database migration. Nine game-model tests and TypeScript checks pass. Isolated Postgres assertions verify receipts, stale revisions, payload/actor mismatch, independent tenants, table/function grants, and RLS enabled. Real concurrent commit verification is in `tests/live-concurrency.test.mjs`.
+## Data and permissions
 
-Second checkpoint: Today and Team load the signed-in organization's actual catalog, branding and roster. Preparation saves through the database API; live scoring, crew-link management, coach controls and a polling dugout display are connected. A persistent browser command queue and explicit conflict review are implemented but still require adversarial/offline verification. Existing scorer, imports, planner, analytics and public training routes remain available. A workspace entry link is added to the older coach screens.
+The signed session's organization is the only tenant authority. Server queries include it; composite foreign keys bind teams, games, players and practice within an organization.
 
-The first browser/API/database path passed against the disposable local stack: prepare a game with reordered batting lineup, start, record ball plus in-play, resolve LF double. PostgreSQL showed revision 4, two pitches for the original pitcher and the batter on second. This also caught and fixed a local reverse-proxy origin comparison issue. The new workspace loaded without a browser error overlay. Metadata and smooth-scroll warnings were reviewed; the unrelated metadataBase warning remains from the existing root configuration.
+The existing server-only service-role client is retained. New tables enable RLS and deny direct anon/authenticated access. Server authorization and scoped queries remain critical: service-role traffic is not per-user RLS enforcement. The service-only command RPC atomically stores receipt and aggregate under a short row lock.
 
-Third checkpoint: computed game insights and persisted training are implemented. New command receipts capture authoritative before/after context; older receipts are explicitly excluded from contact analysis when their context is missing. Postgame review summarizes actual pitcher counts and opponent contact locations, without inferring defensive mistakes. It links to coach-created assignments using existing `BACKUP_SCENARIOS`. Answers are evaluated server-side and saved with idempotent attempt IDs. A security-invoker progress view computes full counts. Shared-game Insights is separate from, and links to, existing historical analytics.
+Recorder grants are scoped to one organization/game, expire after 18 hours, and are revocable. Only a hash is stored. The link secret is a URL fragment retained in that tab's session storage. Grants require a same-organization session and identify an assigned device/role, not a verified person. Use viewer sessions for parent recorders; coaches retain their broader session privileges outside granted views.
 
-Local API verification now exercises owner/viewer/other-tenant access, foreign-origin rejection, split/all recorder roles, duplicate commands, ID reuse, concurrent submissions, revoked grants, corrections, finalization, context-aware insights, assignment authorization, answer checking and duplicate-attempt handling. It passes. Ten model tests and TypeScript checks pass. Browser verification completed a wrong answer, correct answer, and return to persisted progress (two successful reps / four answers including the earlier API attempts).
+Training is adult-assisted under the shared organization session, not individual child authentication. An adult confirms the selected player. Existing activities use nine-position fields and are labeled accordingly.
 
-An actual local connection-loss check stopped the disposable REST proxy, recorded two pitches, reloaded the page, and verified both unconfirmed actions were restored. Reconnecting confirmed them once; PostgreSQL showed revision 6 and four total pitches (two original plus two queued). Cached game recovery now uses the server-provided org context, independent of whether the roster API is reachable. Polling ignores older responses. A Web Lock prevents two tabs from overwriting the same recorder queue; the board reads confirmed state and never drains a recorder queue.
+## Verification
 
-Bench substitutions and cumulative next-inning defensive changes are supported. Coach-pitch formats record counts without imposing a guessed walk/strike threshold; the recorder explicitly ends those at-bats according to league rules. Kid-pitch counts use four balls and three strikes. Pitch/rest limits remain unconfigured pending verified league rules.
+| Area | Evidence |
+| --- | --- |
+| Model | Ten tests passed: pitch counts, split recording, roles, pitcher changes, scheduled defense, runner collisions/third outs, undo, finalization and coach-pitch behavior. |
+| Database | Both migrations applied from scratch in isolated PostgreSQL 16. Assertions passed for receipts, stale revisions, actor/payload mismatch, tenants, grants, RLS, security-invoker progress, attempt counts and cross-tenant foreign-key rejection. |
+| Concurrency | Two simultaneous real Postgres commands yielded one commit and one conflict. Retrying the winner returned its receipt. |
+| API lifecycle | Passed owner/viewer/other-tenant access, origin rejection, recorder roles, duplicates/ID reuse, concurrent submissions, revocation, corrections, finalization, insights, assignments, answer checking and attempt retry. |
+| Offline queue | Stopped local REST proxy, recorded two pitches, reloaded and restored both queued actions, then reconnected. DB confirmed revision 6 and four pitches: each queued pitch counted once. |
+| Browser roles | Separate pitch/play tabs completed an LF double without another pitch. A duplicate-role tab was read-only, then acquired ownership when the first left. Board received confirmed count. |
+| Browser conflict | Simultaneous coach/parent clicks produced one accepted pitch and one conflict. Reviewing `Pitch: ball` and discarding the duplicate resumed at seven pitches. |
+| Game to practice | Finalized synthetic game, reviewed real pitch/contact data, assigned LF-gap relay to Gray, answered SS on phone and received saved-success feedback. Earlier wrong/correct answers also verified persisted counts. |
+| Responsive | Inspected 390x844 phone scoring/play/practice, 1024x768 landscape and 768x1024 portrait boards, and 1440x900 desktop review. Phone pitch buttons fit first screen; landscape board fits without page scrolling. |
+| Build/regression | Production build and TypeScript passed. API lifecycle passed again against `next start`. Built Today, phone preparation and saved practice loaded; lesson focus moved to its question at scroll position zero. Fresh public training loaded with no console errors. Legacy scorer rendered, but reported React hydration error 418; its page source is unchanged from MT-3. |
 
-This is an intermediate checkpoint, not a completed integration. Still required: broader phone/tablet/desktop checks, live multi-device-role browser checks and conflict review, inspection of queue ownership/reconnect edge cases, final build and regression verification, and final review/handoff. Training is adult-assisted under an organization session, not individual child authentication. Existing nine-position training scenarios are labeled as such; team-specific coach-pitch training content is a remaining content dependency.
+Browser findings led to compact phone headers, a board-height adjustment, readable action review, safe tab ownership transfer, non-overlapping polling, and focus/scroll reset to the practice question.
 
-Local review uses `http://localhost:4180/coach/today`, `.env.local` containing only synthetic local credentials, PostgreSQL container `codex-ninety-feet-db-tests`, PostgREST container `codex-ninety-feet-rest` on localhost:54389, and `scripts/local-review-proxy.mjs` on localhost:54390. All database rows used here are synthetic. The review fixture must never run against production.
+## Migrations and local review
 
-## Local verification
+New migrations, in order:
+1. `supabase/migrations/20260921192619_live_game_commands.sql`
+2. `supabase/migrations/20260921195625_live_training_and_event_context.sql`
+
+They add separate live-game aggregates/receipts/grants and training assignments/attempts/progress. They do not replace historical games. Verify baseline migrations 001–015 and review staging before any production application. Production migration/deployment is a separate authorized step.
+
+Local review: `http://localhost:4180/coach/today`, passcode `local-review-coach`. All local data and credentials are synthetic. The ignored `.env.local` is excluded from the branch/bundle.
+
+Local infrastructure: `codex-ninety-feet-db-tests` Postgres container; `codex-ninety-feet-rest` PostgREST on localhost:54389; `scripts/local-review-proxy.mjs` on localhost:54390; app on 4180. A separate network-isolated container verified fresh migrations.
 
 ```sh
 node --experimental-strip-types --test tests/live-model.test.mjs
+node --test tests/live-concurrency.test.mjs
+node --experimental-strip-types --test tests/live-api.test.mjs
 npx tsc --noEmit
+npm run build
 ```
 
-The SQL assertions are for a disposable isolated PostgreSQL 16 container only. `tests/live-database.sql` creates test-only base tables and roles before applying the new migration; do not execute that fixture against an existing database. The concurrency test targets only container `codex-ninety-feet-db-tests`.
+API tests refuse a non-local Supabase URL; concurrency targets the named disposable container. SQL verification runs `live-database.sql`, `review-fixture.sql`, the second migration, then `training-database.sql` on a fresh database. Never run these fixtures against an existing/production database: they create test roles/base tables and fictional rows.
 
-Supabase documentation checked: https://supabase.com/docs/reference/javascript/rpc and current changelog. The migration was generated with the Supabase CLI. It has not been applied to production.
+## Limits and rollout checks
+
+- Polling is every three seconds. Separate tabs verify shared backend behavior; physical phones/iPads and sunlight usability still need a field trial.
+- Offline durability covers already loaded game state and browser-stored commands. This is not an offline PWA: fresh launch without application assets/server is unsupported. Do not clear storage with unconfirmed actions. Training retries are tab-local, not a durable offline queue.
+- No league pitch/rest limits or eligibility rules are configured. Kid pitch uses four balls/three strikes. Coach pitch counts are informational with explicit walk/strikeout decisions under league rules. Not every special baseball scoring rule is implemented.
+- New game insights remain separate from historical imports/analytics. Old receipts lacking event context cannot provide trustworthy contact statistics.
+- Existing shared-passcode identity and legacy API behavior were preserved. This is not an application-wide security audit or individual parent/child account system.
+- Existing Next.js middleware-convention and metadataBase warnings remain. No dependency upgrades were included.
+- Legacy `/coach` reports a hydration mismatch in the production preview while still rendering. Its unchanged implementation initializes state from browser storage during render, which is a likely cause; this was not proven with a separate baseline build. New practice and public training checks had no console errors. Track the legacy warning before calling application-wide regression clean.
+- Before rollout: verify deployed revision, review/apply migrations in staging, trial actual devices and verified league rules, approve production rollout, then re-check deployed authenticated flows.
+
+## Review artifacts
+
+The incremental Git bundle contains `codex/ninety-feet-ux` and requires base `b2bcac0` from the Warriors repository. Verify with `git bundle verify` and fetch into a separate clone. The patch is the full diff against that base. Neither contains the ignored local environment. Keep OpenClaw's active checkout separate.

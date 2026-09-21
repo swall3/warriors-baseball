@@ -44,17 +44,22 @@ export function Workspace({
   catalog,
   active,
   children,
+  compact = false,
 }: {
   catalog: Catalog | null;
   active: string;
   children: ReactNode;
+  compact?: boolean;
 }) {
   const color = catalog?.organization.branding?.colors?.primary;
   const style = {
     "--nf-team": color && /^#[0-9a-f]{6}$/i.test(color) ? color : "#0f2044",
   } as CSSProperties;
   return (
-    <div className="nf-workspace" style={style}>
+    <div
+      className={`nf-workspace${compact ? " nf-live-workspace" : ""}`}
+      style={style}
+    >
       <header className="nf-top">
         <Link href="/coach/today" className="nf-wordmark">
           NINETY FEET <span>/</span>

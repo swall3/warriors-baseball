@@ -697,10 +697,10 @@
 }
 @media (min-width: 800px) and (min-height: 600px) {
   .nf-board .nf-field {
-    max-width: calc(100vh - 225px);
+    max-width: calc(100vh - 245px);
   }
   .nf-board .nf-board-stale + .nf-board-grid .nf-field {
-    max-width: calc(100vh - 275px);
+    max-width: calc(100vh - 295px);
   }
 }
 @media (max-width: 650px) {
@@ -865,6 +865,56 @@
 }
 .nf-practice .nf-card p {
   line-height: 1.65;
+}
+@media (max-width: 650px) {
+  .nf-live-workspace .nf-top {
+    height: 48px;
+  }
+  .nf-live-workspace .nf-wordmark {
+    font-size: 17px;
+  }
+  .nf-live-workspace .nf-main {
+    padding-top: 0;
+  }
+  .nf-live-workspace .nf-identity {
+    display: none;
+  }
+  .nf-live-workspace .nf-nav {
+    margin: 0 0 12px;
+  }
+  .nf-live-workspace .nf-intro {
+    margin-bottom: 12px;
+  }
+  .nf-live-workspace .nf-intro .nf-eyebrow {
+    display: none;
+  }
+  .nf-live-workspace .nf-intro h2 {
+    font-size: 20px;
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+  .nf-live-workspace .nf-intro a {
+    font-size: 13px;
+  }
+  .nf-live-workspace .nf-sync {
+    margin: 7px 0;
+  }
+  .nf-live-workspace .nf-steps {
+    margin: 10px 0 14px;
+  }
+  .nf-live-workspace .nf-card {
+    padding: 18px;
+  }
+  .nf-live-workspace .nf-card h3 {
+    margin: 6px 0;
+  }
+  .nf-live-workspace .nf-pitch-buttons {
+    margin-top: 14px;
+    gap: 10px;
+  }
+  .nf-live-workspace .nf-pitch-buttons button {
+    min-height: 56px;
+  }
 }
 @media (max-width: 750px) {
   .nf-practice-grid {

@@ -101,6 +101,13 @@ export default function Today() {
       </Link>
       <section id="games" className="nf-section">
         <h2>Shared games</h2>
+        {current && catalog && catalog.role !== "viewer" && (
+          <p>
+            <Link className="nf-button nf-secondary" href="/coach/live/new">
+              Prepare another game →
+            </Link>
+          </p>
+        )}
         {loaded && !games.length && (
           <p className="nf-muted">
             No shared games yet. Your existing game history is still in{" "}
