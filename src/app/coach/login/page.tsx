@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const from = params.get("from") || "/coach";
+  const from = params.get("from") || "/coach/today";
   const [passcode, setPasscode] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -23,7 +23,7 @@ function LoginForm() {
         body: JSON.stringify({ passcode }),
       });
       if (res.ok) {
-        router.replace(from.startsWith("/") ? from : "/coach");
+        router.replace(from.startsWith("/") && !from.startsWith("//") ? from : "/coach/today");
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));

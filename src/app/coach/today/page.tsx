@@ -118,7 +118,11 @@ export default function Today() {
           {games.map((g) => (
             <Link
               className="nf-game-row"
-              href={`/coach/live/${g.id}`}
+              href={
+                g.status === "final"
+                  ? `/coach/live/${g.id}/insights`
+                  : `/coach/live/${g.id}`
+              }
               key={g.id}
             >
               <span className={`nf-status nf-${g.status}`}>{g.status}</span>
@@ -131,7 +135,9 @@ export default function Today() {
               <b>
                 {g.score.us} – {g.score.them}
               </b>
-              <span aria-hidden>→</span>
+              <span aria-hidden>
+                {g.status === "final" ? "Review →" : "Open →"}
+              </span>
             </Link>
           ))}
         </div>

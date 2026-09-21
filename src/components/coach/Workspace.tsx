@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import GameDaySteps from "./GameDaySteps";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 export type Catalog = {
   organization: {
@@ -45,11 +46,13 @@ export function Workspace({
   active,
   children,
   compact = false,
+  gameStatus,
 }: {
   catalog: Catalog | null;
   active: string;
   children: ReactNode;
   compact?: boolean;
+  gameStatus?: string;
 }) {
   const color = catalog?.organization.branding?.colors?.primary;
   const style = {
@@ -91,19 +94,32 @@ export function Workspace({
           {[
             ["Today", "/coach/today"],
             ["Team", "/coach/team"],
-            ["Games", "/coach/today#games"],
-            ["Insights", "/coach/insights"],
-            ["Play & Learn", "/coach/training"],
+            ["Review", "/coach/insights"],
+            ["Practice", "/coach/training"],
           ].map(([name, href]) => (
             <Link
               key={name}
               href={href}
-              aria-current={active === name ? "page" : undefined}
+              aria-current={
+                (active === "Insights"
+                  ? "Review"
+                  : active === "Play & Learn"
+                    ? "Practice"
+                    : active) === name
+                  ? "page"
+                  : undefined
+              }
             >
               {name}
             </Link>
           ))}
         </nav>
+        {!compact && (
+          <GameDaySteps
+            canPrepare={catalog?.role !== "viewer"}
+            gameStatus={gameStatus}
+          />
+        )}
         {children}
         <footer className="nf-footer">
           <Link href="/coach">Device-only scorer</Link>

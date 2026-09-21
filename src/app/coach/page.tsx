@@ -24,6 +24,8 @@ type DefenseAssignments = Record<string, string>;
 type DefenseGroups = Record<DefenseGroupName, DefenseAssignments>;
 
 type SavedGameState = {
+  balls?: number;
+  strikes?: number;
   inning: number;
   outs: number;
   ourRuns: number;
@@ -328,6 +330,14 @@ function makeV2Event(params: {
 }
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? <SavedScorer /> : <main className="p-6" aria-busy="true">Loading your saved game…</main>;
+}
+
+// Mount only after hydration: saved browser state must not differ from server HTML,
+// and no persistence effect should run with an empty server-side snapshot.
+function SavedScorer() {
   const brandTeam = useCoachBrand();
   // Must come before the first read below: the hook runs the legacy-key
   // migration during render (storage-keys.ts ORDERING).
@@ -338,8 +348,8 @@ export default function Home() {
   const [outs, setOuts] = useState(typeof saved.outs === "number" ? saved.outs : 0);
   const [ourRuns, setOurRuns] = useState(typeof saved.ourRuns === "number" ? saved.ourRuns : 0);
   const [oppRuns, setOppRuns] = useState(typeof saved.oppRuns === "number" ? saved.oppRuns : 0);
-  const [balls, setBalls] = useState(0);
-  const [strikes, setStrikes] = useState(0);
+  const [balls, setBalls] = useState(saved.balls ?? 0);
+  const [strikes, setStrikes] = useState(saved.strikes ?? 0);
   const [usLineup, setUsLineup] = useState<string[]>(saved.usLineup || DEFAULT_US_LINEUP);
   const [opponentsLineup, setOpponentsLineup] = useState<string[]>(saved.opponentsLineup || DEFAULT_OPPONENTS_LINEUP);
   const [defenseGroups, setDefenseGroups] = useState<DefenseGroups>(saved.defenseGroups || DEFAULT_DEFENSE_GROUPS);
@@ -434,6 +444,8 @@ export default function Home() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const next: SavedGameState = {
+      balls,
+      strikes,
       inning,
       outs,
       ourRuns,
@@ -454,7 +466,7 @@ export default function Home() {
       eventsV2: eventLog,
     };
     window.localStorage.setItem(storageKeys.state, JSON.stringify(next));
-  }, [storageKeys.state, inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, usLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, usAreHome, gameFormat, eventLog]);
+  }, [storageKeys.state, balls, strikes, inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, usLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, usAreHome, gameFormat, eventLog]);
 
   const summary = useMemo(() => {
     const outCount = pins.filter((p) => p.result === "out" || p.result === "strikeout" || p.result === "fielders_choice").length;
