@@ -190,59 +190,99 @@ check(
 );
 
 // ── 3. A pre-006 localStorage blob still loads ──────────────────────────────
+//
+// REWRITTEN IN MT-3. This section used to seed the blob under
+// `outlaws-field-app:v1`, reload, and read that SAME key back expecting the app
+// to have rewritten it in the new vocabulary. MT-3's T7 rename changed both
+// halves of that: the app now reads and writes `coach:<orgId>:state:v1`, and it
+// COPIES the legacy key rather than moving it — the original is deliberately
+// left byte-for-byte intact as the only recoverable backup of an in-progress
+// game (src/lib/coach/storage-keys.ts, §6.4). So the old assertions would now
+// fail for a correct app.
+//
+// ⚠️ THE ORDER BELOW MATTERS AND IS NOT INCIDENTAL. localStorage is cleared
+// first, then the legacy blob is planted, and only THEN is /coach opened. That
+// is the real device's sequence: a phone that has not loaded the new build yet
+// holds a legacy blob and nothing else. Doing it the other way round — opening
+// the app first, planting the blob second — is how the previous version of this
+// section produced six red checks against a working app: the first load wrote a
+// default empty state to the new key, and the migration then correctly declined
+// to overwrite it. That is the no-overwrite rule doing its job, not a bug, but
+// it is also not a sequence any real browser can be in.
 await page.evaluate((blob) => {
+  window.localStorage.clear();
   window.localStorage.setItem("outlaws-field-app:v1", JSON.stringify(blob));
 }, LEGACY_BLOB);
 await page.goto(`${BASE}/coach`, { waitUntil: "networkidle" });
 await page.waitForTimeout(800);
 
-const revived = await page.evaluate(() => {
-  const raw = JSON.parse(window.localStorage.getItem("outlaws-field-app:v1"));
+const migrated = await page.evaluate(() => {
+  const NEW_KEY = "coach:org-outlaws:state:v1";
+  const parse = (k) => {
+    const raw = window.localStorage.getItem(k);
+    return raw ? JSON.parse(raw) : null;
+  };
+  const current = parse(NEW_KEY);
+  const legacy = parse("outlaws-field-app:v1");
   return {
-    keys: Object.keys(raw).sort(),
-    usLineup: raw.usLineup,
-    outlawsLineup: raw.outlawsLineup,
-    usAreHome: raw.usAreHome,
-    teamAtBat: raw.teamAtBat,
-    battingTeams: [...new Set((raw.pins || []).map((p) => p.battingTeam))].sort(),
-    eventUsRuns: (raw.eventsV2 || []).map((e) => e.stateAfter.usRuns),
-    ourRuns: raw.ourRuns,
-    oppRuns: raw.oppRuns,
+    newKeyExists: current !== null,
+    legacyStillThere: legacy !== null,
+    legacyRaw: window.localStorage.getItem("outlaws-field-app:v1"),
+    keys: current ? Object.keys(current).sort() : [],
+    usLineup: current?.usLineup,
+    usAreHome: current?.usAreHome,
+    ourRuns: current?.ourRuns,
+    oppRuns: current?.oppRuns,
+    battingTeams: [...new Set((current?.pins || []).map((p) => p.battingTeam))].sort(),
+    eventUsRuns: (current?.eventsV2 || []).map((e) => e.stateAfter.usRuns),
   };
 });
+
+check(
+  "T7 migration: the legacy blob was copied to the org-namespaced key",
+  migrated.newKeyExists,
+  "coach:org-outlaws:state:v1",
+);
+check(
+  "T7 migration: the legacy key is LEFT IN PLACE, byte for byte (§6.4 — the only backup)",
+  migrated.legacyStillThere && migrated.legacyRaw === JSON.stringify(LEGACY_BLOB),
+  migrated.legacyStillThere ? "unchanged" : "GONE — an in-progress game would be unrecoverable",
+);
 check(
   "legacy blob: batting order survives (outlawsLineup -> usLineup)",
-  JSON.stringify(revived.usLineup) === JSON.stringify(LEGACY_BLOB.outlawsLineup),
-  `usLineup=${JSON.stringify(revived.usLineup)}`,
+  JSON.stringify(migrated.usLineup) === JSON.stringify(LEGACY_BLOB.outlawsLineup),
+  `usLineup=${JSON.stringify(migrated.usLineup)}`,
 );
 check(
   "legacy blob: home/away survives (outlawsAreHome -> usAreHome)",
-  revived.usAreHome === true,
-  `usAreHome=${revived.usAreHome}`,
+  migrated.usAreHome === true,
+  `usAreHome=${migrated.usAreHome}`,
 );
 check(
   "legacy blob: score survives",
-  revived.ourRuns === 7 && revived.oppRuns === 4,
-  `ourRuns=${revived.ourRuns}, oppRuns=${revived.oppRuns}`,
+  migrated.ourRuns === 7 && migrated.oppRuns === 4,
+  `ourRuns=${migrated.ourRuns}, oppRuns=${migrated.oppRuns}`,
 );
 check(
   "legacy blob: pin vocabulary normalised (outlaws/opponent/wahoos -> us/them)",
-  JSON.stringify(revived.battingTeams) === JSON.stringify(["them", "us"]),
-  `battingTeam values now ${JSON.stringify(revived.battingTeams)}`,
+  JSON.stringify(migrated.battingTeams) === JSON.stringify(["them", "us"]),
+  `battingTeam values now ${JSON.stringify(migrated.battingTeams)}`,
 );
 check(
   "legacy blob: event-log running score survives (outlawsRuns -> usRuns)",
-  JSON.stringify(revived.eventUsRuns) === JSON.stringify([3, 3]),
-  `stateAfter.usRuns=${JSON.stringify(revived.eventUsRuns)}`,
+  JSON.stringify(migrated.eventUsRuns) === JSON.stringify([3, 3]),
+  `stateAfter.usRuns=${JSON.stringify(migrated.eventUsRuns)}`,
 );
 check(
-  "legacy blob: rewritten blob no longer carries the old keys",
-  !revived.keys.includes("outlawsLineup") && !revived.keys.includes("outlawsAreHome"),
-  `keys=${revived.keys.join(",")}`,
+  "legacy blob: the rewritten blob no longer carries the old keys",
+  !migrated.keys.includes("outlawsLineup") && !migrated.keys.includes("outlawsAreHome"),
+  `keys=${migrated.keys.join(",")}`,
 );
 
 // Whole-body text, not just <button> text — the batting order is rendered in
-// the lineup list, which is not a button.
+// the lineup list, which is not a button. This is the check that matters most:
+// the blob being in the right key proves the migration, but only the screen
+// proves the coach can still see the game.
 const bodyText = (await page.textContent("body")) || "";
 const missing = LEGACY_BLOB.outlawsLineup.filter((j) => !bodyText.includes(j));
 check(
