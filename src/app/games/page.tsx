@@ -1,182 +1,160 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
-import { FIELD_POS, PositionKey } from "@/components/Diamond";
-import { getMastery, MasteryMap, hasPlayedToday, getDailyState } from "@/lib/gameStorage";
-
-const POSITIONS = Object.keys(FIELD_POS) as PositionKey[];
-
-function masteryColor(rec: { correct: number; total: number } | undefined) {
-  if (!rec || rec.total === 0) return "bg-white/10 text-white/60";
-  const pct = rec.correct / rec.total;
-  if (pct >= 0.8) return "bg-green-500 text-white";
-  if (pct >= 0.5) return "bg-[#c9a84c] text-[#0f2044]";
-  return "bg-[#8b1a2e] text-white";
-}
-
+import { FIELD_POS, type PositionKey } from "@/components/Diamond";
+import {
+  getMastery,
+  type MasteryMap,
+  hasPlayedToday,
+  getDailyState,
+} from "@/lib/gameStorage";
+const positions = Object.keys(FIELD_POS) as PositionKey[];
+const activities = [
+  {
+    href: "rules",
+    number: "01",
+    title: "Know the rules",
+    detail: "Make the call. Build your baseball IQ one question at a time.",
+    meta: "15 questions",
+    icon: "⚾",
+  },
+  {
+    href: "backup",
+    number: "02",
+    title: "Back up your team",
+    detail: "Read the play and tap the teammate who needs to move.",
+    meta: `${BACKUP_SCENARIOS.length} situations`,
+    icon: "↗",
+  },
+  {
+    href: "position",
+    number: "03",
+    title: "Where do I go?",
+    detail: "Pick your position. Learn your job before the next pitch.",
+    meta: "Practice at your pace",
+    icon: "◇",
+  },
+];
 export default function GamesPage() {
   const [mastery, setMastery] = useState<MasteryMap>({});
   const [dailyDone, setDailyDone] = useState(false);
-  const [dailyStreak, setDailyStreak] = useState(0);
-
+  const [streak, setStreak] = useState(0);
   useEffect(() => {
     setMastery(getMastery());
     setDailyDone(hasPlayedToday());
-    setDailyStreak(getDailyState().streak);
+    setStreak(getDailyState().streak);
   }, []);
-
-  const attempted = POSITIONS.filter(p => (mastery[p]?.total ?? 0) > 0).length;
-
+  const attempted = positions.filter(
+    (p) => (mastery[p]?.total ?? 0) > 0,
+  ).length;
   return (
-    <div className="min-h-screen hub-bg px-4 py-14">
-      <div className="max-w-lg mx-auto">
-
-        {/* Header */}
-        <div className="text-center mb-9">
-          {/* Gold logo ring */}
-          <div className="w-[88px] h-[88px] mx-auto mb-4 rounded-full p-[3px]"
-               style={{ background: "linear-gradient(135deg,#c9a84c 0%,#f0d070 50%,#c9a84c 100%)", boxShadow: "0 0 0 4px rgba(201,168,76,0.15), 0 8px 32px rgba(201,168,76,0.3)" }}>
-            <div className="w-full h-full rounded-full bg-[#0f2044] flex items-center justify-center text-4xl">
-              ⚾
-            </div>
+    <main className="training-hub">
+      <nav className="training-nav" aria-label="Training navigation">
+        <Link href="/" className="training-brand">
+          WARRIORS<span> / TRAINING</span>
+        </Link>
+        <Link href="/coach/today">Coach workspace ↗</Link>
+      </nav>
+      <div className="training-content">
+        <header className="training-intro">
+          <p className="training-eyebrow">Little reps. Big game confidence.</p>
+          <h1>
+            Your next great
+            <br />
+            play starts here.
+          </h1>
+          <p>See the field. Make the call. Be ready for your team.</p>
+        </header>
+        <Link href="/games/daily" className="training-feature">
+          <div>
+            <span className="training-kicker">
+              {dailyDone ? "TODAY’S REP · COMPLETE" : "TODAY’S REP"}
+            </span>
+            <h2>
+              One play.
+              <br />
+              Your move.
+            </h2>
+            <p>
+              A fresh situation every day. Read it, find your spot, and keep
+              your streak going.
+            </p>
+            <span className="training-action">
+              {dailyDone ? "Review today’s play" : "Play of the day"}{" "}
+              <span aria-hidden="true">→</span>
+            </span>
           </div>
-          <p className="text-[#c9a84c] font-bold text-[10px] uppercase tracking-[0.3em] mb-2">
-            Warriors Training Zone
-          </p>
-          <h1 className="font-display text-white text-6xl leading-[0.9] mb-2">PLAY &amp; LEARN</h1>
-          <p className="text-white/45 text-sm font-medium">Level up your baseball IQ</p>
+          <div className="training-diamond" aria-hidden="true">
+            <span>⚾</span>
+            <i />
+            <b>READ THE FIELD</b>
+          </div>
+          <span className="training-streak">{streak} day streak</span>
+        </Link>
+        <div className="training-section-title">
+          <h2>Find your next rep</h2>
+          <span>Choose a skill. Jump in.</span>
         </div>
-
-        {/* Game Cards */}
-        <div className="space-y-4">
-
-          {/* Play of the Day */}
-          <Link href="/games/daily" className="block">
-            <div className="tile-daily tile-3d relative overflow-hidden rounded-[24px] p-6 cursor-pointer">
-              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
-                   style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.12) 0%,transparent 100%)" }} />
-              <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.12] pointer-events-none -rotate-12 select-none">🔥</div>
-
-              <div className="relative">
-                <span className="inline-block bg-[#0f2044]/20 text-[#0f2044] text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">
-                  {dailyDone ? "✅ Done Today" : "New Every Day"}
+        <section className="training-activities" aria-label="Training games">
+          {activities.map((a) => (
+            <Link
+              key={a.href}
+              href={`/games/${a.href}`}
+              className="training-card"
+            >
+              <div className="training-card-top">
+                <span>{a.number} / TRAINING</span>
+                <span className="training-card-icon" aria-hidden="true">
+                  {a.icon}
                 </span>
-                <h2 className="font-display text-[#0f2044] text-4xl leading-none mb-2">PLAY OF THE DAY</h2>
-                <p className="text-[#0f2044]/70 text-[13px] font-medium leading-snug mb-4 max-w-[240px]">
-                  One play, every Warrior gets the same one. Build your streak!
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1.5">
-                    <span className="bg-[#0f2044]/15 text-[#0f2044] text-[11px] font-bold px-2.5 py-1.5 rounded-full">🔥 {dailyStreak}-day streak</span>
-                  </div>
-                  <div className="w-9 h-9 bg-[#0f2044]/15 rounded-full flex items-center justify-center text-[#0f2044] text-lg">›</div>
-                </div>
               </div>
-            </div>
-          </Link>
-
-          {/* Rules Quiz */}
-          <Link href="/games/rules" className="block">
-            <div className="tile-rules tile-3d relative overflow-hidden rounded-[24px] p-6 cursor-pointer">
-              {/* shine */}
-              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
-                   style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)" }} />
-              {/* bg icon */}
-              <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.12] pointer-events-none -rotate-12 select-none">⚾</div>
-
-              <div className="relative">
-                <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Game 1</span>
-                <h2 className="font-display text-white text-4xl leading-none mb-2">RULES QUIZ</h2>
-                <p className="text-white/70 text-[13px] font-medium leading-snug mb-4 max-w-[240px]">
-                  Test your baseball knowledge with 15 random questions. Earn bonus points for streaks!
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1.5">
-                    <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">15 Questions</span>
-                    <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">🔥 Streaks</span>
-                  </div>
-                  <div className="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white text-lg">›</div>
-                </div>
+              <h3>{a.title}</h3>
+              <p>{a.detail}</p>
+              <div className="training-card-bottom">
+                <span>{a.meta}</span>
+                <span aria-hidden="true">↗</span>
               </div>
-            </div>
-          </Link>
-
-          {/* Backup Positions */}
-          <Link href="/games/backup" className="block">
-            <div className="tile-backup tile-3d relative overflow-hidden rounded-[24px] p-6 cursor-pointer">
-              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
-                   style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.08) 0%,transparent 100%)" }} />
-              <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.12] pointer-events-none -rotate-12 select-none">📍</div>
-
-              <div className="relative">
-                <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Game 2</span>
-                <h2 className="font-display text-white text-4xl leading-none mb-2">BACKUP DRILL</h2>
-                <p className="text-white/70 text-[13px] font-medium leading-snug mb-4 max-w-[240px]">
-                  Tap the player on the field. Real game situations — know where to be!
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-1.5">
-                    <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">{BACKUP_SCENARIOS.length} Scenarios</span>
-                    <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">👆 Tap Field</span>
-                  </div>
-                  <div className="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white text-lg">›</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-
-          {/* Where Do I Go? — free play, not scored */}
-          <Link href="/games/position" className="block">
-            <div className="tile-position tile-3d relative overflow-hidden rounded-[24px] p-6 cursor-pointer">
-              <div className="absolute inset-x-0 top-0 h-1/2 rounded-t-[24px] pointer-events-none"
-                   style={{ background: "linear-gradient(180deg,rgba(255,255,255,0.10) 0%,transparent 100%)" }} />
-              <div className="absolute -right-2 -bottom-3 text-[90px] leading-none opacity-[0.14] pointer-events-none -rotate-12 select-none">🧭</div>
-
-              <div className="relative">
-                <span className="inline-block bg-white/15 text-white/80 text-[10px] font-bold uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-2.5">Practice Mode</span>
-                <h2 className="font-display text-white text-3xl leading-none mb-2">WHERE DO I GO?</h2>
-                <p className="text-white/70 text-[13px] font-medium leading-snug mb-4 max-w-[240px]">
-                  Pick YOUR position. Only see the plays where you have a job — no scoring, just reps.
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="bg-white/20 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-full">🎯 No Pressure</span>
-                  <div className="w-9 h-9 bg-white/15 rounded-full flex items-center justify-center text-white text-lg">›</div>
-                </div>
-              </div>
-            </div>
-          </Link>
-        </div>
-
-        {/* Position Mastery */}
-        <div className="mt-8 bg-white/[0.07] border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest">Position Mastery</p>
-            <p className="text-white/45 text-[11px] font-semibold">{attempted}/9 started</p>
+            </Link>
+          ))}
+        </section>
+        <section
+          className="training-mastery"
+          aria-label="Position practice progress"
+        >
+          <div className="training-section-title">
+            <h2>Your field knowledge</h2>
+            <span>{attempted} of 9 positions started</span>
           </div>
-          <div className="grid grid-cols-9 gap-1.5">
-            {POSITIONS.map(pos => (
-              <div key={pos} className="flex flex-col items-center gap-1">
-                <div className={`w-full aspect-square rounded-lg flex items-center justify-center text-[10px] font-extrabold ${masteryColor(mastery[pos])}`}>
-                  {pos}
+          <div className="training-positions">
+            {positions.map((p) => {
+              const rec = mastery[p];
+              const pct = rec?.total
+                ? Math.round((rec.correct / rec.total) * 100)
+                : null;
+              return (
+                <div
+                  key={p}
+                  className={
+                    pct === null ? "" : pct >= 80 ? "mastered" : "practicing"
+                  }
+                >
+                  <strong>{p}</strong>
+                  <span>{pct === null ? "New" : `${pct}%`}</span>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <p className="text-white/40 text-[10px] mt-3 leading-snug">
-            Fills in as you play Backup Drill or Where Do I Go? — green means you&apos;ve got it down.
+          <p>
+            Build this as you play Backup Drill and Where Do I Go? Your progress
+            stays on this device.
           </p>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12">
-          <Link href="/" className="text-white/30 hover:text-white/60 text-sm transition-colors">
-            ← Back to Warriors site
-          </Link>
-          <p className="text-white/20 text-xs mt-3">East Cherokee Warriors Baseball</p>
-        </div>
+        </section>
+        <footer className="training-footer">
+          <span>Every teammate has a job. Learn yours.</span>
+          <Link href="/">Back to Warriors →</Link>
+        </footer>
       </div>
-    </div>
+    </main>
   );
 }

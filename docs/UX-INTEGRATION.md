@@ -6,7 +6,7 @@ Ninety Feet is integrated into the existing Warriors Next.js app on local branch
 
 Today, Team, game preparation, shared scoring, a read-only dugout display, postgame insights and persisted player practice now use the existing application's organization, team and roster data. Device-only scoring, historical analytics, imports, rotation planning, public training and MT-3 sessions remain available.
 
-No production data writes, migrations, push, merge or deployment occurred. OpenClaw agents were not interrupted. Its recorded MT-3 implementation succeeded; a separate verify/deploy task failed for an authentication-routing reason. The Vercel connector returned 403 for the project scope, so the deployed commit remains unverified.
+The initial implementation stayed local. On September 21, Stuart authorized publishing a draft PR and preview, plus reskinning the public training games. Production data and schema remain unchanged. The Vercel connector authorization was repaired and production MT-3 b2bcac0 was verified READY. GitHub master and both OpenClaw checkouts still match that base. OpenClaw acknowledged the status update and confirmed no unpushed Warriors changes or overlapping work.
 
 ## Connected behavior
 
@@ -81,3 +81,11 @@ API tests refuse a non-local Supabase URL; concurrency targets the named disposa
 ## Review artifacts
 
 The incremental Git bundle contains `codex/ninety-feet-ux` and requires base `b2bcac0` from the Warriors repository. Verify with `git bundle verify` and fetch into a separate clone. The patch is the full diff against that base. Neither contains the ignored local environment. Keep OpenClaw's active checkout separate.
+
+## Training reskin and preview review
+
+Public /games now has a responsive cream-and-green skill hub, featured daily play, and position progress with text labels. All four games share a scoped green panel/answer treatment, warm action buttons, visible keyboard focus, reduced-motion support, and named back links. Drill content, field geometry, scoring and device storage are preserved.
+
+Validation: TypeScript, ten live-model tests, and production build passed. Browser checked the hub at desktop and 390x844, answered and advanced a quiz, selected LF practice, and loaded daily/backup field drills including 1024x768 tablet inspection. No console errors were observed on these public game routes. Physical-device testing remains outstanding.
+
+The Vercel preview does not automatically apply the two SQL migrations. Public games are reviewable without them; new live-game and saved-practice tools require a separately provisioned staging database with the migrations. Do not run review fixtures against production or assume preview environment variables are isolated from production.

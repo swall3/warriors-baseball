@@ -220,7 +220,7 @@ export default function BackupPage() {
 
         {/* Header */}
         <div className="flex items-center gap-2 mb-3">
-          <Link href="/games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
+          <Link href="/games" aria-label="Back to training games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
           </Link>
           <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Warriors home">
