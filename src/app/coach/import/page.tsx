@@ -1,4 +1,5 @@
 "use client";
+import { useCoachBrand } from "@/lib/coach/org-client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -31,6 +32,7 @@ const ZONE_COORDS: Record<string, { x: number; y: number }> = {
 };
 
 export default function GameImportPage() {
+  const brandTeam = useCoachBrand();
   const storageKeys = useCoachStorageKeys();
   const router = useRouter();
   const [currentGameId, setCurrentGameId] = useState<string>("");
@@ -222,7 +224,7 @@ export default function GameImportPage() {
 
         <div className="mt-3 space-y-3">
           <div className="flex justify-between">
-            <label className="text-xs font-bold text-d-ink-3">Outlaws Runs</label>
+            <label className="text-xs font-bold text-d-ink-3">{brandTeam.name} Runs</label>
             <input
               type="number"
               min="0"
@@ -303,7 +305,7 @@ export default function GameImportPage() {
                   className="w-full rounded border border-d-line bg-d-sunken px-2 py-1 text-sm text-d-ink focus:border-d-sel focus:outline-none"
                 >
                   <option value="them">{opponentTeamName}</option>
-                  <option value="us">Outlaws</option>
+                  <option value="us">{brandTeam.name}</option>
                 </select>
               </div>
 

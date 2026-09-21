@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { team } from "@/lib/brand-config";
+
 
 function LoginForm() {
   const router = useRouter();
@@ -39,8 +39,8 @@ function LoginForm() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-d-bg text-d-ink px-6">
       <div className="w-full max-w-xs text-center">
-        <h1 className="text-2xl font-bold tracking-tight">{team.fullName}</h1>
-        <p className="mt-1 text-sm text-d-ink-3">Team access only</p>
+        <h1 className="text-2xl font-bold tracking-tight">Team sign-in</h1>
+        <p className="mt-1 text-sm text-d-ink-3">Enter your team’s passcode to continue.</p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
           <input

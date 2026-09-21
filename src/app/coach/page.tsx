@@ -10,7 +10,7 @@ import { isDatabaseSyncEnabled, syncGameToDatabase } from "@/lib/coach/db-sync";
 import type { Bases, EventPin, FieldZone, GameEventV2, LegacyPersistedGamePayload, PlayResult, TeamAtBat } from "@/lib/coach/game-types";
 import { readUsAreHome, readUsLineup, toTeamAtBat } from "@/lib/coach/game-types";
 import { canonicalPlayerName } from "@/lib/coach/player-name";
-import { team as brandTeam } from "@/lib/brand-config";
+import { useCoachBrand } from "@/lib/coach/org-client";
 
 type FieldPointerEvent = React.PointerEvent<HTMLDivElement>;
 type DefenseGroupName = "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
@@ -328,6 +328,7 @@ function makeV2Event(params: {
 }
 
 export default function Home() {
+  const brandTeam = useCoachBrand();
   // Must come before the first read below: the hook runs the legacy-key
   // migration during render (storage-keys.ts ORDERING).
   const storageKeys = useCoachStorageKeys();

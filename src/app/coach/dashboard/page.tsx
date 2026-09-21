@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import HeatmapCanvas from '@/components/coach/heatmap-canvas';
 import type { PlayEvent } from '@/lib/coach/types';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
-import { team as brandTeam } from '@/lib/brand-config';
+import { useCoachBrand } from "@/lib/coach/org-client";
 import { readScoreUs, readUsLineup, toTeamAtBat } from '@/lib/coach/game-types';
 import { useCoachStorageKeys } from '@/lib/coach/org-client';
 
@@ -328,7 +328,7 @@ function downloadBlob(filename: string, mime: string, content: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function buildMarkdownExport(game: StoredGame, snapshot: DefenseSnapshot): string {
+function buildMarkdownExport(game: StoredGame, snapshot: DefenseSnapshot, brandTeam: { name: string }): string {
   const pins = game.pins || [];
   const score = game.score || snapshot.score;
   const opponentTeamName = game.opponentTeamName || snapshot.opponentTeamName || 'Opponents';
@@ -409,6 +409,7 @@ function pinsToPlayEvents(pins: StoredPin[], selectedPlayer: string | null): Pla
 }
 
 export default function Dashboard() {
+  const brandTeam = useCoachBrand();
   const storageKeys = useCoachStorageKeys();
   const [selectedTeam, setSelectedTeam] = useState<TeamKey>('us');
   const [scope, setScope] = useState<Scope>('all');
@@ -502,7 +503,7 @@ export default function Dashboard() {
   });
 
   const onExportMarkdown = () => {
-    downloadBlob(`${brandTeam.slug}-game-summary.md`, 'text/markdown', buildMarkdownExport(exportScopeGame(), defenseSnapshot));
+    downloadBlob(`${brandTeam.slug}-game-summary.md`, 'text/markdown', buildMarkdownExport(exportScopeGame(), defenseSnapshot, brandTeam));
   };
 
   const onExportCsv = () => {
