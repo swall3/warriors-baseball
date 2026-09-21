@@ -708,14 +708,127 @@ async function layer5(dbCounts) {
     } catch (e) {
       check("cleanup ran", false, String(e).slice(0, 200));
     }
-    // Negative pid = the whole process group. `next start` runs as a grandchild
-    // of npx; signalling only the child leaves it listening. See the preflight
-    // note above for what that cost.
-    try {
-      process.kill(-server.pid, "SIGTERM");
-    } catch {
-      server.kill("SIGTERM");
-    }
+    // Layer 6 reuses this server rather than starting a second one; it is
+    // stopped in stopServer() below, after the browser work is done.
+  }
+
+  return { server, sessionSecret, demoPasscode };
+}
+
+function stopServer(server) {
+  if (!server) return;
+  // Negative pid = the whole process group. `next start` runs as a grandchild
+  // of npx; signalling only the child leaves it listening. See the preflight
+  // note in layer5 for what that cost.
+  try {
+    process.kill(-server.pid, "SIGTERM");
+  } catch {
+    server.kill("SIGTERM");
+  }
+}
+
+// ===========================================================================
+// LAYER 6 — two tenants, one browser
+// ===========================================================================
+// The leak this closes cannot be seen from the database OR from a fake Storage,
+// which is why it needs a real browser: a coach who uses one phone for two
+// clubs, or Stuart demoing the product to Talking Baseball on his own device.
+// Server-side scoping is irrelevant here — the collision would be entirely in
+// localStorage, and every check in layers 1-5 would stay green through it.
+//
+// What must be true after switching tenants on one browser:
+//   * the second tenant starts on a DEFAULT EMPTY game, not the first's;
+//   * nothing of the first tenant's is on their screen;
+//   * and the first tenant's state is still there, because logging out must
+//     never delete an in-progress game (that is why logout clears cookies and
+//     touches no storage).
+const CHROME =
+  process.env.CHROME_PATH || "/home/swall/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome";
+
+async function layer6({ demoPasscode }) {
+  console.log("\nLAYER 6 — two tenants, one browser (T7 client-side isolation)");
+  if (!fs.existsSync(CHROME)) {
+    console.log(`  SKIP  no chromium at ${CHROME} — set CHROME_PATH to run this layer`);
+    return;
+  }
+  const { chromium } = await import(
+    "/home/swall/.local/lib/node_modules/openclaw/node_modules/playwright-core/index.mjs"
+  );
+  const browser = await chromium.launch({ executablePath: CHROME });
+  try {
+    const page = await (await browser.newContext()).newPage();
+    const login = async (passcode) => {
+      await page.goto(`${BASE}/coach/login`, { waitUntil: "networkidle" });
+      await page.fill('input[type="password"]', passcode);
+      await page.click('button[type="submit"]');
+      await page.waitForURL((u) => !u.pathname.endsWith("/login"), { timeout: 15000 });
+    };
+
+    // The owner, with a game in progress that came from a pre-MT-3 blob.
+    await login(LOCAL_PASSCODE);
+    await page.evaluate(() => {
+      localStorage.clear();
+      localStorage.setItem(
+        "outlaws-field-app:v1",
+        JSON.stringify({
+          inning: 5,
+          ourRuns: 12,
+          oppRuns: 1,
+          outlawsLineup: ["#77", "#88"],
+          opponentTeamName: "Secret Opponent",
+          pins: [],
+          eventsV2: [],
+        }),
+      );
+    });
+    await page.goto(`${BASE}/coach`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(800);
+    const ownerBody = (await page.textContent("body")) || "";
+    check(
+      "owner's in-progress game is on screen before the switch",
+      ownerBody.includes("#77") && ownerBody.includes("Secret Opponent"),
+      `#77 ${ownerBody.includes("#77")}, opponent ${ownerBody.includes("Secret Opponent")}`,
+    );
+
+    // Log out, log in as the other tenant, same browser profile.
+    await page.evaluate(() => fetch("/api/coach/login", { method: "DELETE" }));
+    await login(demoPasscode);
+    await page.goto(`${BASE}/coach`, { waitUntil: "networkidle" });
+    await page.waitForTimeout(900);
+
+    const tbBody = (await page.textContent("body")) || "";
+    const after = await page.evaluate(() => ({
+      keys: Object.keys(localStorage).sort(),
+      tb: localStorage.getItem("coach:org-talking-baseball:state:v1"),
+    }));
+    const tbState = after.tb ? JSON.parse(after.tb) : null;
+
+    check("the other tenant does NOT see the owner's batter on screen", !tbBody.includes("#77"));
+    check(
+      "the other tenant does NOT see the owner's opponent on screen",
+      !tbBody.includes("Secret Opponent"),
+    );
+    eq("their own state starts at inning 1", tbState?.inning, 1);
+    check(
+      "...with a 0-0 score, not the owner's 12-1",
+      tbState?.ourRuns === 0 && tbState?.oppRuns === 0,
+      `${tbState?.ourRuns}-${tbState?.oppRuns}`,
+    );
+    check(
+      "...and the owner's batting order is nowhere in their blob",
+      !JSON.stringify(tbState ?? {}).includes("#77"),
+    );
+    check(
+      "the owner's state SURVIVES the switch (logging out must not delete a game)",
+      after.keys.includes("coach:org-outlaws:state:v1"),
+      after.keys.join(", "),
+    );
+    check(
+      "...and so does the pre-MT-3 backup blob",
+      after.keys.includes("outlaws-field-app:v1"),
+    );
+  } finally {
+    await browser.close();
   }
 }
 
@@ -726,7 +839,12 @@ await layer1();
 await layer2();
 await layer3();
 const dbCounts = await layer4();
-await layer5(dbCounts);
+const running = await layer5(dbCounts);
+try {
+  if (running?.demoPasscode) await layer6(running);
+} finally {
+  stopServer(running?.server);
+}
 
 console.log("\n" + "═".repeat(72));
 if (failures.length === 0) {
