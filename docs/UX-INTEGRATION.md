@@ -21,7 +21,13 @@ Read-only session evidence: MT-3 implementation succeeded; its separate verify/d
 
 Implemented the pure game command model, server routes, recorder grants, and unapplied database migration. Nine game-model tests and TypeScript checks pass. Isolated Postgres assertions verify receipts, stale revisions, payload/actor mismatch, independent tenants, table/function grants, and RLS enabled. Real concurrent commit verification is in `tests/live-concurrency.test.mjs`.
 
-This is an intermediate checkpoint, not a completed integration. Still required: connect the existing-app screens, tenant branding/roster loading, offline command queue and conflict review, dugout polling/staleness, persisted training assignments/progress, computed postgame summaries and compatibility with existing insights, API/browser acceptance tests, final review and handoff. League-specific pitch limits require verified configuration; no generic numerical safety thresholds are inferred.
+Second checkpoint: Today and Team load the signed-in organization's actual catalog, branding and roster. Preparation saves through the database API; live scoring, crew-link management, coach controls and a polling dugout display are connected. A persistent browser command queue and explicit conflict review are implemented but still require adversarial/offline verification. Existing scorer, imports, planner, analytics and public training routes remain available. A workspace entry link is added to the older coach screens.
+
+The first browser/API/database path passed against the disposable local stack: prepare a game with reordered batting lineup, start, record ball plus in-play, resolve LF double. PostgreSQL showed revision 4, two pitches for the original pitcher and the batter on second. This also caught and fixed a local reverse-proxy origin comparison issue. The new workspace loaded without a browser error overlay. Metadata and smooth-scroll warnings were reviewed; the unrelated metadataBase warning remains from the existing root configuration.
+
+This is an intermediate checkpoint, not a completed integration. Still required: persisted training assignments/progress; computed postgame summaries and compatibility with existing insights; full API authorization, recorder, offline and browser/device acceptance tests; UI review; final review and handoff. Some new navigation targets point to these forthcoming screens. League-specific pitch limits require verified configuration; no generic numerical safety thresholds are inferred.
+
+Local review uses `http://localhost:4180/coach/today`, `.env.local` containing only synthetic local credentials, PostgreSQL container `codex-ninety-feet-db-tests`, PostgREST container `codex-ninety-feet-rest` on localhost:54389, and `scripts/local-review-proxy.mjs` on localhost:54390. All database rows used here are synthetic. The review fixture must never run against production.
 
 ## Local verification
 

@@ -9,7 +9,6 @@ export const viewport: Viewport = {
   themeColor: colors.navy,
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   viewportFit: "cover",
 };
 
@@ -39,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body className={`${inter.variable} antialiased`}>{children}</body>
     </html>
   );

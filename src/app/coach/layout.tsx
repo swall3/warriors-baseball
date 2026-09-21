@@ -11,10 +11,11 @@
 // — it is what stops the coach palette from leaking onto the public Warriors
 // site or the /games hub, which share the same root layout.
 import type { Metadata } from "next";
-import { team } from "@/lib/brand-config";
+import WorkspaceEntry from "@/components/coach/WorkspaceEntry";
 import { CoachOrgProvider } from "@/lib/coach/org-client";
 import { NoOrgSessionError, OWNER_ORG_ID, getOrgContext } from "@/lib/tenant/context";
 import "./coach.css";
+import "./workspace.css";
 
 // Every /coach route renders per-request, never prerendered.
 //
@@ -26,7 +27,7 @@ import "./coach.css";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: `${team.name} Coach`,
+  title: "Ninety Feet Coach",
   // Coach screens are a private tool; keep them out of search results.
   robots: { index: false, follow: false },
 };
@@ -61,7 +62,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
 
   return (
     <CoachOrgProvider value={{ orgId, isOwnerOrg: orgId === OWNER_ORG_ID }}>
-      <div className="dugout-theme min-h-screen">{children}</div>
+      <div className="dugout-theme min-h-screen"><WorkspaceEntry/>{children}</div>
     </CoachOrgProvider>
   );
 }
