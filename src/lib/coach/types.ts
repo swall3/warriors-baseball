@@ -15,7 +15,7 @@ export type PlayEvent = {
   outsAfter?: number;
   stateAfter?: {
     outs: number;
-    outlawsRuns: number;
+    usRuns: number;
     opponentRuns: number;
     bases: Bases;
   };

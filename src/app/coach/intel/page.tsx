@@ -11,7 +11,7 @@ type GameSummary = {
   label: string;
   date: string;
   opponentTeamName: string;
-  score: { outlaws: number; opponents: number };
+  score: { us: number; opponents: number };
   pinCount: number;
   pins: EventPin[];
 };
@@ -64,8 +64,8 @@ export default function IntelligencePage() {
 
   const allPins = filteredGames.flatMap(g => g.pins);
 
-  const ourOffense = computeZoneStats(allPins, "outlaws");
-  const opponentOffense = computeZoneStats(allPins, "opponent");
+  const ourOffense = computeZoneStats(allPins, "us");
+  const opponentOffense = computeZoneStats(allPins, "them");
 
   const opponentIntel = selectedOpponent
     ? computeOpponentIntelligence(games, selectedOpponent)
@@ -74,7 +74,7 @@ export default function IntelligencePage() {
   const currentStats = viewMode === "our-offense" ? ourOffense : opponentOffense;
 
   const playerTendencies = selectedOpponent && viewMode === "opponent-offense"
-    ? computePlayerTendencies(allPins, "opponent")
+    ? computePlayerTendencies(allPins, "them")
     : [];
 
   return (
@@ -253,7 +253,7 @@ export default function IntelligencePage() {
                 timestamp: new Date().toISOString(),
                 eventType: "ball_in_play" as const,
                 description: "",
-                stateAfter: { outs: 0, outlawsRuns: 0, opponentRuns: 0, bases: { first: null, second: null, third: null } }
+                stateAfter: { outs: 0, usRuns: 0, opponentRuns: 0, bases: { first: null, second: null, third: null } }
               })) : undefined}
             />
           </div>

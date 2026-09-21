@@ -11,7 +11,7 @@ interface HeatmapCanvasProps {
   visualStyle?: "classic" | "mesh"; // accepted for back-compat; rendering is unified
 }
 
-type TeamFilter = "all" | "outlaws" | "opponent";
+type TeamFilter = "all" | "us" | "them";
 type LayerFilter = "all" | "hits" | "missed";
 type RGB = [number, number, number];
 
@@ -21,11 +21,11 @@ const isHit = (r: string) => HIT_RESULTS.includes(r);
 const isOut = (r: string) => OUT_RESULTS.includes(r);
 
 // Which reference layer does an event belong to?
-//   green = Outlaws hits · red = opponent hits · grey = any out/miss
-type Layer = "outlawsHit" | "oppHit" | "missed" | null;
+//   green = our hits · red = their hits · grey = any out/miss
+type Layer = "usHit" | "oppHit" | "missed" | null;
 function layerOf(e: PlayEvent): Layer {
-  if (e.battingTeam === "outlaws" && isHit(e.result)) return "outlawsHit";
-  if (e.battingTeam === "opponent" && isHit(e.result)) return "oppHit";
+  if (e.battingTeam === "us" && isHit(e.result)) return "usHit";
+  if (e.battingTeam === "them" && isHit(e.result)) return "oppHit";
   if (isOut(e.result)) return "missed";
   return null; // walks/errors/fouls aren't plotted on the contact heat map
 }
@@ -194,11 +194,11 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
 
   // Events filtered by the team toggle and split into the three reference layers.
   const filtered = events.filter((e) => {
-    if (teamFilter === "outlaws" && e.battingTeam !== "outlaws") return false;
-    if (teamFilter === "opponent" && e.battingTeam !== "opponent") return false;
+    if (teamFilter === "us" && e.battingTeam !== "us") return false;
+    if (teamFilter === "them" && e.battingTeam !== "them") return false;
     return layerOf(e) !== null;
   });
-  const outlawsHits = filtered.filter((e) => layerOf(e) === "outlawsHit");
+  const usHits = filtered.filter((e) => layerOf(e) === "usHit");
   const oppHits = filtered.filter((e) => layerOf(e) === "oppHit");
   const missed = filtered.filter((e) => layerOf(e) === "missed");
 
@@ -211,7 +211,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
     const layers: HeatLayer[] = [];
     if (layerFilter !== "hits") layers.push({ events: missed, color: C_GREY, tint: C_GREY_T, weight: 0.68 });
     if (layerFilter !== "missed") {
-      layers.push({ events: outlawsHits, color: C_GREEN, tint: C_GREEN_T, weight: 1.0 });
+      layers.push({ events: usHits, color: C_GREEN, tint: C_GREEN_T, weight: 1.0 });
       layers.push({ events: oppHits, color: C_RED, tint: C_RED_T, weight: 1.0 });
     }
     renderDensityHeat(ctx, layers, blobRadius);
@@ -253,7 +253,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
     if (nearest) setHoverPos({ x: clientX, y: clientY });
   };
 
-  const total = outlawsHits.length + oppHits.length + missed.length;
+  const total = usHits.length + oppHits.length + missed.length;
   const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
 
   return (
@@ -261,7 +261,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
       {/* Controls */}
       <div className="flex flex-wrap gap-3 items-center bg-d-sunken p-3 rounded-lg">
         <div className="flex gap-1 flex-wrap">
-          {(["all", "outlaws", "opponent"] as TeamFilter[]).map((f) => (
+          {(["all", "us", "them"] as TeamFilter[]).map((f) => (
             <button
               key={f}
               onClick={() => setTeamFilter(f)}
@@ -269,7 +269,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
                 teamFilter === f ? "bg-d-sel text-white" : "bg-d-sunken text-d-ink-2"
               }`}
             >
-              {f === "all" ? "All ABs" : f === "outlaws" ? brandTeam.name : "Opponent"}
+              {f === "all" ? "All ABs" : f === "us" ? brandTeam.name : "Opponent"}
             </button>
           ))}
         </div>
@@ -298,7 +298,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
         </div>
 
         <div className="ml-auto flex gap-3 text-xs">
-          <span className="text-d-pos font-semibold">● {outlawsHits.length} OUT hits</span>
+          <span className="text-d-pos font-semibold">● {usHits.length} {brandTeam.name} hits</span>
           <span className="text-d-neg font-semibold">● {oppHits.length} OPP hits</span>
           <span className="text-d-ink-3 font-semibold">● {missed.length} missed</span>
         </div>
@@ -345,7 +345,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-lg bg-d-surface border border-d-line px-2 py-1.5">
           <div className="text-[10px] uppercase tracking-wide text-d-ink-3">{brandTeam.name} Hits</div>
-          <div className="text-sm font-black text-d-pos tabular-nums">{outlawsHits.length} · {pct(outlawsHits.length)}%</div>
+          <div className="text-sm font-black text-d-pos tabular-nums">{usHits.length} · {pct(usHits.length)}%</div>
         </div>
         <div className="rounded-lg bg-d-surface border border-d-line px-2 py-1.5">
           <div className="text-[10px] uppercase tracking-wide text-d-ink-3">Opponent Hits</div>
@@ -374,7 +374,7 @@ export default function HeatmapCanvas({ gameId, events: propEvents }: HeatmapCan
           </div>
           <div className="text-d-warn font-semibold">{resultLabel(hoveredEvent)}</div>
           <div className="text-d-ink-2 mt-1">
-            {hoveredEvent.battingTeam === "outlaws" ? brandTeam.name : "Opponent"} · Inning {hoveredEvent.inning}
+            {hoveredEvent.battingTeam === "us" ? brandTeam.name : "Opponent"} · Inning {hoveredEvent.inning}
           </div>
           <div className="text-d-ink-3 text-xs mt-1">Zone: {hoveredEvent.zone?.replace(/_/g, " ")}</div>
           {hoveredEvent.description && (

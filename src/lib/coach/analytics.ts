@@ -12,7 +12,7 @@ export type ZoneStat = {
 };
 
 export type TeamAnalytics = {
-  team: "outlaws" | "opponent";
+  team: "us" | "them";
   totalPlays: number;
   zoneStats: Record<string, ZoneStat>;
   favoriteZone: string | null;
@@ -157,11 +157,11 @@ export function computeOpponentIntelligence(
   if (relevantGames.length === 0) return null;
 
   const allPins = relevantGames.flatMap(g => g.pins);
-  const opponentPins = allPins.filter(p => p.battingTeam === "opponent");
+  const opponentPins = allPins.filter(p => p.battingTeam === "them");
 
   if (opponentPins.length === 0) return null;
 
-  const baseStats = computeZoneStats(opponentPins as EventPin[], "opponent");
+  const baseStats = computeZoneStats(opponentPins as EventPin[], "them");
 
   // Find zones with highest success rate (where they do damage)
   const sortedZones = Object.values(baseStats.zoneStats)

@@ -15,6 +15,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DEFENSE_GROUP_NAMES, type DefenseGroupName } from "@/lib/coach/defense";
+import { readUsLineup } from "@/lib/coach/game-types";
 import {
   assignmentFor,
   assignPlayer,
@@ -80,9 +81,11 @@ function readPlanFromStorage(): { plan: LineupPlan; fromStorage: boolean } {
       // The live game blob wins for the defense itself — it is what the coach
       // last touched on the scoring screen.
       format: normalizeFormat(parsed.gameFormat ?? base.format),
-      battingOrder: Array.isArray(parsed.outlawsLineup)
-        ? (parsed.outlawsLineup as unknown[]).filter((v): v is string => typeof v === "string")
-        : base.battingOrder,
+      // readUsLineup handles both spellings: a blob written before 006 stores
+      // the batting order under `outlawsLineup`. Reading only the new key here
+      // would silently fall back to `base.battingOrder` and present an empty
+      // lineup grid as if the coach had never built one.
+      battingOrder: readUsLineup(parsed) ?? base.battingOrder,
       groups: parsed.defenseGroups ? normalizeGroups(parsed.defenseGroups) : base.groups,
       inningMap: parsed.inningDefenseGroup
         ? normalizeInningMap(parsed.inningDefenseGroup)
@@ -104,11 +107,18 @@ function writePlanToStorage(plan: LineupPlan) {
   try {
     const raw = window.localStorage.getItem(COACH_STORAGE_KEY);
     const existing = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    // This is a read-modify-write, so the pre-006 keys would survive the spread
+    // and sit alongside their replacements forever — a stale `outlawsLineup`
+    // shadowing a fresh `usLineup`. Drop them here: this is the write side of
+    // the same migration the read helpers perform, and it is what lets the blob
+    // converge on the new shape the first time a lineup is saved.
+    delete existing.outlawsLineup;
+    delete existing.outlawsAreHome;
     window.localStorage.setItem(
       COACH_STORAGE_KEY,
       JSON.stringify({
         ...existing,
-        outlawsLineup: plan.battingOrder,
+        usLineup: plan.battingOrder,
         defenseGroups: plan.groups,
         inningDefenseGroup: plan.inningMap,
         gameFormat: plan.format,

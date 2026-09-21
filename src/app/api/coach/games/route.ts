@@ -30,8 +30,8 @@ export async function GET() {
         label: g.label,
         date: g.playedAt,
         opponentTeamName: team?.name || "Opponents",
-        score: { outlaws: g.outlawsScore, opponents: g.opponentScore },
-        outlawsAreHome: g.outlawsAreHome ?? false,
+        score: { us: g.usScore, opponents: g.opponentScore },
+        usAreHome: g.usAreHome ?? false,
         pinCount: pins.length,
         pins,
       };

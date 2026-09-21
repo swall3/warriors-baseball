@@ -58,11 +58,21 @@ export const BENCH_CONSECUTIVE_LIMIT = 1;
 
 export const BENCH_CODE = "BENCH";
 
+// A `teams.id` row value, not a label — deliberately untouched by migration
+// 006, which renamed only the perspective vocabulary. Changing it means an
+// UPDATE across every FK that references it. T6 replaces this fallback with a
+// 400 in MT-2 anyway, at which point the constant goes away rather than being
+// renamed (MULTI-TENANT-PLAN §0.3 T6).
 export const DEFAULT_TEAM_ID = "team-outlaws";
 
 // localStorage keys. The first is the live-scoring blob — shared, and merged
 // into rather than overwritten (see readPlanFromStorage/writePlanToStorage in
 // the page). The second holds plan metadata that has no home in that blob.
+//
+// Also deliberately untouched by 006: this string is the address of Stuart's
+// only copy of in-progress game state, and renaming it orphans that blob
+// silently. T7 owns the rename and ships an old-key -> new-key migration with
+// it (MULTI-TENANT-PLAN §0.3 T7, §6.4).
 export const COACH_STORAGE_KEY = "outlaws-field-app:v1";
 export const LINEUP_PLAN_KEY = "warriors-coach:lineup-plan:v1";
 
@@ -152,7 +162,7 @@ export function fieldSpotsForFormat(format: GameFormat): DefenseSpot[] {
 // coach reads top-to-bottom), then anyone who appears in a defense group but
 // isn't in the batting order, alphabetically.
 //
-// ⚠️ This union is B5 made visible: DEFAULT_OUTLAWS_LINEUP is jersey numbers
+// ⚠️ This union is B5 made visible: DEFAULT_US_LINEUP is jersey numbers
 // ("#00", "#3", …) while DEFAULT_DEFENSE_GROUPS holds names ("Jack", "Linc").
 // Until the jersey↔name mapping is resolved (MERGE-PLAN.md §9 item 4) an
 // untouched install shows both sets as separate rows. That is the honest

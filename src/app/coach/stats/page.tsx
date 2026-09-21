@@ -6,6 +6,7 @@ import SprayChart from '@/components/coach/spray-chart';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
 import type { PlayEvent } from '@/lib/coach/types';
 import { team as brandTeam } from '@/lib/brand-config';
+import { toTeamAtBat } from '@/lib/coach/game-types';
 
 type Play = {
   inning: number;
@@ -22,7 +23,7 @@ type StoredPin = {
   inning?: number;
   outs?: number;
   batter?: string;
-  battingTeam?: 'outlaws' | 'opponent' | 'wahoos';
+  battingTeam?: string;
   result: string;
   zone?: string;
   x: number;
@@ -36,7 +37,7 @@ type StoredGameState = {
 type ApiGame = {
   id: string;
   label?: string;
-  score?: { outlaws: number; opponents: number };
+  score?: { us: number; opponents: number };
   pins?: StoredPin[];
 };
 
@@ -57,15 +58,16 @@ export default function StatsPage() {
   const [sprayEvents, setSprayEvents] = useState<PlayEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [exported, setExported] = useState(false);
-  const [score, setScore] = useState<{ outlaws: number; opponents: number }>({ outlaws: 0, opponents: 0 });
+  const [score, setScore] = useState<{ us: number; opponents: number }>({ us: 0, opponents: 0 });
   const [opponentName, setOpponentName] = useState('Opponents');
 
   const loadStats = async () => {
     try {
+      // Not renamed by 006 — see coach/page.tsx. T7 owns the key rename.
       const STORAGE_KEY = 'outlaws-field-app:v1';
       const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
       let pins: StoredPin[] = [];
-      let nextScore = { outlaws: 0, opponents: 0 };
+      let nextScore = { us: 0, opponents: 0 };
 
       let nextOpponentName = 'Opponents';
 
@@ -73,7 +75,7 @@ export default function StatsPage() {
         const gameState = JSON.parse(raw) as StoredGameState & { ourRuns?: number; oppRuns?: number; opponentTeamName?: string };
         pins = Array.isArray(gameState.pins) ? gameState.pins : [];
         nextScore = {
-          outlaws: typeof gameState.ourRuns === 'number' ? gameState.ourRuns : 0,
+          us: typeof gameState.ourRuns === 'number' ? gameState.ourRuns : 0,
           opponents: typeof gameState.oppRuns === 'number' ? gameState.oppRuns : 0,
         };
         if (typeof gameState.opponentTeamName === 'string' && gameState.opponentTeamName.trim()) {
@@ -93,20 +95,20 @@ export default function StatsPage() {
         }
       }
 
-      const outlawsPins = pins.filter((pin) => !pin.battingTeam || pin.battingTeam === 'outlaws');
+      const usPins = pins.filter((pin) => toTeamAtBat(pin.battingTeam) === 'us');
 
       // Calculate stats
-      const totalPlays = outlawsPins.length;
-      const outs = outlawsPins.filter((p) => p.result === 'out' || p.result === 'fielders_choice' || p.result === 'strikeout').length;
-      const hits = outlawsPins.filter((p) => ['single', 'double', 'triple', 'home_run'].includes(p.result)).length;
-      const singles = outlawsPins.filter((p) => p.result === 'single').length;
-      const doubles = outlawsPins.filter((p) => p.result === 'double').length;
-      const triples = outlawsPins.filter((p) => p.result === 'triple').length;
-      const homeRuns = outlawsPins.filter((p) => p.result === 'home_run').length;
+      const totalPlays = usPins.length;
+      const outs = usPins.filter((p) => p.result === 'out' || p.result === 'fielders_choice' || p.result === 'strikeout').length;
+      const hits = usPins.filter((p) => ['single', 'double', 'triple', 'home_run'].includes(p.result)).length;
+      const singles = usPins.filter((p) => p.result === 'single').length;
+      const doubles = usPins.filter((p) => p.result === 'double').length;
+      const triples = usPins.filter((p) => p.result === 'triple').length;
+      const homeRuns = usPins.filter((p) => p.result === 'home_run').length;
 
       // Calculate favorite zone
       const zoneCounts: Record<string, number> = {};
-      outlawsPins.forEach((pin) => {
+      usPins.forEach((pin) => {
         const zone = pin.zone || 'unknown';
         zoneCounts[zone] = (zoneCounts[zone] || 0) + 1;
       });
@@ -136,7 +138,7 @@ export default function StatsPage() {
       // matching analytics.ts. This page has no playerMap — it builds two flat
       // arrays that are later grouped/rendered by batter string, so the
       // equivalent fix is to canonicalize at the point the string enters them.
-      const playData: Play[] = outlawsPins.map((pin) => ({
+      const playData: Play[] = usPins.map((pin) => ({
         inning: pin.inning ?? 1,
         outs: pin.outs ?? 0,
         batter: canonicalPlayerName(pin.batter),
@@ -149,10 +151,10 @@ export default function StatsPage() {
 
       setPlays(playData);
       setSprayEvents(
-        outlawsPins.map((pin, index) => ({
+        usPins.map((pin, index) => ({
           id: `local-${index}`,
           batter: canonicalPlayerName(pin.batter),
-          battingTeam: 'outlaws',
+          battingTeam: 'us',
           result: pin.result as PlayEvent['result'],
           zone: (pin.zone || 'center_field') as PlayEvent['zone'],
           x: pin.x,
@@ -179,7 +181,7 @@ export default function StatsPage() {
       const lines: string[] = [];
       lines.push(`# ${brandTeam.name} Stat Summary`);
       lines.push('');
-      lines.push(`**Score:** ${brandTeam.name} ${score.outlaws} — ${opponentName} ${score.opponents}`);
+      lines.push(`**Score:** ${brandTeam.name} ${score.us} — ${opponentName} ${score.opponents}`);
       if (stats) {
         lines.push(`**Total Plays:** ${stats.totalPlays} · **Hits:** ${stats.hits} · **Outs:** ${stats.outs} · **HR:** ${stats.homeRuns}`);
         lines.push(`**Singles/Doubles/Triples:** ${stats.singles}/${stats.doubles}/${stats.triples}`);
@@ -335,7 +337,7 @@ export default function StatsPage() {
         <div className="mt-4 flex items-center justify-center gap-6">
           <div className="text-center">
             <p className="text-[10px] text-d-ink-3">{brandTeam.name}</p>
-            <p className="text-3xl font-black text-d-sel">{score.outlaws}</p>
+            <p className="text-3xl font-black text-d-sel">{score.us}</p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-d-ink-3">{opponentName}</p>

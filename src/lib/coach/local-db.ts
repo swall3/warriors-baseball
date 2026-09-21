@@ -14,11 +14,11 @@ export type LocalDb = {
     label: string;
     playedAt: string;
     opponentTeamId: string;
-    outlawsScore: number;
+    usScore: number;
     opponentScore: number;
     source: "local_storage";
     schemaVersion: number;
-    outlawsAreHome: boolean;
+    usAreHome: boolean;
     createdAt: string;
     updatedAt: string;
   }>;
@@ -38,7 +38,7 @@ export type LocalDb = {
     eventTimestamp: string;
     description: string;
     outsAfter: number;
-    outlawsRunsAfter: number;
+    usRunsAfter: number;
     opponentRunsAfter: number;
     basesAfter: { first: string | null; second: string | null; third: string | null };
     createdAt: string;
@@ -91,14 +91,14 @@ export async function readDb(): Promise<LocalDb> {
 type TeamRow = { id: string; name: string; normalized_name: string; created_at: string };
 type GameRow = {
   id: string; client_game_id: string; label: string; played_at: string; opponent_team_id: string;
-  outlaws_score: number; opponent_score: number; source: string; schema_version: number;
-  outlaws_home?: boolean; created_at: string; updated_at: string;
+  us_score: number; opponent_score: number; source: string; schema_version: number;
+  us_home?: boolean; created_at: string; updated_at: string;
 };
 type EventRow = {
   id: string; game_id: string; event_index: number; client_pin_id: string; inning: number;
   batter: string; batting_team: TeamAtBat; result: string; zone: string; x: number; y: number;
   event_type: string; event_timestamp: string | null; description: string; outs_after: number;
-  outlaws_runs_after: number; opponent_runs_after: number;
+  us_runs_after: number; opponent_runs_after: number;
   bases_after: { first: string | null; second: string | null; third: string | null }; created_at: string;
 };
 
@@ -114,15 +114,15 @@ async function readDbFromSupabase(): Promise<LocalDb> {
     })),
     games: games.map((g) => ({
       id: g.id, clientGameId: g.client_game_id, label: g.label, playedAt: g.played_at,
-      opponentTeamId: g.opponent_team_id, outlawsScore: g.outlaws_score, opponentScore: g.opponent_score,
-      source: "local_storage", schemaVersion: g.schema_version, outlawsAreHome: g.outlaws_home ?? false,
+      opponentTeamId: g.opponent_team_id, usScore: g.us_score, opponentScore: g.opponent_score,
+      source: "local_storage", schemaVersion: g.schema_version, usAreHome: g.us_home ?? false,
       createdAt: g.created_at, updatedAt: g.updated_at,
     })),
     playEvents: events.map((e) => ({
       id: e.id, gameId: e.game_id, eventIndex: e.event_index, clientPinId: e.client_pin_id, inning: e.inning,
       batter: e.batter, battingTeam: e.batting_team, result: e.result, zone: e.zone, x: e.x, y: e.y,
       eventType: e.event_type, eventTimestamp: e.event_timestamp || e.created_at, description: e.description,
-      outsAfter: e.outs_after, outlawsRunsAfter: e.outlaws_runs_after, opponentRunsAfter: e.opponent_runs_after,
+      outsAfter: e.outs_after, usRunsAfter: e.us_runs_after, opponentRunsAfter: e.opponent_runs_after,
       basesAfter: e.bases_after || { first: null, second: null, third: null }, createdAt: e.created_at,
     })),
   };
@@ -153,7 +153,7 @@ export function toV2EventFallback(row: LocalDb["playEvents"][number]): GameEvent
     description: row.description || `${row.batter} ${row.result}`,
     stateAfter: {
       outs: typeof row.outsAfter === "number" ? row.outsAfter : 0,
-      outlawsRuns: typeof row.outlawsRunsAfter === "number" ? row.outlawsRunsAfter : 0,
+      usRuns: typeof row.usRunsAfter === "number" ? row.usRunsAfter : 0,
       opponentRuns: typeof row.opponentRunsAfter === "number" ? row.opponentRunsAfter : 0,
       bases: row.basesAfter || { first: null, second: null, third: null },
     },

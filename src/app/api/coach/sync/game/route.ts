@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { GameEventV2, PersistedGamePayload } from "@/lib/coach/game-types";
+import { readScoreUs, readStateUsRuns, readUsAreHome, toTeamAtBat } from "@/lib/coach/game-types";
 import { makeId, normalizeTeamName, readDb, writeDb } from "@/lib/coach/local-db";
 import { isSupabaseEnabled, sbDelete, sbInsert, sbSelectAll, sbUpsert } from "@/lib/supabase";
 import { requireCoach } from "@/lib/coach/auth";
@@ -12,7 +13,7 @@ function toV2Events(game: PersistedGamePayload): GameEventV2[] {
     timestamp: game.date,
     inning: pin.inning ?? 1,
     batter: pin.batter || "",
-    battingTeam: pin.battingTeam === "opponent" ? "opponent" : "outlaws",
+    battingTeam: toTeamAtBat(pin.battingTeam),
     result: pin.result,
     zone: pin.zone,
     x: pin.x,
@@ -20,7 +21,7 @@ function toV2Events(game: PersistedGamePayload): GameEventV2[] {
     description: `${pin.batter || "Batter"} ${pin.result.replaceAll("_", " ")}`,
     stateAfter: {
       outs: 0,
-      outlawsRuns: game.score?.outlaws ?? 0,
+      usRuns: readScoreUs(game.score) ?? 0,
       opponentRuns: game.score?.opponents ?? 0,
       bases: { first: null, second: null, third: null },
     },
@@ -86,11 +87,11 @@ async function syncToSupabase(game: PersistedGamePayload) {
         label: game.label || `${opponentTeamName} game`,
         played_at: game.date || now,
         opponent_team_id: teamId,
-        outlaws_score: game.score?.outlaws ?? 0,
+        us_score: readScoreUs(game.score) ?? 0,
         opponent_score: game.score?.opponents ?? 0,
         source: "local_storage",
         schema_version: game.schemaVersion ?? 2,
-        outlaws_home: game.outlawsAreHome ?? false,
+        us_home: readUsAreHome(game) ?? false,
         updated_at: now,
       },
     ],
@@ -107,7 +108,7 @@ async function syncToSupabase(game: PersistedGamePayload) {
     client_pin_id: event.id,
     inning: event.inning ?? 1,
     batter: event.batter || "",
-    batting_team: event.battingTeam === "opponent" ? "opponent" : "outlaws",
+    batting_team: toTeamAtBat(event.battingTeam),
     result: event.result || "single",
     zone: event.zone || "",
     x: event.x,
@@ -116,7 +117,7 @@ async function syncToSupabase(game: PersistedGamePayload) {
     event_timestamp: event.timestamp || now,
     description: event.description || `${event.batter} ${event.result}`,
     outs_after: event.stateAfter?.outs ?? 0,
-    outlaws_runs_after: event.stateAfter?.outlawsRuns ?? game.score?.outlaws ?? 0,
+    us_runs_after: readStateUsRuns(event.stateAfter) ?? readScoreUs(game.score) ?? 0,
     opponent_runs_after: event.stateAfter?.opponentRuns ?? game.score?.opponents ?? 0,
     bases_after: event.stateAfter?.bases || { first: null, second: null, third: null },
     created_at: now,
@@ -149,11 +150,11 @@ async function syncToLocalFile(game: PersistedGamePayload) {
       label: game.label || `${opponentTeamName} game`,
       playedAt: game.date || now,
       opponentTeamId: team.id,
-      outlawsScore: game.score?.outlaws ?? 0,
+      usScore: readScoreUs(game.score) ?? 0,
       opponentScore: game.score?.opponents ?? 0,
       source: "local_storage",
       schemaVersion: game.schemaVersion ?? 2,
-      outlawsAreHome: game.outlawsAreHome ?? false,
+      usAreHome: readUsAreHome(game) ?? false,
       createdAt: now,
       updatedAt: now,
     };
@@ -162,10 +163,10 @@ async function syncToLocalFile(game: PersistedGamePayload) {
     storedGame.label = game.label || storedGame.label;
     storedGame.playedAt = game.date || storedGame.playedAt;
     storedGame.opponentTeamId = team.id;
-    storedGame.outlawsScore = game.score?.outlaws ?? storedGame.outlawsScore;
+    storedGame.usScore = readScoreUs(game.score) ?? storedGame.usScore;
     storedGame.opponentScore = game.score?.opponents ?? storedGame.opponentScore;
     storedGame.schemaVersion = game.schemaVersion ?? storedGame.schemaVersion ?? 2;
-    storedGame.outlawsAreHome = game.outlawsAreHome ?? storedGame.outlawsAreHome ?? false;
+    storedGame.usAreHome = readUsAreHome(game) ?? storedGame.usAreHome ?? false;
     storedGame.updatedAt = now;
   }
 
@@ -178,7 +179,7 @@ async function syncToLocalFile(game: PersistedGamePayload) {
     clientPinId: event.id,
     inning: event.inning ?? 1,
     batter: event.batter || "",
-    battingTeam: (event.battingTeam === "opponent" ? "opponent" : "outlaws") as "outlaws" | "opponent",
+    battingTeam: toTeamAtBat(event.battingTeam),
     result: event.result || "single",
     zone: event.zone || "",
     x: event.x,
@@ -187,7 +188,7 @@ async function syncToLocalFile(game: PersistedGamePayload) {
     eventTimestamp: event.timestamp || now,
     description: event.description || `${event.batter} ${event.result}`,
     outsAfter: event.stateAfter?.outs ?? 0,
-    outlawsRunsAfter: event.stateAfter?.outlawsRuns ?? game.score?.outlaws ?? 0,
+    usRunsAfter: readStateUsRuns(event.stateAfter) ?? readScoreUs(game.score) ?? 0,
     opponentRunsAfter: event.stateAfter?.opponentRuns ?? game.score?.opponents ?? 0,
     basesAfter: event.stateAfter?.bases || { first: null, second: null, third: null },
     createdAt: now,

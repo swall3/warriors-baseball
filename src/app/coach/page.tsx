@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isDatabaseSyncEnabled, syncGameToDatabase } from "@/lib/coach/db-sync";
-import type { Bases, EventPin, FieldZone, GameEventV2, PlayResult, TeamAtBat } from "@/lib/coach/game-types";
+import type { Bases, EventPin, FieldZone, GameEventV2, LegacyPersistedGamePayload, PlayResult, TeamAtBat } from "@/lib/coach/game-types";
+import { readUsAreHome, readUsLineup, toTeamAtBat } from "@/lib/coach/game-types";
 import { canonicalPlayerName } from "@/lib/coach/player-name";
 import { team as brandTeam } from "@/lib/brand-config";
 
@@ -29,13 +30,13 @@ type SavedGameState = {
   selectedResult: PlayResult;
   pins: EventPin[];
   teamAtBat: TeamAtBat;
-  outlawsLineup: string[];
+  usLineup: string[];
   opponentsLineup: string[];
   defenseGroups: DefenseGroups;
   inningDefenseGroup: Record<number, DefenseGroupName>;
   bases: Bases;
   opponentTeamName: string;
-  outlawsAreHome: boolean;
+  usAreHome: boolean;
   gameFormat: GameFormat;
   eventsV2: GameEventV2[];
 };
@@ -120,9 +121,9 @@ type SavedGameHistory = {
   pins: EventPin[];
   eventsV2?: GameEventV2[];
   schemaVersion?: number;
-  score: { outlaws: number; opponents: number };
+  score: { us: number; opponents: number };
   opponentTeamName?: string;
-  outlawsAreHome?: boolean;
+  usAreHome?: boolean;
 };
 
 type GameSnapshot = {
@@ -140,10 +141,16 @@ type GameSnapshot = {
   bases: Bases;
 };
 
+// ⚠️ NOT renamed by the 006 "outlaws" -> "us" pass, on purpose. These strings
+// are the address of Stuart's only copy of in-progress game state; renaming
+// the key orphans the blob instantly and silently. That rename is T7 and ships
+// with its own old-key -> new-key migration in MT-3/MT-4
+// (MULTI-TENANT-PLAN §0.4 bucket (d), §4.4, §6.4). The blob's *contents* are
+// migrated on read — see readSavedGameState() at the bottom of this file.
 const STORAGE_KEY = "outlaws-field-app:v1";
 const HISTORY_KEY = "outlaws-field-app:games:v1";
 
-const DEFAULT_OUTLAWS_LINEUP = ["#00", "#3", "#6", "#11", "#15", "#18", "#20", "#22", "#31", "#41", "#99"];
+const DEFAULT_US_LINEUP = ["#00", "#3", "#6", "#11", "#15", "#18", "#20", "#22", "#31", "#41", "#99"];
 // Start empty: opponent lineups are rarely known pre-game, so live-add builds the
 // order from spot 1 instead of appending to placeholder junk numbers.
 const DEFAULT_OPPONENTS_LINEUP: string[] = [];
@@ -288,7 +295,7 @@ function makeV2Event(params: {
   pin: EventPin;
   description: string;
   outsAfter: number;
-  outlawsRunsAfter: number;
+  usRunsAfter: number;
   opponentRunsAfter: number;
   basesAfter: Bases;
 }): GameEventV2 {
@@ -306,7 +313,7 @@ function makeV2Event(params: {
     description: params.description,
     stateAfter: {
       outs: params.outsAfter,
-      outlawsRuns: params.outlawsRunsAfter,
+      usRuns: params.usRunsAfter,
       opponentRuns: params.opponentRunsAfter,
       bases: params.basesAfter,
     },
@@ -322,7 +329,7 @@ export default function Home() {
   const [oppRuns, setOppRuns] = useState(typeof saved.oppRuns === "number" ? saved.oppRuns : 0);
   const [balls, setBalls] = useState(0);
   const [strikes, setStrikes] = useState(0);
-  const [outlawsLineup, setOutlawsLineup] = useState<string[]>(saved.outlawsLineup || DEFAULT_OUTLAWS_LINEUP);
+  const [usLineup, setUsLineup] = useState<string[]>(saved.usLineup || DEFAULT_US_LINEUP);
   const [opponentsLineup, setOpponentsLineup] = useState<string[]>(saved.opponentsLineup || DEFAULT_OPPONENTS_LINEUP);
   const [defenseGroups, setDefenseGroups] = useState<DefenseGroups>(saved.defenseGroups || DEFAULT_DEFENSE_GROUPS);
   const [inningDefenseGroup, setInningDefenseGroup] = useState<Record<number, DefenseGroupName>>(saved.inningDefenseGroup || DEFAULT_INNING_DEFENSE_GROUP);
@@ -333,11 +340,11 @@ export default function Home() {
     if (showSetup) setupRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [showSetup]);
   const [gameFormat, setGameFormat] = useState<GameFormat>(saved.gameFormat || "coach_pitch");
-  const [outlawsAreHome, setOutlawsAreHome] = useState<boolean>(saved.outlawsAreHome ?? false);
+  const [usAreHome, setUsAreHome] = useState<boolean>(saved.usAreHome ?? false);
   const [teamAtBat, setTeamAtBat] = useState<TeamAtBat>(
-    saved.teamAtBat || ((saved.outlawsAreHome ?? false) ? "opponent" : "outlaws"),
+    saved.teamAtBat || ((saved.usAreHome ?? false) ? "them" : "us"),
   );
-  const [batter, setBatter] = useState(saved.batter || (saved.outlawsLineup?.[0] ?? DEFAULT_OUTLAWS_LINEUP[0]));
+  const [batter, setBatter] = useState(saved.batter || (saved.usLineup?.[0] ?? DEFAULT_US_LINEUP[0]));
   const [oppBatter, setOppBatter] = useState(saved.oppBatter || saved.opponentsLineup?.[0] || "");
   const [selectedResult, setSelectedResult] = useState<PlayResult>(saved.selectedResult || "single");
   const [pins, setPins] = useState<EventPin[]>(Array.isArray(saved.pins) ? saved.pins : []);
@@ -356,22 +363,22 @@ export default function Home() {
   // Display-safe opponent name (state can be empty while typing).
   const opponentLabel = opponentTeamName.trim() || "Opponents";
   // Home/away: the away team always bats first (top of the inning).
-  const awayTeam: TeamAtBat = outlawsAreHome ? "opponent" : "outlaws";
-  const homeTeam: TeamAtBat = outlawsAreHome ? "outlaws" : "opponent";
-  const teamLabel = (t: TeamAtBat) => (t === "outlaws" ? brandTeam.name : opponentLabel);
+  const awayTeam: TeamAtBat = usAreHome ? "them" : "us";
+  const homeTeam: TeamAtBat = usAreHome ? "us" : "them";
+  const teamLabel = (t: TeamAtBat) => (t === "us" ? brandTeam.name : opponentLabel);
   const halfLabel = (t: TeamAtBat) => (t === awayTeam ? "Top" : "Bottom");
 
   // Flip home/away before any plays are logged: move the leadoff team so the
   // change is immediately visible (away team bats first).
-  const toggleOutlawsHome = (nextHome: boolean) => {
-    setOutlawsAreHome(nextHome);
+  const toggleUsHome = (nextHome: boolean) => {
+    setUsAreHome(nextHome);
     if (pins.length === 0) {
-      setTeamAtBat(nextHome ? "opponent" : "outlaws");
+      setTeamAtBat(nextHome ? "them" : "us");
     }
   };
 
-  const activeLineup = teamAtBat === "outlaws" ? outlawsLineup : opponentsLineup;
-  const activeBatter = teamAtBat === "outlaws" ? batter : oppBatter;
+  const activeLineup = teamAtBat === "us" ? usLineup : opponentsLineup;
+  const activeBatter = teamAtBat === "us" ? batter : oppBatter;
   const currentDefenseGroup = getDefenseGroupForInning(inningDefenseGroup, inning);
   const currentDefense = defenseGroups[currentDefenseGroup] || makeBlankDefense();
   const activeDefenseSpots = getDefenseSpotsForFormat(gameFormat);
@@ -385,7 +392,7 @@ export default function Home() {
   // the unapplied migration 001. This is a validation fix and does not wait on
   // the schema.
   //
-  // The union is required, not defensive. `outlawsLineup` holds jersey numbers
+  // The union is required, not defensive. `usLineup` holds jersey numbers
   // ("#00", "#3", …) while `defenseGroups` holds names ("Jack", "Linc") — that
   // mismatch is B5, and the two sets do not intersect on a default install.
   // Offering only the lineup would make every existing assignment an
@@ -394,7 +401,7 @@ export default function Home() {
   const defenseRosterOptions = useMemo(() => {
     const ordered: string[] = [];
     const seen = new Set<string>();
-    for (const raw of outlawsLineup) {
+    for (const raw of usLineup) {
       const name = canonicalPlayerName(raw);
       if (!name || name === "Unknown" || seen.has(name)) continue;
       seen.add(name);
@@ -411,7 +418,7 @@ export default function Home() {
       }
     }
     return [...ordered, ...[...extras].sort((a, b) => a.localeCompare(b))];
-  }, [outlawsLineup, defenseGroups]);
+  }, [usLineup, defenseGroups]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -425,18 +432,18 @@ export default function Home() {
       selectedResult,
       pins,
       teamAtBat,
-      outlawsLineup,
+      usLineup,
       opponentsLineup,
       defenseGroups,
       inningDefenseGroup,
       bases,
       opponentTeamName,
-      outlawsAreHome,
+      usAreHome,
       gameFormat,
       eventsV2: eventLog,
     };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, [inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, outlawsLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, outlawsAreHome, gameFormat, eventLog]);
+  }, [inning, outs, ourRuns, oppRuns, batter, oppBatter, selectedResult, pins, teamAtBat, usLineup, opponentsLineup, defenseGroups, inningDefenseGroup, bases, opponentTeamName, usAreHome, gameFormat, eventLog]);
 
   const summary = useMemo(() => {
     const outCount = pins.filter((p) => p.result === "out" || p.result === "strikeout" || p.result === "fielders_choice").length;
@@ -446,15 +453,15 @@ export default function Home() {
 
   const linescore = useMemo(() => {
     const events = [...eventLog].reverse();
-    const innings = new Map<number, { outlaws: number; opponent: number }>();
-    let prevOutlaws = 0;
+    const innings = new Map<number, { us: number; them: number }>();
+    let prevUs = 0;
     let prevOpp = 0;
     for (const event of events) {
-      const prior = innings.get(event.inning) || { outlaws: 0, opponent: 0 };
-      const dOutlaws = Math.max(0, event.stateAfter.outlawsRuns - prevOutlaws);
+      const prior = innings.get(event.inning) || { us: 0, them: 0 };
+      const dUs = Math.max(0, event.stateAfter.usRuns - prevUs);
       const dOpp = Math.max(0, event.stateAfter.opponentRuns - prevOpp);
-      innings.set(event.inning, { outlaws: prior.outlaws + dOutlaws, opponent: prior.opponent + dOpp });
-      prevOutlaws = event.stateAfter.outlawsRuns;
+      innings.set(event.inning, { us: prior.us + dUs, them: prior.them + dOpp });
+      prevUs = event.stateAfter.usRuns;
       prevOpp = event.stateAfter.opponentRuns;
     }
     return Array.from(innings.entries()).sort((a, b) => a[0] - b[0]);
@@ -462,7 +469,7 @@ export default function Home() {
 
   const boxScore = useMemo(() => {
     const byBatter: Record<string, { PA: number; AB: number; H: number; BB: number; K: number; R: number }> = {};
-    for (const event of eventLog.filter((e) => e.battingTeam === "outlaws" && e.eventType === "ball_in_play")) {
+    for (const event of eventLog.filter((e) => e.battingTeam === "us" && e.eventType === "ball_in_play")) {
       const name = canonicalPlayerName(event.batter || "Unknown");
       if (!byBatter[name]) byBatter[name] = { PA: 0, AB: 0, H: 0, BB: 0, K: 0, R: 0 };
       byBatter[name].PA += 1;
@@ -542,10 +549,10 @@ export default function Home() {
       setBases(nextBases);
     }
 
-    const nextOutlawsRuns = teamAtBat === "outlaws" ? ourRuns + runs : ourRuns;
-    const nextOpponentRuns = teamAtBat === "opponent" ? oppRuns + runs : oppRuns;
+    const nextUsRuns = teamAtBat === "us" ? ourRuns + runs : ourRuns;
+    const nextOpponentRuns = teamAtBat === "them" ? oppRuns + runs : oppRuns;
     if (runs > 0) {
-      if (teamAtBat === "outlaws") setOurRuns((v) => v + runs);
+      if (teamAtBat === "us") setOurRuns((v) => v + runs);
       else setOppRuns((v) => v + runs);
     }
 
@@ -556,8 +563,8 @@ export default function Home() {
     setLastPlay(description);
     setBalls(0);
     setStrikes(0);
-    if (teamAtBat === "outlaws") {
-      setBatter((current) => nextLineupPlayer(outlawsLineup, current));
+    if (teamAtBat === "us") {
+      setBatter((current) => nextLineupPlayer(usLineup, current));
     } else {
       setOppBatter((current) => nextLineupPlayer(opponentsLineup, current));
     }
@@ -566,7 +573,7 @@ export default function Home() {
         pin: next,
         description,
         outsAfter: nextOuts,
-        outlawsRunsAfter: nextOutlawsRuns,
+        usRunsAfter: nextUsRuns,
         opponentRunsAfter: nextOpponentRuns,
         basesAfter,
       }),
@@ -627,7 +634,7 @@ export default function Home() {
         description: `${activeBatter}: ${outcome.replaceAll("_", " ")} (${nextBalls}-${nextStrikes})`,
         stateAfter: {
           outs,
-          outlawsRuns: ourRuns,
+          usRuns: ourRuns,
           opponentRuns: oppRuns,
           bases,
         },
@@ -682,9 +689,9 @@ export default function Home() {
       pins,
       eventsV2: eventLog,
       schemaVersion: 2,
-      score: { outlaws: ourRuns, opponents: oppRuns },
+      score: { us: ourRuns, opponents: oppRuns },
       opponentTeamName: opponentLabel,
-      outlawsAreHome,
+      usAreHome,
     };
     window.localStorage.setItem(HISTORY_KEY, JSON.stringify([entry, ...existing]));
     setLastSavedGameId(null);
@@ -710,8 +717,8 @@ export default function Home() {
     setOppRuns(0);
     setInning(1);
     setOuts(0);
-    setTeamAtBat(outlawsAreHome ? "opponent" : "outlaws");
-    setBatter(outlawsLineup[0] ?? "#00");
+    setTeamAtBat(usAreHome ? "them" : "us");
+    setBatter(usLineup[0] ?? "#00");
     setOppBatter(opponentsLineup[0] ?? "");
     setSelectedResult("single");
     setBases(EMPTY_BASES);
@@ -731,8 +738,8 @@ export default function Home() {
     setOppRuns(0);
     setInning(1);
     setOuts(0);
-    setTeamAtBat(outlawsAreHome ? "opponent" : "outlaws");
-    setBatter(outlawsLineup[0] ?? "#00");
+    setTeamAtBat(usAreHome ? "them" : "us");
+    setBatter(usLineup[0] ?? "#00");
     setOppBatter(opponentsLineup[0] ?? "");
     setSelectedResult("single");
     setBases(EMPTY_BASES);
@@ -769,20 +776,20 @@ export default function Home() {
   const loadTestModeGame = () => {
     const now = Date.now();
     const demoPins: EventPin[] = [
-      { id: now + 1, batter: "#3", result: "single", zone: "left_field", x: 24, y: 40, inning: 1, battingTeam: "outlaws" },
-      { id: now + 2, batter: "#6", result: "out", zone: "shortstop", x: 44, y: 56, inning: 1, battingTeam: "outlaws" },
-      { id: now + 3, batter: "#11", result: "double", zone: "right_center", x: 67, y: 33, inning: 2, battingTeam: "opponent" },
-      { id: now + 4, batter: "#15", result: "strikeout", zone: "catcher_zone", x: 50, y: 82, inning: 2, battingTeam: "opponent" },
-      { id: now + 5, batter: "#18", result: "walk", zone: "pitcher_zone", x: 50, y: 65, inning: 3, battingTeam: "outlaws" },
-      { id: now + 6, batter: "#20", result: "home_run", zone: "center_field", x: 50, y: 28, inning: 3, battingTeam: "outlaws" },
+      { id: now + 1, batter: "#3", result: "single", zone: "left_field", x: 24, y: 40, inning: 1, battingTeam: "us" },
+      { id: now + 2, batter: "#6", result: "out", zone: "shortstop", x: 44, y: 56, inning: 1, battingTeam: "us" },
+      { id: now + 3, batter: "#11", result: "double", zone: "right_center", x: 67, y: 33, inning: 2, battingTeam: "them" },
+      { id: now + 4, batter: "#15", result: "strikeout", zone: "catcher_zone", x: 50, y: 82, inning: 2, battingTeam: "them" },
+      { id: now + 5, batter: "#18", result: "walk", zone: "pitcher_zone", x: 50, y: 65, inning: 3, battingTeam: "us" },
+      { id: now + 6, batter: "#20", result: "home_run", zone: "center_field", x: 50, y: 28, inning: 3, battingTeam: "us" },
     ];
     setPins(demoPins);
     setOurRuns(3);
     setOppRuns(1);
     setInning(4);
     setOuts(1);
-    setTeamAtBat("outlaws");
-    setBatter(outlawsLineup[0] ?? "#00");
+    setTeamAtBat("us");
+    setBatter(usLineup[0] ?? "#00");
     setOppBatter(opponentsLineup[0] ?? "");
     setSelectedResult("single");
     setBases({ first: null, second: null, third: null });
@@ -818,7 +825,7 @@ export default function Home() {
   };
 
   const setActiveBatter = (name: string) => {
-    if (teamAtBat === "outlaws") setBatter(name);
+    if (teamAtBat === "us") setBatter(name);
     else setOppBatter(name);
   };
 
@@ -827,7 +834,7 @@ export default function Home() {
   const addBatterToActiveLineup = (rawName: string) => {
     const name = rawName.trim();
     if (!name) return;
-    const setLineup = teamAtBat === "outlaws" ? setOutlawsLineup : setOpponentsLineup;
+    const setLineup = teamAtBat === "us" ? setUsLineup : setOpponentsLineup;
     setLineup((prev) => (prev.includes(name) ? prev : [...prev, name].slice(0, MAX_LINEUP_PLAYERS)));
     setActiveBatter(name);
     setLastPlay(`Added ${name} to ${teamLabel(teamAtBat)} lineup and set as batter.`);
@@ -852,7 +859,7 @@ export default function Home() {
     const typed = typeof window === "undefined" ? null : window.prompt("New player name");
     const name = (typed || "").trim();
     if (!name) return;
-    setOutlawsLineup((prev) =>
+    setUsLineup((prev) =>
       prev.includes(name) ? prev : [...prev, name].slice(0, MAX_LINEUP_PLAYERS),
     );
     updateDefenseSpot(group, spot, name);
@@ -913,15 +920,15 @@ export default function Home() {
           <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
             <button
               type="button"
-              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "outlaws" ? "border-d-pos bg-d-pos/10" : "border-d-line bg-d-sunken"}`}
-              onClick={() => setTeamAtBat("outlaws")}
+              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "us" ? "border-d-pos bg-d-pos/10" : "border-d-line bg-d-sunken"}`}
+              onClick={() => setTeamAtBat("us")}
             >
               {brandTeam.name} Batting
             </button>
             <button
               type="button"
-              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "opponent" ? "border-d-neg bg-d-neg/10" : "border-d-line bg-d-sunken"}`}
-              onClick={() => setTeamAtBat("opponent")}
+              className={`rounded-xl border px-5 py-3.5 text-sm font-bold tracking-wide touch-manipulation min-h-[48px] active:scale-[0.985] transition-all ${teamAtBat === "them" ? "border-d-neg bg-d-neg/10" : "border-d-line bg-d-sunken"}`}
+              onClick={() => setTeamAtBat("them")}
             >
               {opponentLabel} Batting
             </button>
@@ -1044,7 +1051,7 @@ export default function Home() {
                 style={{
                   left: `${pin.x}%`,
                   top: `${pin.y}%`,
-                  backgroundColor: pin.result === "out" || pin.result === "strikeout" ? "#dc2626" : pin.battingTeam === "outlaws" ? "#0f766e" : "#c026d3",
+                  backgroundColor: pin.result === "out" || pin.result === "strikeout" ? "#dc2626" : pin.battingTeam === "us" ? "#0f766e" : "#c026d3",
                 }}
                 title={`${pin.batter} ${resultLabel[pin.result]} (${pin.zone}) inning ${pin.inning}`}
               >
@@ -1139,12 +1146,12 @@ export default function Home() {
                     <tbody>
                       <tr>
                         <td className="px-2 py-1 font-semibold">{brandTeam.name}</td>
-                        {linescore.map(([inn, v]) => <td key={`o-${inn}`} className="px-2 py-1 text-center">{v.outlaws}</td>)}
+                        {linescore.map(([inn, v]) => <td key={`o-${inn}`} className="px-2 py-1 text-center">{v.us}</td>)}
                         <td className="px-2 py-1 text-center font-bold">{ourRuns}</td>
                       </tr>
                       <tr>
                         <td className="px-2 py-1 font-semibold">{opponentLabel}</td>
-                        {linescore.map(([inn, v]) => <td key={`p-${inn}`} className="px-2 py-1 text-center">{v.opponent}</td>)}
+                        {linescore.map(([inn, v]) => <td key={`p-${inn}`} className="px-2 py-1 text-center">{v.them}</td>)}
                         <td className="px-2 py-1 text-center font-bold">{oppRuns}</td>
                       </tr>
                     </tbody>
@@ -1207,12 +1214,12 @@ export default function Home() {
               result: pin.result,
               battingTeam: pin.battingTeam,
               description: `${pin.batter} · ${resultLabel[pin.result]} · ${pin.zone.replaceAll("_", " ")}`,
-              stateAfter: { outs, outlawsRuns: ourRuns, opponentRuns: oppRuns, bases },
+              stateAfter: { outs, usRuns: ourRuns, opponentRuns: oppRuns, bases },
             }))).map((event) => (
               <li key={`recent-${event.id}`} className="rounded-lg border border-d-line bg-d-surface p-2">
                 <div className="font-semibold">{event.batter} · {resultLabel[event.result]} · Inning {event.inning}</div>
-                <div className="text-d-ink-2">{event.battingTeam === "outlaws" ? brandTeam.name : opponentLabel} · {event.description}</div>
-                <div className="text-d-ink-3">Outs {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
+                <div className="text-d-ink-2">{event.battingTeam === "us" ? brandTeam.name : opponentLabel} · {event.description}</div>
+                <div className="text-d-ink-3">Outs {event.stateAfter.outs} · Score {event.stateAfter.usRuns}-{event.stateAfter.opponentRuns}</div>
               </li>
             ))}
             {pins.length === 0 && <li className="text-d-ink-3">No plays logged yet.</li>}
@@ -1290,22 +1297,22 @@ export default function Home() {
                   <button
                     type="button"
                     disabled={pins.length > 0}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${!outlawsAreHome ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
-                    onClick={() => toggleOutlawsHome(false)}
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${!usAreHome ? "border-d-sel bg-d-sel/10 text-d-sel" : "border-d-line bg-d-sunken text-d-ink-2"}`}
+                    onClick={() => toggleUsHome(false)}
                   >
                     Away (bat first)
                   </button>
                   <button
                     type="button"
                     disabled={pins.length > 0}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${outlawsAreHome ? "border-d-pos bg-d-pos/10 text-d-pos" : "border-d-line bg-d-sunken text-d-ink-2"}`}
-                    onClick={() => toggleOutlawsHome(true)}
+                    className={`rounded-xl border px-3 py-2.5 text-sm font-bold min-h-[44px] touch-manipulation disabled:opacity-50 ${usAreHome ? "border-d-pos bg-d-pos/10 text-d-pos" : "border-d-line bg-d-sunken text-d-ink-2"}`}
+                    onClick={() => toggleUsHome(true)}
                   >
                     Home (bat last)
                   </button>
                 </div>
                 <span className="text-[11px] text-d-ink-3">
-                  {outlawsAreHome
+                  {usAreHome
                     ? `${opponentLabel} bats top, ${brandTeam.name} bat bottom.`
                     : `${brandTeam.name} bat top, ${opponentLabel} bats bottom.`}
                   {pins.length > 0 ? " (Locked: plays already logged.)" : ""}
@@ -1314,8 +1321,8 @@ export default function Home() {
               <SavedGamesCheck />
               <LineupEditor
                 label={`${brandTeam.name} Lineup`}
-                lineup={outlawsLineup}
-                onChange={setOutlawsLineup}
+                lineup={usLineup}
+                onChange={setUsLineup}
                 accent="cyan"
                 addLabel="Add Batter"
               />
@@ -1741,12 +1748,54 @@ function FieldDot({ x, y, label, player }: { x: number; y: number; label: string
   );
 }
 
+// One V2 event out of a pre-006 blob. `stateAfter.usRuns` was `outlawsRuns`.
+function normalizeLegacyEvent(event: GameEventV2): GameEventV2 {
+  const legacy = event.stateAfter as GameEventV2["stateAfter"] & { outlawsRuns?: number };
+  return {
+    ...event,
+    battingTeam: toTeamAtBat(event.battingTeam),
+    stateAfter: {
+      ...event.stateAfter,
+      usRuns: typeof legacy.usRuns === "number" ? legacy.usRuns : legacy.outlawsRuns ?? 0,
+    },
+  };
+}
+
+// ⚠️ The single chokepoint where a pre-006 localStorage blob becomes current
+// state. Normalise here, not at the ~6 call sites, and never behind a version
+// flag — the blob has no version field and Stuart's phone holds the only copy
+// of an in-progress game. If `usLineup` came back undefined because the stored
+// key still says `outlawsLineup`, the lineup silently resets to the default
+// eleven jersey numbers mid-game and the batting order is gone.
+//
+// The storage KEY itself (`outlaws-field-app:v1`) is deliberately unchanged —
+// that rename is T7 / MT-4 and carries its own migration.
 function readSavedGameState(): Partial<SavedGameState> {
   if (typeof window === "undefined") return {};
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return {};
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as Partial<SavedGameState> & LegacyPersistedGamePayload;
+    const usLineup = readUsLineup(parsed);
+    return {
+      ...parsed,
+      ...(usLineup ? { usLineup } : {}),
+      usAreHome: readUsAreHome(parsed),
+      // Pins written before 006 say "outlaws"/"opponent" (or, older still,
+      // "wahoos"). Left raw they fail every `=== "us"` comparison, so the
+      // scoreboard, spray chart and box score would all read as if the whole
+      // game were the opponent's at-bats.
+      ...(Array.isArray(parsed.pins)
+        ? { pins: parsed.pins.map((p) => ({ ...p, battingTeam: toTeamAtBat(p.battingTeam) })) }
+        : {}),
+      ...(parsed.teamAtBat ? { teamAtBat: toTeamAtBat(parsed.teamAtBat) } : {}),
+      // Same for the V2 event log, which additionally carries the running
+      // score under `stateAfter.outlawsRuns` in pre-006 blobs. Without this
+      // the linescore renders every inning as 0 for us.
+      ...(Array.isArray(parsed.eventsV2)
+        ? { eventsV2: parsed.eventsV2.map(normalizeLegacyEvent) }
+        : {}),
+    };
   } catch {
     return {};
   }

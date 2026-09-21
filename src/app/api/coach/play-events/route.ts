@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const gameId = searchParams.get('id');
-    const team = searchParams.get('team') || 'outlaws';
+    const team = searchParams.get('team') || 'us';
 
     if (!gameId) {
       return Response.json({ ok: false, error: 'Game ID is required' }, { status: 400 });

@@ -6,8 +6,9 @@ import HeatmapCanvas from '@/components/coach/heatmap-canvas';
 import type { PlayEvent } from '@/lib/coach/types';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
 import { team as brandTeam } from '@/lib/brand-config';
+import { readScoreUs, readUsLineup, toTeamAtBat } from '@/lib/coach/game-types';
 
-type TeamKey = 'outlaws' | 'opponent';
+type TeamKey = 'us' | 'them';
 type Scope = 'current' | 'multiple' | 'all';
 
 type StoredPin = {
@@ -17,7 +18,11 @@ type StoredPin = {
   result: string;
   batter?: string;
   inning?: number;
-  battingTeam?: TeamKey | 'wahoos';
+  // Widened to string on purpose: these pins come straight out of localStorage
+  // and carry three generations of vocabulary ('outlaws'/'opponent' pre-006,
+  // 'wahoos' older still, 'us'/'them' now). Every read goes through
+  // toTeamAtBat() rather than comparing the raw value.
+  battingTeam?: string;
   zone?: string;
   description?: string;
 };
@@ -27,7 +32,7 @@ type StoredGame = {
   label?: string;
   date?: string;
   pins?: StoredPin[];
-  score?: { outlaws: number; opponents: number };
+  score?: { us: number; opponents: number };
   opponentTeamName?: string;
 };
 
@@ -38,11 +43,13 @@ type DefenseGroups = Record<DefenseGroupName, DefenseAssignments>;
 type DefenseSnapshot = {
   groups: DefenseGroups | null;
   perInning: Record<number, DefenseGroupName> | null;
-  outlawsLineup: string[];
-  score: { outlaws: number; opponents: number };
+  usLineup: string[];
+  score: { us: number; opponents: number };
   opponentTeamName: string;
 };
 
+// Not renamed by 006 — see the note on the same constants in coach/page.tsx.
+// These address Stuart's live game state; the T7 key rename is MT-3/MT-4.
 const STORAGE_KEY = 'outlaws-field-app:v1';
 const HISTORY_KEY = 'outlaws-field-app:games:v1';
 const DEFENSE_SPOTS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'LCF', 'RCF', 'RF', 'BENCH'] as const;
@@ -104,24 +111,27 @@ function loadGames(): StoredGame[] {
 
 function loadDefense(): DefenseSnapshot {
   if (typeof window === 'undefined') {
-    return { groups: null, perInning: null, outlawsLineup: [], score: { outlaws: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
+    return { groups: null, perInning: null, usLineup: [], score: { us: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
   }
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { groups: null, perInning: null, outlawsLineup: [], score: { outlaws: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
+    if (!raw) return { groups: null, perInning: null, usLineup: [], score: { us: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
     const parsed = JSON.parse(raw);
     return {
       groups: parsed.defenseGroups || null,
       perInning: parsed.inningDefenseGroup || null,
-      outlawsLineup: Array.isArray(parsed.outlawsLineup) ? parsed.outlawsLineup : [],
+      // readUsLineup, not `parsed.usLineup`: a blob written before 006 stores
+      // the batting order under `outlawsLineup`, and reading only the new key
+      // would show an empty lineup and a fairness grid with no players in it.
+      usLineup: readUsLineup(parsed) ?? [],
       score: {
-        outlaws: typeof parsed.ourRuns === 'number' ? parsed.ourRuns : 0,
+        us: typeof parsed.ourRuns === 'number' ? parsed.ourRuns : 0,
         opponents: typeof parsed.oppRuns === 'number' ? parsed.oppRuns : 0,
       },
       opponentTeamName: typeof parsed.opponentTeamName === 'string' && parsed.opponentTeamName.trim() ? parsed.opponentTeamName.trim() : 'Opponents',
     };
   } catch {
-    return { groups: null, perInning: null, outlawsLineup: [], score: { outlaws: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
+    return { groups: null, perInning: null, usLineup: [], score: { us: 0, opponents: 0 }, opponentTeamName: 'Opponents' };
   }
 }
 
@@ -145,7 +155,7 @@ function buildInningGrid(snapshot: DefenseSnapshot, innings = PLANNED_INNINGS) {
 }
 
 function buildFairness(snapshot: DefenseSnapshot, innings = PLANNED_INNINGS) {
-  const players = new Set<string>(snapshot.outlawsLineup.map((name) => canonicalPlayerName(name)));
+  const players = new Set<string>(snapshot.usLineup.map((name) => canonicalPlayerName(name)));
   for (const group of DEFENSE_GROUP_NAMES) {
     const assignments = snapshot.groups?.[group];
     if (!assignments) continue;
@@ -217,7 +227,7 @@ function zoneByPoint(x: number, y: number): string {
 function buildZoneStats(pins: StoredPin[], selectedTeam: TeamKey) {
   const isHit = (r: string) => ['single', 'double', 'triple', 'home_run', 'hit'].includes(r);
   const isOutResult = (r: string) => ['out', 'strikeout', 'fielders_choice'].includes(r);
-  const teamOf = (p: StoredPin): TeamKey => (p.battingTeam === 'wahoos' ? 'opponent' : p.battingTeam || 'outlaws');
+  const teamOf = (p: StoredPin): TeamKey => toTeamAtBat(p.battingTeam);
   const zones: Record<string, { hits: number; outs: number }> = {};
   for (const key of Object.keys(ZONE_LABELS)) zones[key] = { hits: 0, outs: 0 };
   for (const p of pins) {
@@ -235,8 +245,7 @@ const OUT_RESULTS = new Set(['out', 'strikeout', 'fielders_choice']);
 const REACHED_RESULTS = new Set(['single', 'double', 'triple', 'home_run', 'walk', 'error']);
 
 function teamOfPin(pin: StoredPin): TeamKey {
-  if (pin.battingTeam === 'wahoos') return 'opponent';
-  return pin.battingTeam || 'outlaws';
+  return toTeamAtBat(pin.battingTeam);
 }
 
 function buildPlayerReports(pins: StoredPin[], selectedTeam: TeamKey) {
@@ -328,13 +337,13 @@ function buildMarkdownExport(game: StoredGame, snapshot: DefenseSnapshot): strin
   lines.push(`# ${brandTeam.name} Game Summary — ${game.label || date}`);
   lines.push('');
   lines.push(`**Date:** ${date}`);
-  lines.push(`**Score:** ${brandTeam.name} ${score.outlaws} — ${opponentTeamName} ${score.opponents}`);
+  lines.push(`**Score:** ${brandTeam.name} ${readScoreUs(score)} — ${opponentTeamName} ${score.opponents}`);
   lines.push(`**Total Plays Logged:** ${pins.length}`);
   lines.push('');
 
-  if (snapshot.outlawsLineup.length > 0) {
+  if (snapshot.usLineup.length > 0) {
     lines.push(`## ${brandTeam.name} Lineup`);
-    lines.push(snapshot.outlawsLineup.map((p, i) => `${i + 1}. ${p}`).join('\n'));
+    lines.push(snapshot.usLineup.map((p, i) => `${i + 1}. ${p}`).join('\n'));
     lines.push('');
   }
 
@@ -361,7 +370,7 @@ function buildMarkdownExport(game: StoredGame, snapshot: DefenseSnapshot): strin
     lines.push('| # | Inning | Team | Batter | Result | Zone |');
     lines.push('| --- | --- | --- | --- | --- | --- |');
     pins.slice().reverse().forEach((p, idx) => {
-      const team = (p.battingTeam === 'wahoos' ? 'opponent' : p.battingTeam) || 'outlaws';
+      const team = toTeamAtBat(p.battingTeam);
       const zone = p.zone || zoneByPoint(p.x, p.y);
       lines.push(`| ${idx + 1} | ${p.inning ?? '-'} | ${team} | ${canonicalPlayerName(p.batter) || '-'} | ${p.result} | ${ZONE_LABELS[zone] || zone} |`);
     });
@@ -375,7 +384,7 @@ function buildCsvExport(game: StoredGame): string {
   const pins = game.pins || [];
   const rows = [['id', 'inning', 'team', 'batter', 'result', 'zone', 'x', 'y']];
   for (const p of pins.slice().reverse()) {
-    const team = (p.battingTeam === 'wahoos' ? 'opponent' : p.battingTeam) || 'outlaws';
+    const team = toTeamAtBat(p.battingTeam);
     const zone = p.zone || zoneByPoint(p.x, p.y);
     rows.push([String(p.id), String(p.inning ?? ''), team, canonicalPlayerName(p.batter), p.result, zone, p.x.toFixed(2), p.y.toFixed(2)]);
   }
@@ -389,7 +398,7 @@ function pinsToPlayEvents(pins: StoredPin[], selectedPlayer: string | null): Pla
     .map((p, i) => ({
       id: String(p.id ?? i),
       batter: canonicalPlayerName(p.batter),
-      battingTeam: (p.battingTeam === 'wahoos' ? 'opponent' : p.battingTeam || 'outlaws') as 'outlaws' | 'opponent',
+      battingTeam: toTeamAtBat(p.battingTeam),
       result: p.result as PlayEvent['result'],
       zone: (p.zone || 'center_field') as PlayEvent['zone'],
       x: p.x,
@@ -400,7 +409,7 @@ function pinsToPlayEvents(pins: StoredPin[], selectedPlayer: string | null): Pla
 }
 
 export default function Dashboard() {
-  const [selectedTeam, setSelectedTeam] = useState<TeamKey>('outlaws');
+  const [selectedTeam, setSelectedTeam] = useState<TeamKey>('us');
   const [scope, setScope] = useState<Scope>('all');
   const [selectedPlayer, setSelectedPlayer] = useState<string>('all');
 
@@ -415,7 +424,7 @@ export default function Dashboard() {
           const localIds = new Set(localGames.map((g) => g.id));
           const newFromServer: StoredGame[] = data.games
             .filter((g: { id: string }) => !localIds.has(g.id))
-            .map((g: { id: string; label?: string; date?: string; opponentTeamName?: string; score?: { outlaws: number; opponents: number }; pinCount?: number; pins?: StoredPin[] }) => ({
+            .map((g: { id: string; label?: string; date?: string; opponentTeamName?: string; score?: { us: number; opponents: number }; pinCount?: number; pins?: StoredPin[] }) => ({
               id: g.id,
               label: g.label,
               date: g.date,
@@ -452,7 +461,7 @@ export default function Dashboard() {
   const playerOptions = useMemo(() => {
     const values = new Set<string>();
     for (const pin of scopedPins) {
-      const normalizedTeam = pin.battingTeam === 'wahoos' ? 'opponent' : (pin.battingTeam || 'outlaws');
+      const normalizedTeam = toTeamAtBat(pin.battingTeam);
       if (normalizedTeam !== selectedTeam) continue;
       const rawName = (pin.batter || '').trim();
       if (!rawName) continue;
@@ -469,7 +478,7 @@ export default function Dashboard() {
   const selectedSummary = useMemo(() => buildContactSummary(scopedPins, selectedTeam), [scopedPins, selectedTeam]);
   const playerReports = useMemo(() => buildPlayerReports(scopedPins, selectedTeam), [scopedPins, selectedTeam]);
   const selectedZoneReport = useMemo(() => buildZoneReport(scopedPins, selectedTeam), [scopedPins, selectedTeam]);
-  const opponentGapReport = useMemo(() => buildZoneReport(scopedPins, 'opponent'), [scopedPins]);
+  const opponentGapReport = useMemo(() => buildZoneReport(scopedPins, 'them'), [scopedPins]);
 
   const defenseSnapshot = useMemo(() => loadDefense(), []);
   const inningGrid = useMemo(() => buildInningGrid(defenseSnapshot), [defenseSnapshot]);
@@ -536,14 +545,14 @@ export default function Dashboard() {
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Team View</h2>
             <div className="grid grid-cols-2 gap-2">
               <button
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'outlaws' ? 'border-d-pos bg-d-pos text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
-                onClick={() => setSelectedTeam('outlaws')}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'us' ? 'border-d-pos bg-d-pos text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
+                onClick={() => setSelectedTeam('us')}
               >
                 {brandTeam.name}
               </button>
               <button
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'opponent' ? 'border-d-neg bg-d-neg text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
-                onClick={() => setSelectedTeam('opponent')}
+                className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 ${selectedTeam === 'them' ? 'border-d-neg bg-d-neg text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
+                onClick={() => setSelectedTeam('them')}
               >
                 {opponentTeamLabel}
               </button>
@@ -590,7 +599,7 @@ export default function Dashboard() {
               value={selectedPlayer}
               onChange={(e) => setSelectedPlayer(e.target.value)}
             >
-              <option value="all">All batters ({selectedTeam === 'outlaws' ? brandTeam.name : opponentTeamLabel})</option>
+              <option value="all">All batters ({selectedTeam === 'us' ? brandTeam.name : opponentTeamLabel})</option>
               {playerOptions.map((name) => (
                 <option key={name} value={name}>{name}</option>
               ))}
@@ -625,7 +634,7 @@ export default function Dashboard() {
           <section className="rounded-xl border border-d-line bg-d-surface p-4 lg:col-span-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Where Balls Are Finding Grass</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <ZoneList title={selectedTeam === 'outlaws' ? `${brandTeam.name} Contact` : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
+              <ZoneList title={selectedTeam === 'us' ? `${brandTeam.name} Contact` : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
               <ZoneList title="Defensive Gap Watch" rows={opponentGapReport} />
             </div>
           </section>

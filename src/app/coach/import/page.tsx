@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { readUsLineup } from "@/lib/coach/game-types";
 
 interface GameEvent {
   batter: string;
-  battingTeam: "outlaws" | "opponent";
+  battingTeam: "us" | "them";
   result: "single" | "double" | "triple" | "home_run" | "out" | "error" | "fielders_choice" | "strikeout" | "walk" | "foul";
   zone: string;
   x: number;
@@ -34,7 +35,7 @@ export default function GameImportPage() {
   const [gameLabel, setGameLabel] = useState<string>("");
   const [gameDate, setGameDate] = useState<string>("");
   const [events, setEvents] = useState<GameEvent[]>([]);
-  const [outlawsRuns, setOutlawsRuns] = useState<number>(0);
+  const [usRuns, setUsRuns] = useState<number>(0);
   const [opponentRuns, setOpponentRuns] = useState<number>(0);
   const [opponentTeamName, setOpponentTeamName] = useState<string>("Opponents");
   const [batters, setBatters] = useState<string[]>(DEFAULT_BATTERS);
@@ -54,9 +55,12 @@ export default function GameImportPage() {
 
         const storedGames = rawHistory ? (JSON.parse(rawHistory) as Array<{ id?: string; label?: string; opponentTeamName?: string; pins?: unknown[] }>) : [];
         const existingIds = storedGames.filter((g) => g.pins && Array.isArray(g.pins) && g.id).map((g) => g.id as string);
-        const current = rawCurrent ? JSON.parse(rawCurrent) as { outlawsLineup?: string[]; opponentsLineup?: string[]; opponentTeamName?: string } : null;
+        const current = rawCurrent ? JSON.parse(rawCurrent) as { usLineup?: string[]; outlawsLineup?: string[]; opponentsLineup?: string[]; opponentTeamName?: string } : null;
+        // readUsLineup, not `current?.usLineup`: pre-006 blobs spell it
+        // `outlawsLineup`, and missing it here means the import screen offers
+        // only the opponent's batters to pick from.
         const loadedBatters = [
-          ...(Array.isArray(current?.outlawsLineup) ? current.outlawsLineup : []),
+          ...(readUsLineup(current) ?? []),
           ...(Array.isArray(current?.opponentsLineup) ? current.opponentsLineup : []),
         ].filter(Boolean);
         if (loadedBatters.length > 0) setBatters(Array.from(new Set(loadedBatters)));
@@ -79,7 +83,7 @@ export default function GameImportPage() {
     const zone = "center_field";
     setEvents([...events, {
       batter: batters[batters.length - 1] || "#00",
-      battingTeam: "opponent",
+      battingTeam: "them",
       result: "single",
       zone,
       x: ZONE_COORDS[zone].x,
@@ -111,7 +115,7 @@ export default function GameImportPage() {
             label: gameLabel || `${syncDate.slice(0, 10)} vs ${opponentTeamName}`,
             date: syncDate,
             opponentTeamName,
-            score: { outlaws: outlawsRuns, opponents: opponentRuns },
+            score: { us: usRuns, opponents: opponentRuns },
             schemaVersion: 2,
             pins: events.map(e => ({
               id: events.indexOf(e),
@@ -134,7 +138,7 @@ export default function GameImportPage() {
         
         // Reset form
         setEvents([]);
-        setOutlawsRuns(0);
+        setUsRuns(0);
         setOpponentRuns(0);
         setTimeout(() => setSynced(false), 2000);
       } else {
@@ -218,8 +222,8 @@ export default function GameImportPage() {
             <input
               type="number"
               min="0"
-              value={outlawsRuns}
-              onChange={(e) => setOutlawsRuns(Math.max(0, parseInt(e.target.value) || 0))}
+              value={usRuns}
+              onChange={(e) => setUsRuns(Math.max(0, parseInt(e.target.value) || 0))}
               className="w-16 rounded border border-d-line bg-d-sunken px-2 py-1 text-center text-sm text-d-ink focus:border-d-sel focus:outline-none"
             />
           </div>
@@ -294,8 +298,8 @@ export default function GameImportPage() {
                   onChange={(e) => handleUpdateEvent(index, "battingTeam", e.target.value)}
                   className="w-full rounded border border-d-line bg-d-sunken px-2 py-1 text-sm text-d-ink focus:border-d-sel focus:outline-none"
                 >
-                  <option value="opponent">{opponentTeamName}</option>
-                  <option value="outlaws">Outlaws</option>
+                  <option value="them">{opponentTeamName}</option>
+                  <option value="us">Outlaws</option>
                 </select>
               </div>
 

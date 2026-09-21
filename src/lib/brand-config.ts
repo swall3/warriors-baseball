@@ -9,17 +9,26 @@
 //   team display names, brand hex values, logo/mascot paths.
 //
 // WHAT DOES NOT BELONG HERE — and must never be driven from this file
-//   Data identifiers that happen to read like branding. The string "outlaws"
-//   is a *persisted value*, not a label, in all of these places:
-//     - `TeamAtBat = "outlaws" | "opponent"` (src/lib/coach/game-types.ts) and
-//       every `=== "outlaws"` comparison derived from it
-//     - row ids such as `team-outlaws`, and `play_events.batting_team`
-//     - saved device state keys: `outlawsLineup`, `outlawsAreHome`,
-//       `stateAfter.outlawsRuns`, `outlawsRunsAfter`
+//   Data identifiers. These are *persisted values*, not labels:
+//     - `TeamAtBat = "us" | "them"` (src/lib/coach/game-types.ts), every
+//       `=== "us"` comparison derived from it, and `play_events.batting_team`
+//     - column names `games.us_score`, `games.us_home`,
+//       `play_events.us_runs_after`
+//     - saved device state keys: `usLineup`, `usAreHome`,
+//       `stateAfter.usRuns`, `usRunsAfter`
+//     - the localStorage keys `outlaws-field-app:v1` / `:games:v1`, and row ids
+//       such as `team-outlaws` — both still spelled the old way on purpose
+//       (T7 / MT-4 own those renames, and each needs its own data migration)
 //     - the auth cookie `ec_coach_auth` and its salt
 //     - asset filenames under `public/coach/icons/`
 //   Renaming any of those silently drops saved state or breaks the synced event
 //   shape in Supabase. Rebranding is a display concern; keep it to display.
+//
+//   This list used to say "outlaws" everywhere instead of "us". Migration 006
+//   (MULTI-TENANT-PLAN §2.6) renamed the perspective vocabulary precisely so
+//   that the data layer stops borrowing a team's name — the entries above are
+//   now neutral, and the remaining "outlaws" spellings are the ones that still
+//   have a migration owed to them.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -64,7 +73,7 @@ export const team = {
    * Display-only — this is NOT the `team-outlaws` database id, and changing it
    * renames future exports without touching any stored row.
    */
-  slug: "outlaws",
+  slug: "us",
 } as const;
 
 /**

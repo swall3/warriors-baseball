@@ -29,7 +29,7 @@ export default async function ReadOnlyGamePage({ params }: { params: Promise<{ g
         <h1 className="text-2xl font-black">{game.label}</h1>
         <Link href="/coach" className="rounded border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel">Open Logger</Link>
       </div>
-      <p className="text-sm text-d-ink-2">{new Date(game.playedAt).toLocaleString()} · {brandTeam.name} {game.outlawsScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
+      <p className="text-sm text-d-ink-2">{new Date(game.playedAt).toLocaleString()} · {brandTeam.name} {game.usScore} - {game.opponentScore} {team?.name || "Opponents"}</p>
 
       <section className="mt-6 rounded-xl border border-d-line bg-d-surface p-4">
         <h2 className="mb-3 text-lg font-bold">Live Feed</h2>
@@ -38,7 +38,7 @@ export default async function ReadOnlyGamePage({ params }: { params: Promise<{ g
             <li key={event.id} className="rounded border border-d-line bg-d-surface p-2">
               <div className="font-semibold">Inning {event.inning} · {event.batter} · {event.result.replaceAll("_", " ")}</div>
               <div className="text-d-ink-2">{event.description}</div>
-              <div className="text-xs text-d-ink-3">Outs: {event.stateAfter.outs} · Score {event.stateAfter.outlawsRuns}-{event.stateAfter.opponentRuns}</div>
+              <div className="text-xs text-d-ink-3">Outs: {event.stateAfter.outs} · Score {event.stateAfter.usRuns}-{event.stateAfter.opponentRuns}</div>
             </li>
           ))}
           {events.length === 0 && <li className="text-d-ink-3">No events recorded.</li>}
