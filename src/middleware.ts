@@ -12,12 +12,35 @@ import { AUTH_COOKIE, expectedToken } from "@/lib/coach/auth";
 // first place) are reachable without a valid session cookie. Everything
 // else — every other /coach/* page and every other /api/coach/* route —
 // requires it.
-const OPEN = new Set(["/coach/login", "/api/coach/login"]);
+//
+// PWA install assets are open too, and they have to be. `/coach/:path*`
+// matches static files under public/coach/ as well as pages, so a gated
+// manifest answers the browser's install request with a 307 to /coach/login.
+// A redirect is not JSON, the manifest fails to parse, and the install fails
+// *silently* — no console error on most browsers. Icons are worse: the OS
+// installer fetches them outside the page's credential context, so the cookie
+// is not guaranteed to be present even for a logged-in coach.
+//
+// Nothing here is secret — they are a name, a theme colour and four PNGs.
+// (MULTI-TENANT-PLAN §0.1 finding 3 / MT-1 step 5; MERGE-PLAN §4 warned about
+// exactly this trap.)
+//
+// /coach/images/* is deliberately NOT opened: it is page content (the
+// spray-chart field background), loaded by an <img> from an already
+// authenticated page, so it carries the cookie and does not need the hole.
+const OPEN = new Set([
+  "/coach/login",
+  "/api/coach/login",
+  "/coach/manifest.webmanifest",
+  "/coach/apple-touch-icon.png",
+]);
+
+const OPEN_PREFIXES = ["/coach/icons/"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (OPEN.has(pathname)) {
+  if (OPEN.has(pathname) || OPEN_PREFIXES.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
