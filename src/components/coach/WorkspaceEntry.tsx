@@ -5,7 +5,7 @@ export default function WorkspaceEntry() {
   const pathname = usePathname();
   if (
     pathname === "/coach/login" ||
-    ["/coach/today", "/coach/team", "/coach/live", "/coach/training"].some(
+    ["/coach/today", "/coach/team", "/coach/live", "/coach/training", "/coach/insights"].some(
       (p) => pathname.startsWith(p),
     )
   )

@@ -67,3 +67,13 @@ test('coach-pitch shape uses ten fielders and coach deliveries, invalid config f
  assert.throws(()=>makeGame('g3',{...config,order:['missing']},now),/unknown/);
  assert.throws(()=>act(makeGame('g4',{...config,positions:{}},now),{type:'start'}),/Fill all/);
 });
+test('coach pitch does not impose unverified walk/strike thresholds',()=>{
+ const c={...config,format:'coach_pitch',positions:Object.fromEntries(fieldPositions('coach_pitch').map((p,i)=>[p,roster[i].id]))};
+ let s=act(makeGame('g5',c,now),{type:'start'});
+ for(let i=0;i<5;i++)s=act(s,{type:'pitch',outcome:'ball'},'pitch');
+ assert.equal(s.balls,5);assert.equal(s.bases['1'],null);
+ s=act(s,{type:'end_at_bat',outcome:'walk'},'pitch');assert.equal(s.bases['1'].id,'opp-p0');assert.equal(s.pitchCounts['us:coach'],5);
+ for(let i=0;i<3;i++)s=act(s,{type:'pitch',outcome:'called_strike'},'pitch');
+ s=act(s,{type:'pitch',outcome:'foul'},'pitch');assert.equal(s.strikes,3);assert.equal(s.outs,0);
+ s=act(s,{type:'end_at_bat',outcome:'strikeout'},'pitch');assert.equal(s.outs,1);assert.equal(s.pitchCounts['us:coach'],9);
+});

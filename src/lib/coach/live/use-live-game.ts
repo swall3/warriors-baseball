@@ -7,7 +7,11 @@ export type PendingCommand = {
   command: Command;
 };
 type Cache = { confirmed: LiveGame; queue: PendingCommand[]; lane: Lane };
-export function useLiveGame(orgId: string | null, gameId: string) {
+export function useLiveGame(
+  orgId: string | null,
+  gameId: string,
+  readOnly = false,
+) {
   const [game, setGame] = useState<LiveGame | null>(null);
   const [confirmed, setConfirmed] = useState<LiveGame | null>(null);
   const [lane, setLane] = useState<Lane>("display");
@@ -24,6 +28,8 @@ export function useLiveGame(orgId: string | null, gameId: string) {
   const stopped = useRef(false);
   const conflictRef = useRef(false);
   const initialized = useRef(false);
+  const writer = useRef(false);
+  const [recordingAllowed, setRecordingAllowed] = useState(false);
   function publish(value: Cache) {
     cache.current = value;
     setConfirmed(value.confirmed);
@@ -61,7 +67,9 @@ export function useLiveGame(orgId: string | null, gameId: string) {
       draining.current ||
       stopped.current ||
       conflictRef.current ||
-      !initialized.current
+      !initialized.current ||
+      !writer.current ||
+      readOnly
     )
       return;
     draining.current = true;
@@ -92,7 +100,6 @@ export function useLiveGame(orgId: string | null, gameId: string) {
             conflictRef.current = true;
             setConflict(true);
             if (data.game) {
-              cache.current = { ...cache.current, confirmed: data.game };
               setConfirmed(data.game);
             }
           } else setOnline(false);
@@ -122,7 +129,7 @@ export function useLiveGame(orgId: string | null, gameId: string) {
     } finally {
       draining.current = false;
     }
-  }, [gameId, headers]);
+  }, [gameId, headers, readOnly]);
   useEffect(() => {
     if (!orgId) return;
     stopped.current = false;
@@ -134,6 +141,8 @@ export function useLiveGame(orgId: string | null, gameId: string) {
     setConfirmed(null);
     setQueue([]);
     setError("");
+    writer.current = false;
+    setRecordingAllowed(false);
     const tokenKey = `coach:${orgId}:recording:${gameId}`;
     try {
       const fragment = new URLSearchParams(location.hash.slice(1));
@@ -143,7 +152,7 @@ export function useLiveGame(orgId: string | null, gameId: string) {
         history.replaceState(null, "", location.pathname + location.search);
       }
       token.current = sessionStorage.getItem(tokenKey) ?? "";
-      storageKey.current = `coach:${orgId}:live:${gameId}:${token.current ? token.current.slice(-12) : "session"}`;
+      storageKey.current = `coach:${orgId}:live:v1:${gameId}:${readOnly ? "board" : token.current ? token.current.slice(-12) : "session"}`;
       const saved = localStorage.getItem(storageKey.current);
       if (saved) {
         const value = JSON.parse(saved) as Cache;
@@ -156,6 +165,7 @@ export function useLiveGame(orgId: string | null, gameId: string) {
       );
     }
     let active = true;
+    let releaseLock: (() => void) | undefined;
     const refresh = async () => {
       try {
         const response = await fetch(
@@ -177,6 +187,8 @@ export function useLiveGame(orgId: string | null, gameId: string) {
           ) {
             conflictRef.current = true;
             setConflict(true);
+            setGame(null);
+            setConfirmed(null);
           }
           setOnline(false);
           return;
@@ -185,9 +197,13 @@ export function useLiveGame(orgId: string | null, gameId: string) {
         setOnline(true);
         setLastSeen(Date.now());
         setLane(data.lane);
-        if (!cache.current?.queue.length)
-          persist({ confirmed: data.game, queue: [], lane: data.lane });
-        else {
+        if (!cache.current?.queue.length) {
+          if (
+            !cache.current ||
+            data.game.revision >= cache.current.confirmed.revision
+          )
+            persist({ confirmed: data.game, queue: [], lane: data.lane });
+        } else {
           cache.current = { ...cache.current, lane: data.lane };
           setConfirmed(data.game);
         }
@@ -200,6 +216,24 @@ export function useLiveGame(orgId: string | null, gameId: string) {
         }
       }
     };
+    if (!readOnly && navigator.locks) {
+      // One tab owns a role's durable queue. Separate grants and separate
+      // devices remain independent; an extra tab cannot overwrite unsent work.
+      void navigator.locks.request(
+        storageKey.current,
+        { ifAvailable: true },
+        async (lock) => {
+          if (!active || !lock) return;
+          writer.current = true;
+          setRecordingAllowed(true);
+          void refresh();
+          await new Promise<void>((resolve) => {
+            releaseLock = resolve;
+          });
+          writer.current = false;
+        },
+      );
+    }
     void refresh();
     const interval = setInterval(() => {
       setClock(Date.now());
@@ -209,11 +243,16 @@ export function useLiveGame(orgId: string | null, gameId: string) {
     return () => {
       active = false;
       stopped.current = true;
+      releaseLock?.();
       clearInterval(interval);
       window.removeEventListener("online", refresh);
     };
-  }, [orgId, gameId, headers, drain]);
+  }, [orgId, gameId, headers, drain, readOnly]);
   async function send(command: Command) {
+    if (!writer.current || readOnly)
+      throw new Error(
+        "This tab is read-only. Close another tab recording this role, then reload here. Recording requires a browser that supports Web Locks.",
+      );
     if (!cache.current || !initialized.current)
       throw new Error("Connect to the game before recording.");
     if (conflictRef.current)
@@ -261,6 +300,7 @@ export function useLiveGame(orgId: string | null, gameId: string) {
     setLastSeen(Date.now());
   }
   return {
+    recordingAllowed,
     game,
     confirmed,
     lane,

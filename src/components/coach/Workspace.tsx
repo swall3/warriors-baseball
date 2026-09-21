@@ -87,7 +87,7 @@ export function Workspace({
             ["Today", "/coach/today"],
             ["Team", "/coach/team"],
             ["Games", "/coach/today#games"],
-            ["Insights", "/coach/dashboard"],
+            ["Insights", "/coach/insights"],
             ["Play & Learn", "/coach/training"],
           ].map(([name, href]) => (
             <Link

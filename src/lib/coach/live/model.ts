@@ -18,6 +18,7 @@ export type Command =
   | { type: "configure"; config: Config }
   | { type: "start" }
   | { type: "pitch"; outcome: Pitch }
+  | { type: "end_at_bat"; outcome: "walk" | "strikeout" }
   | { type: "result"; pitchId: string; result: Result; zone: Position; moves: Move[]; countRunsOnThirdOut: boolean }
   | { type: "runners"; moves: Move[]; countRunsOnThirdOut: boolean }
   | { type: "pitcher"; side: Side; pitcher: Player }
@@ -87,9 +88,9 @@ export function makeGame(id: string, config: Config, now: string): LiveGame {
 }
 export function mayCommand(lane: Lane, command: Command) {
   if (lane === "coach") return true;
-  if (lane === "pitch") return command.type === "pitch";
+  if (lane === "pitch") return command.type === "pitch" || command.type === "end_at_bat";
   if (lane === "play") return command.type === "result" || command.type === "runners";
-  if (lane === "all") return ["pitch","result","runners"].includes(command.type);
+  if (lane === "all") return ["pitch","end_at_bat","result","runners"].includes(command.type);
   return false;
 }
 function snapshot(g: LiveGame): Snapshot {
@@ -157,11 +158,18 @@ export function applyCommand(game: LiveGame, command: Command, commandId: string
         const b=batter(s); const side=pitchingSide(s); const p=s.pitchers[side];
         const key=pitchKey(side,p.id); s.pitchCounts[key]=(s.pitchCounts[key]??0)+1;
         if(command.outcome==="in_play") s.pending={id:commandId,batter:b,pitcher:p};
-        else if(command.outcome==="ball") {s.balls++; if(s.balls===4) {forceWalk(s,b);nextBatter(s);}}
-        else if(command.outcome==="foul") s.strikes=Math.min(2,s.strikes+1);
-        else {s.strikes++;if(s.strikes===3){s.outs++;nextBatter(s);}}
+        else if(command.outcome==="ball") {s.balls++; if(s.config.format==="kid_pitch" && s.balls===4) {forceWalk(s,b);nextBatter(s);}}
+        else if(command.outcome==="foul") {if(s.strikes<2)s.strikes++;}
+        else {s.strikes++;if(s.config.format==="kid_pitch" && s.strikes===3){s.outs++;nextBatter(s);}}
         if(s.outs===3) nextHalf(s);
         break;
+      }
+      case "end_at_bat": {
+        requireRule(s.config.format==="coach_pitch","Kid-pitch walks and strikeouts follow the recorded count.");
+        requireRule(!s.pending,"Finish the pending play first.");
+        requireRule(["walk","strikeout"].includes(command.outcome),"Choose the at-bat outcome.");
+        if(command.outcome==="walk")forceWalk(s,batter(s));else s.outs++;
+        nextBatter(s);if(s.outs===3)nextHalf(s);break;
       }
       case "result": {
         requireRule(s.pending && s.pending.id===command.pitchId,"This play must match the pending pitch. Refresh before recording it.");

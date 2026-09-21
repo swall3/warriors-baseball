@@ -759,3 +759,129 @@
     display: none;
   }
 }
+.nf-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 14px;
+}
+.nf-table th,
+.nf-table td {
+  text-align: left;
+  padding: 13px 10px;
+  border-bottom: 1px solid #e0e6dc;
+}
+.nf-table th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #566d5b;
+}
+.nf-table-scroll {
+  overflow: auto;
+}
+.nf-review-score {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin: 28px 0;
+}
+.nf-review-score strong {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--nf-green);
+}
+.nf-review-score span {
+  font-size: 13px;
+  color: #5d6f60;
+}
+.nf-zone-bars {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+.nf-zone-bars > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.nf-zone-bars b {
+  width: 35px;
+}
+.nf-zone-bars meter {
+  flex: 1;
+  height: 24px;
+  accent-color: var(--nf-green);
+}
+.nf-practice-main {
+  max-width: 1080px;
+  padding: 36px 24px;
+  margin: auto;
+}
+.nf-practice-main h1 {
+  font-size: 30px;
+  font-weight: 900;
+  max-width: 850px;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+.nf-practice-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+}
+.nf-practice-diamond {
+  background: #142f2b;
+  padding: 20px;
+  border-radius: 18px;
+}
+.nf-practice-diamond svg {
+  width: 100%;
+  max-height: 490px;
+}
+.nf-answer-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+.nf-answer-buttons button {
+  min-width: 48px;
+  padding: 10px;
+  background: #f0f5ec;
+  color: #213e29;
+}
+.nf-coach-note {
+  border-left: 4px solid #e8611a;
+  padding: 10px 18px;
+  margin: 20px 0;
+}
+.nf-practice .nf-card h2 {
+  font-size: 27px;
+  font-weight: 850;
+}
+.nf-practice .nf-card button {
+  margin-top: 20px;
+}
+.nf-practice .nf-card p {
+  line-height: 1.65;
+}
+@media (max-width: 750px) {
+  .nf-practice-grid {
+    grid-template-columns: 1fr;
+  }
+  .nf-practice-main h1 {
+    font-size: 24px;
+  }
+  .nf-practice-main {
+    padding: 28px 16px;
+  }
+  .nf-review-score {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .nf-practice-diamond {
+    padding: 14px;
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useCoachOrg } from "@/lib/coach/org-client";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Workspace, useCatalog, LoadError } from "./Workspace";
@@ -383,8 +384,15 @@ function CoachControls({
   const [pitcher, setPitcher] = useState(game.pitchers.us.id);
   const [opponent, setOpponent] = useState("");
   const [first, setFirst] = useState<Position>("LF");
-  const [second, setSecond] = useState<Position>("CF");
+  const [second, setSecond] = useState<Position>(
+    game.config.format === "coach_pitch" ? "LCF" : "CF",
+  );
   const [when, setWhen] = useState<"now" | "next">("next");
+  const [incoming, setIncoming] = useState(game.config.roster[0].id);
+  const planned =
+    when === "next"
+      ? (game.nextPositions ?? game.config.positions)
+      : game.config.positions;
   return (
     <div className="nf-grid">
       <section className="nf-card">
@@ -483,24 +491,49 @@ function CoachControls({
           </select>
         </label>
         <button
-          disabled={
-            first === second ||
-            !game.config.positions[first] ||
-            !game.config.positions[second]
-          }
+          disabled={first === second || !planned[first] || !planned[second]}
           onClick={() =>
             void onCommand({
               type: "defense",
               when,
               positions: {
-                ...game.config.positions,
-                [first]: game.config.positions[second],
-                [second]: game.config.positions[first],
+                ...planned,
+                [first]: planned[second],
+                [second]: planned[first],
               },
             })
           }
         >
           Swap positions
+        </button>
+        <label className="nf-label nf-section">
+          Substitute into {first}
+          <select
+            value={incoming}
+            onChange={(e) => setIncoming(e.target.value)}
+          >
+            {game.config.roster.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+                {Object.values(planned).includes(p.id) ? "" : " · bench"}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          className="nf-secondary"
+          disabled={planned[first] === incoming}
+          onClick={() => {
+            const positions = { ...planned };
+            const other = Object.entries(positions).find(
+              ([, id]) => id === incoming,
+            )?.[0] as Position | undefined;
+            if (other) positions[other] = positions[first];
+            positions[first] = incoming;
+            void onCommand({ type: "defense", positions, when });
+          }}
+        >
+          Publish substitution
         </button>
         {game.nextPositions && (
           <p className="nf-notice">
@@ -527,13 +560,14 @@ function CoachControls({
 }
 export default function LiveGameScreen({ gameId }: { gameId: string }) {
   const { catalog, error: catalogError, retry } = useCatalog();
-  const live = useLiveGame(catalog?.organization.id ?? null, gameId);
+  const { orgId } = useCoachOrg();
   const params = useSearchParams();
   const board = params.get("view") === "board";
+  const live = useLiveGame(orgId, gameId, board);
   const [tab, setTab] = useState("all");
   const [actionError, setActionError] = useState("");
   const [wake, setWake] = useState(false);
-  const game = board ? live.confirmed : live.game;
+  const game = board || live.conflict ? live.confirmed : live.game;
   const coach = live.lane === "coach";
   const perform = async (command: Command) => {
     try {
@@ -688,6 +722,13 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
         )}
       </section>
       {notice}
+      {game && !live.recordingAllowed && live.lane !== "display" && (
+        <p className="nf-notice">
+          This tab is read-only while another tab records this role. Close the
+          other recording tab and reload here to take over. Recording requires a
+          browser with Web Locks support.
+        </p>
+      )}
       {game && (
         <>
           <Score game={game} />
@@ -727,7 +768,11 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
               )}
               {coach && (
                 <button
-                  disabled={live.queue.length > 0 || live.conflict}
+                  disabled={
+                    live.queue.length > 0 ||
+                    live.conflict ||
+                    !live.recordingAllowed
+                  }
                   onClick={() => void perform({ type: "start" })}
                 >
                   Start game
@@ -771,7 +816,10 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
                   </button>
                 ))}
               </div>
-              <fieldset disabled={live.conflict} className="nf-controls">
+              <fieldset
+                disabled={live.conflict || !live.recordingAllowed}
+                className="nf-controls"
+              >
                 {coach && tab === "crew" ? (
                   <Crew gameId={gameId} />
                 ) : coach && tab === "coach" ? (
@@ -833,6 +881,7 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
                             </button>
                           ))}
                         </div>
+                        {game.config.format==="coach_pitch" && <div className="nf-section"><p className="nf-muted">Coach-pitch counts are informational. End the at-bat according to your league’s rules; these buttons do not add a pitch.</p><button className="nf-secondary" disabled={!!game.pending} onClick={()=>void perform({type:"end_at_bat",outcome:"strikeout"})}>Batter out on strikes</button><button className="nf-secondary" disabled={!!game.pending} onClick={()=>void perform({type:"end_at_bat",outcome:"walk"})}>Award first base</button></div>}
                         {game.pending && (
                           <p className="nf-notice">
                             Pitch counted. Waiting for the play result.
@@ -853,7 +902,7 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
           {coach && game.undo && (
             <button
               className="nf-secondary nf-section"
-              disabled={live.conflict}
+              disabled={live.conflict || !live.recordingAllowed}
               onClick={() =>
                 void perform({ type: "undo", targetId: game.undo!.id })
               }
