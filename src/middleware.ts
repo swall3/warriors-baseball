@@ -3,7 +3,7 @@ import { AUTH_COOKIE, expectedToken } from "@/lib/coach/auth";
 
 // Gate for the ported Outlaws coach tool. Allow-by-default: the matcher
 // below is the entire allowlist. Anything not matched (Warriors' public
-// site, /games, /api/signup, /api/signups, and every root-level asset)
+// site, /games, /api/signup, and every root-level asset)
 // never enters this function at all — it cannot be accidentally gated by a
 // change in here.
 //
