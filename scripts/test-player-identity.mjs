@@ -107,6 +107,17 @@ try {
       "primed cache must take precedence over the static map (and key on lower(btrim(x)))",
     );
     assert.equal(canonicalPlayerName("Levi"), "Levi", "unknown names still pass through verbatim");
+
+    // The discriminating case for the withheld-alias rule: 'linc' IS in the
+    // static map (-> Lincoln) but is absent from this primed cache, mirroring
+    // a player_aliases table seeded without the three unconfirmed pairs. A
+    // primed cache must not fall back to the static map, or the app layer
+    // silently re-applies the merge that 003 deliberately withheld.
+    assert.equal(
+      canonicalPlayerName("Linc"),
+      "Linc",
+      "a primed cache must NOT fall back to the static map on a miss",
+    );
   } finally {
     clearAliasCache();
   }

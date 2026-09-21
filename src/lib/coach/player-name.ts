@@ -73,13 +73,26 @@ export function hasAliasCache(): boolean {
 // ---------------------------------------------------------------------------
 // Resolution
 // ---------------------------------------------------------------------------
-// Order: runtime cache → static map → the raw string as typed.
+// Once the cache is primed it is AUTHORITATIVE — a cache miss resolves to the
+// raw string, it does not fall back to the static map. Order is:
 //
-// Falling through to the raw string is deliberate and load-bearing. An
-// unrecognized name is displayed and counted under exactly what the coach
-// typed rather than being dropped or bucketed into "Unknown" — the same
-// principle as 002's nullable batter_player_id: never lose a plate appearance
-// to a typo.
+//   cache primed + hit  -> the cached display name
+//   cache primed + miss -> the raw string as typed
+//   cache absent        -> static map, then the raw string
+//
+// ⚠️ The no-fallback-on-miss rule is load-bearing, not tidiness. The static map
+// contains jackson -> Jack, linc -> Lincoln and aidan -> Aiden, and those are
+// exactly the three merges deliberately withheld from
+// supabase/migrations/003_seed_roster.sql pending Stuart's confirmation. If a
+// miss fell through to the static map, priming the cache from a correctly
+// seeded player_aliases table would silently re-apply the unconfirmed merges
+// at the app layer — undoing the migration's whole point on the day the
+// question gets answered. Withheld must mean withheld at every layer.
+//
+// Falling through to the raw string is likewise deliberate. An unrecognized
+// name is displayed and counted under exactly what the coach typed rather than
+// being dropped or bucketed into "Unknown" — the same principle as 002's
+// nullable batter_player_id: never lose a plate appearance to a typo.
 //
 // Behaviour is unchanged from the original implementation whenever the cache
 // is empty, which is every code path today.
@@ -87,6 +100,6 @@ export function canonicalPlayerName(name?: string | null): string {
   const raw = (name || "").trim();
   if (!raw) return "Unknown";
   const key = raw.toLowerCase();
-  if (aliasCache && aliasCache[key]) return aliasCache[key];
+  if (aliasCache) return aliasCache[key] || raw;
   return NAME_ALIASES[key] || raw;
 }

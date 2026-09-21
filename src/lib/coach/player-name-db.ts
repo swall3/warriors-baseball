@@ -10,14 +10,19 @@
 //
 // ⚠️ NOT WIRED UP YET, AND THAT IS CORRECT. `public.player_aliases` does not
 // exist on the live database — migrations 001–003 are written but unapplied
-// (see supabase/migrations/). Nothing calls loadPlayerAliases() today, so every
+// (see supabase/migrations/). Nothing calls ensureAliasCache() today, so every
 // canonicalPlayerName() call still resolves through the static map. Once 001
 // and 003 are applied, call `ensureAliasCache()` at the top of the server
 // handlers that aggregate by player and the same call sites start resolving
 // against real roster data with no further change.
+//
+// ⚠️ Priming the cache is a behaviour switch, not just a speed-up: per
+// canonicalPlayerName's contract, a primed cache is authoritative and does NOT
+// fall back to the static map. That is what keeps 003's withheld alias pairs
+// withheld. Do not wire this up before those pairs are resolved unless you
+// intend the drift spellings to stop aggregating.
 
-import { sbSelectAll } from "@/lib/supabase";
-import { isSupabaseEnabled } from "@/lib/supabase";
+import { isSupabaseEnabled, sbSelectAll } from "@/lib/supabase";
 import { hasAliasCache, primeAliasCache } from "@/lib/coach/player-name";
 
 type PlayerRow = { id: string; display_name: string };
