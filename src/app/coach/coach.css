@@ -1,0 +1,257 @@
+/* Coach ("Field") surface — LIGHT theme, scoped entirely under .dugout-theme
+   so it can never leak into the Warriors marketing site or the /games design
+   system.
+
+   Why light: this tool is used one-handed at a fence, outdoors, in direct sun.
+   A dark phone screen in sunlight is a mirror. See DESIGN.md DECISION-1 — the
+   ported Outlaws theme was dark, and the stated requirement was always the
+   opposite. This file is the light replacement.
+
+   Naming: `.dugout-theme` / `--d-*`, not `field`, because `field` already means
+   two other things in this codebase — `globals.css` defines `.field` as the
+   signup form-input class, and the baseball field graphic below uses `field-*`.
+   (DESIGN.md §1, "why dugout, not field".)
+
+   ⚠️ Do NOT add bare `body` / `:root` / `h1`..`h6` / `p` rules here. Two
+   separate reasons, both real:
+     1. Scoping is what keeps this off the public site — that was the original
+        port's bug, and the file comment has warned about it since.
+     2. A rule like `.dugout-theme p { color: … }` has specificity (0,1,1) and
+        would silently beat every Tailwind `text-*` utility (0,1,0) used on the
+        coach pages. The old dark file had exactly that, which is why the
+        tokens could not simply be retinted.
+
+   Tailwind utilities for these tokens (`bg-d-surface`, `text-d-ink`, …) are
+   generated from the `@theme` block in globals.css — Tailwind only reads
+   `@theme` from the entry stylesheet that has `@import "tailwindcss"`, which
+   this file is not. The two blocks must be kept in sync. */
+
+.dugout-theme {
+  /* ── Sunlight palette ───────────────────────────────────────────────────
+     Designed to ~7:1 for primary text rather than AA's 4.5:1, because outdoor
+     glare eats effective contrast. Note the deliberate absence of pure #ffffff
+     at page level: full white in direct sun is its own glare source.
+     Values are DESIGN.md §1 verbatim. */
+  --d-bg:        #F2F3F0;  /* page — warm neutral, kills glare */
+  --d-surface:   #FBFBF9;  /* cards */
+  --d-sunken:    #E7E9E4;  /* wells, inactive tabs */
+  --d-line:      #D3D6CF;  /* borders */
+  --d-line-str:  #ADB2A9;  /* emphasis borders */
+
+  --d-ink:       #14181C;  /* primary   — 16:1 on --d-bg */
+  --d-ink-2:     #41474E;  /* secondary — 8.2:1 */
+  /* Tertiary. DEVIATES from DESIGN.md's #565E66 (stated 6.6:1), deliberately:
+     that figure was computed against --d-bg only, and the real worst case on
+     --d-sunken measures 5.39:1. DESIGN.md also restricts the token to >=16px,
+     but this ported UI uses it at 10-14px almost exclusively (measured: 193
+     nodes at <16px, 0 at >=16px). Darkened to clear 7:1 on every surface at
+     the sizes actually in use — worst case now 7.11:1 on --d-sunken.
+     Re-lighten it if the Field type scale in DESIGN.md §2 ever lands. */
+  --d-ink-3:     #454C54;  /* tertiary  — 7.11:1 worst case */
+
+  --d-pos:       #0B6B3A;  /* safe / on-base / hit */
+  --d-neg:       #A4162B;  /* out / error */
+  --d-warn:      #8A5A00;  /* fairness warning — NOT #f59e0b (2.1:1) */
+  --d-sel:       #12457A;  /* selected / active */
+  --d-us:        #0f2044;  /* our team */
+  --d-them:      #5A6470;  /* opponent — neutral, never a second brand color */
+
+  min-height: 100%;
+  background: var(--d-bg);
+  color: var(--d-ink);
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Numerals must not jitter between re-renders of a live scoreboard. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────────
+   Field gets no decorative motion — only short state transitions. Scoped to
+   the coach surface on purpose: /games keeps its one-shot celebrations. */
+@media (prefers-reduced-motion: reduce) {
+  .dugout-theme *,
+  .dugout-theme *::before,
+  .dugout-theme *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* ==============================================================
+   BASEBALL FIELD — AERIAL VIEW
+   ==============================================================
+   Deliberately NOT converted to light. The field graphic is a *photographic*
+   element, not chrome, so it is exempt from the light-surface rule the same
+   way a photo is — grass is green in sunlight too, and a washed-out field
+   would read worse, not better (DESIGN.md §5.8).
+
+   `.field-fair-wedge` uses clip-path, which the project's design principles
+   otherwise ban. That ban is about decorative section dividers; here the
+   clip-path is *geometry* — it is what makes fair territory a 90 degree fan
+   from home plate. Keep it. Do not "fix" it. (DESIGN.md DECISION-1.)
+
+   Only `.baseball-field-canvas` and `.field-vignette` are currently referenced
+   (src/app/coach/page.tsx); the rest describe a CSS-drawn field that the live
+   page currently renders as a photo instead. Kept intact rather than pruned so
+   the graphic stays whole. */
+
+.dugout-theme {
+  /* Field container background (foul territory / outside fair territory) */
+  .baseball-field-canvas {
+    background: #0a1a0a;
+  }
+
+  /* Clip every fair-territory layer to the 90° fan from home plate */
+  .field-fair-wedge {
+    clip-path: polygon(50% 87%, -50% -10%, 150% -10%);
+  }
+
+  /* Outfield grass — deep green, darker near the fence */
+  .field-outfield-grass {
+    background: radial-gradient(
+      ellipse 200% 110% at 50% 120%,
+      #1e6b0d 0%,
+      #185a0b 45%,
+      #103d07 80%
+    );
+  }
+
+  /* Mow-pattern stripes radiating from home plate */
+  .field-grass-stripes {
+    background: repeating-conic-gradient(
+      from 0deg at 50% 87%,
+      rgba(255, 255, 255, 0.045) 0deg 4deg,
+      transparent 4deg 8deg
+    );
+  }
+
+  /* Warning track — sandy arc near the outfield fence */
+  .field-warning-track {
+    background: radial-gradient(
+      ellipse 97% 88% at 50% 87%,
+      transparent 64%,
+      #b48b42 65.5%,
+      #c9a455 69%,
+      #b08040 73%,
+      transparent 74.5%
+    );
+  }
+
+  /* Outfield fence wall */
+  .field-outfield-fence {
+    background: radial-gradient(
+      ellipse 102% 93% at 50% 87%,
+      transparent 73.5%,
+      rgba(12, 12, 12, 0.92) 74.5%,
+      rgba(8, 8, 8, 0.95) 76.5%,
+      transparent 77.5%
+    );
+  }
+
+  /* Inner infield apron — lighter green ring */
+  .field-fair-territory {
+    background: radial-gradient(
+      ellipse 62% 52% at 50% 74%,
+      rgba(38, 120, 55, 0.55) 0%,
+      rgba(30, 95, 44, 0.35) 45%,
+      transparent 62%
+    );
+  }
+
+  /* Subtle distance rings */
+  .field-out-zone-rings {
+    background:
+      radial-gradient(ellipse 55% 48% at 50% 74%, transparent 44%, rgba(255,255,255,0.035) 45%, rgba(255,255,255,0.035) 46.2%, transparent 47.2%),
+      radial-gradient(ellipse 82% 72% at 50% 74%, transparent 56%, rgba(255,255,255,0.025) 57%, rgba(255,255,255,0.025) 58.2%, transparent 59.2%);
+  }
+
+  /* Foul lines */
+  .field-foul-line {
+    width: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    transform-origin: top center;
+  }
+  .field-foul-line-left  { transform: rotate(-45deg); }
+  .field-foul-line-right { transform: rotate(45deg); }
+
+  /* Infield dirt diamond (element is already rotated 45° in markup) */
+  .field-infield-dirt {
+    background: linear-gradient(135deg, #a3723c 0%, #7e5228 55%, #5b3a1b 100%);
+    border-radius: 2px;
+  }
+
+  /* Keyhole — dirt arc from pitcher's mound toward home plate */
+  .field-keyhole {
+    background: radial-gradient(
+      ellipse 75% 50% at 50% 22%,
+      #a3723c 0%,
+      #7e5228 55%,
+      transparent 72%
+    );
+  }
+
+  /* Basepath diamond outline (element is already rotated 45° in markup) */
+  .field-basepaths {
+    background: transparent;
+    border: 3px solid rgba(255, 255, 255, 0.82);
+    border-radius: 2px;
+  }
+
+  /* Pitcher's mound */
+  .field-mound {
+    background: radial-gradient(circle, #cca060 0%, #a07840 60%, #7e5228 100%);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+  }
+
+  /* Home plate */
+  .field-home-plate {
+    width: 16px;
+    height: 14px;
+    background: white;
+    clip-path: polygon(50% 0%, 100% 38%, 100% 100%, 0% 100%, 0% 38%);
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  }
+
+  /* Individual bases */
+  .field-base {
+    width: 12px;
+    height: 12px;
+    background: white;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.55);
+  }
+
+  /* Edge vignette over the field photo. Softened from the dark theme's 0.5 —
+     on a light page the field is already a high-contrast island and does not
+     need heavy edge darkening to separate from its surroundings. */
+  .field-vignette {
+    background: radial-gradient(
+      ellipse 100% 90% at 50% 87%,
+      transparent 52%,
+      rgba(0, 0, 0, 0.28) 100%
+    );
+    pointer-events: none;
+  }
+}
+
+/* Standalone (installed PWA) uses viewportFit:cover — keep content clear of the
+   notch, status bar, and home indicator instead of sliding under them. */
+@media (display-mode: standalone) {
+  .dugout-theme {
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* REMOVED in the light-theme pass: ~200 lines of dark-surface chrome that this
+   file defined and nothing referenced — .glass, .stat-card, .btn-primary,
+   .grid-glass, .zone-*, .heatmap-zone, .message-bubble, .integration-badge,
+   .score-display, .rotation-active, .status-*, .hit-*, .footer,
+   .bg-gradient-primary, .animate-*, and the .baseball-field blue glow.
+   Verified dead before deleting: 40 class definitions, 2 referenced anywhere
+   in src/. They encoded dark-theme assumptions (frosted dark panels, glows)
+   with no light equivalent, so porting them would have meant inventing UI that
+   nothing uses. Recoverable from git history if ever wanted. */

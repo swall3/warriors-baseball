@@ -1,0 +1,69 @@
+-- 005_backfill_batter_player_id.sql — Phase 2: link the 119 existing play events
+--
+-- Target: omwqwwflvnunuvgidvwx (Outlaws-field0app). Requires 001, 002, 003.
+--
+-- ⚠️ REFERENCE ONLY — NOTHING IN THIS FILE IS LIVE SQL, BY DESIGN.
+-- Every statement is commented out. Running this file through
+-- `node scripts/run-migration.mjs` right now is a deliberate no-op.
+--
+-- Numbered 005, not 004: 004_lineup_plans.sql already exists and is already
+-- applied (Phase 3). Migrations are forward-only, so this slots after it even
+-- though it belongs to an earlier phase of the plan.
+--
+-- This is MERGE-PLAN.md §2.4 "Path A — preserve the 119 events", which the plan
+-- recommends over Path B (fresh start). Path A costs one UPDATE, and the
+-- verification query below *is* the test that the alias table is correct.
+--
+-- Why it stays commented: it is only meaningful once 001–003 are applied, and
+-- it is only *complete* once the three pending alias pairs in 003 are resolved
+-- (see that file's PENDING STUART CONFIRMATION block). Run it too early and it
+-- links the undisputed names and silently leaves the drift spellings null —
+-- which is safe, but reads like success when it is half a result.
+--
+-- The statement is written to be re-runnable: `and e.batter_player_id is null`
+-- means a second run only picks up rows a newly-added alias has made
+-- resolvable. Re-run it after each alias confirmation lands.
+
+-- ---------------------------------------------------------------------------
+-- Backfill — MERGE-PLAN.md §2.4, Path A
+-- ---------------------------------------------------------------------------
+-- Matching is `lower(btrim(e.batter)) = a.alias`, which relies on the 001
+-- invariant that every stored alias is already lower(btrim(x)).
+--
+-- CONFIRMED 2026-09-21: all three pending alias pairs in 003 are resolved
+-- (Stuart confirmed directly). Backfill is now live.
+update public.play_events e
+set batter_player_id = a.player_id
+from public.player_aliases a
+where lower(btrim(e.batter)) = a.alias
+  and e.batter_player_id is null;
+
+-- ---------------------------------------------------------------------------
+-- Verification — MERGE-PLAN.md §2.4 and §3.4
+-- ---------------------------------------------------------------------------
+-- This is the one check that proves the alias seed is complete. It must return
+-- ZERO ROWS for Outlaws batters. Any row it returns is a spelling that exists
+-- in game history but has no alias — i.e. a plate appearance that will not
+-- aggregate to anybody.
+--
+-- select distinct batter, count(*)
+-- from public.play_events
+-- where batter_player_id is null and batting_team = 'outlaws'
+-- group by batter order by 2 desc;
+--
+-- Expected while the three pending pairs are unconfirmed: this returns the
+-- drift spellings (Jackson / Linc / Aidan, whichever of them appear in the 119
+-- events). That is the correct state, not a failure — it is exactly the set of
+-- names awaiting Stuart's answer.
+--
+-- Opponent batters stay unlinked by design (MERGE-PLAN.md §2.4): they are
+-- scouting data, not roster members. Hence the `batting_team = 'outlaws'`
+-- filter — without it this query never returns zero.
+
+-- ---------------------------------------------------------------------------
+-- Path B, for the record — MERGE-PLAN.md §2.4
+-- ---------------------------------------------------------------------------
+-- Stuart said a fresh start is acceptable: skip this backfill entirely, run
+-- 001–003 only, and start logging into a clean schema. That costs the two
+-- 2026-05-24 games (12–19 vs NYO Bucks, 16–24 vs Oregon Park Wahoos); the
+-- local JSON copies remain as an archive. The plan recommends Path A.

@@ -24,3 +24,9 @@ yarn-error.log*
 *.pem
 .vercel
 .env*
+.shots/
+
+# Local dev DB fallback (src/lib/coach/local-db.ts writes here when Supabase is
+# unconfigured). Per-machine scratch, never the source of truth — the bundled
+# src/lib/coach/seed-db.json is.
+data/

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { assets, club, eyebrow, wordmark } from "@/lib/brand-config";
 
 const TRYOUTS_OPEN    = false; // flip to true when next season opens
 const COACH_EMAIL     = "warriors8u@gmail.com";
@@ -51,17 +52,17 @@ export default function HomePage() {
     <div className="bg-white text-gray-900">
 
       {/* NAV */}
-      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-[#0f2044] shadow-lg py-3" : "bg-transparent py-5"}`}>
+      <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "bg-navy shadow-lg py-3" : "bg-transparent py-5"}`}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Image src="/images/warriors/mascot.png" alt="" width={38} height={38} className="object-contain" />
-            <span className="font-display text-white text-xl tracking-wide">WARRIORS</span>
+            <Image src={assets.mascot} alt="" width={38} height={38} className="object-contain" />
+            <span className="font-display text-white text-xl tracking-wide">{wordmark}</span>
           </div>
           <div className="flex items-center gap-2">
             <a href="#about"   className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Program</a>
             <a href="#tryouts" className="hidden md:block text-white/70 hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
-            <Link href="/games" className="hidden md:block text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
-            <a href="#signup"  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ml-2">Sign Up</a>
+            <Link href="/games" className="hidden md:block text-gold hover:text-white text-sm font-semibold px-3 py-2 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
+            <a href="#signup"  className="bg-crimson hover:bg-crimson-2 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ml-2">Sign Up</a>
             {/* Hamburger — mobile only */}
             <button
               className="md:hidden ml-2 text-white p-2 rounded-lg hover:bg-white/10 transition-colors"
@@ -82,33 +83,33 @@ export default function HomePage() {
         </div>
         {/* Mobile dropdown */}
         {mobileOpen && (
-          <div className="md:hidden bg-[#0f2044] border-t border-white/10 px-6 py-4 flex flex-col gap-1">
+          <div className="md:hidden bg-navy border-t border-white/10 px-6 py-4 flex flex-col gap-1">
             <a href="#about"   onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Program</a>
             <a href="#tryouts" onClick={() => setMobileOpen(false)} className="text-white/80 hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">Tryouts</a>
-            <Link href="/games" onClick={() => setMobileOpen(false)} className="text-[#c9a84c] hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
-            <a href="#signup"  onClick={() => setMobileOpen(false)} className="mt-2 bg-[#8b1a2e] hover:bg-[#a82037] text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors text-center">Sign Up</a>
+            <Link href="/games" onClick={() => setMobileOpen(false)} className="text-gold hover:text-white text-sm font-semibold px-3 py-3 rounded-lg hover:bg-white/10 transition-colors">⚾ Games</Link>
+            <a href="#signup"  onClick={() => setMobileOpen(false)} className="mt-2 bg-crimson hover:bg-crimson-2 text-white text-sm font-bold px-5 py-3 rounded-xl transition-colors text-center">Sign Up</a>
           </div>
         )}
       </nav>
 
       {/* HERO — stadium photo, mascot right, text left */}
-      <section className="relative min-h-screen flex items-center bg-[#0f2044] overflow-hidden">
+      <section className="relative min-h-screen flex items-center bg-navy overflow-hidden">
         <Image src="/images/hero-bg.jpg" alt="" fill priority className="object-cover object-center opacity-50" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0f2044]/95 via-[#0f2044]/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f2044]/80 via-transparent to-[#0f2044]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-navy/95 via-navy/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-navy/30" />
 
         {/* Mascot — large, right side, bleeds off bottom */}
         <div className="hidden lg:block absolute right-0 bottom-0 w-[520px] h-[640px] pointer-events-none">
-          <Image src="/images/warriors/mascot.png" alt="" fill priority className="object-contain object-bottom" />
+          <Image src={assets.mascot} alt="" fill priority className="object-contain object-bottom" />
         </div>
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 pt-32 pb-20 w-full">
-          <p className="inline-block bg-[#8b1a2e] text-white text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
+          <p className="inline-block bg-crimson text-white text-[11px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full mb-6">
             {TRYOUTS_OPEN ? "Tryouts Open · Limited Roster" : "2026 Roster Set"}
           </p>
           <h1 className="font-display text-white mb-4">
-            <span className="block text-[#c9a84c] text-2xl sm:text-3xl mb-1">EAST CHEROKEE</span>
-            <span className="block leading-none" style={{ fontSize: "clamp(2.75rem, 13vw, 9rem)" }}>WARRIORS</span>
+            <span className="block text-gold text-2xl sm:text-3xl mb-1">{eyebrow}</span>
+            <span className="block leading-none" style={{ fontSize: "clamp(2.75rem, 13vw, 9rem)" }}>{wordmark}</span>
           </h1>
           <p className="text-white/65 text-lg max-w-md mb-8 leading-relaxed">
             8U Travel Baseball. Built on discipline, grit, and the warrior spirit.
@@ -117,7 +118,7 @@ export default function HomePage() {
             {TRYOUTS_OPEN ? (
               <>
                 <a href="#signup"
-                  className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
+                  className="bg-crimson hover:bg-crimson-2 text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
                   style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.6)" }}>
                   Register for Tryouts →
                 </a>
@@ -128,7 +129,7 @@ export default function HomePage() {
               </>
             ) : (
               <a href={`mailto:${COACH_EMAIL}`}
-                className="bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
+                className="bg-crimson hover:bg-crimson-2 text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-xl transition-colors"
                 style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.6)" }}>
                 Contact Coaching Staff →
               </a>
@@ -202,7 +203,7 @@ export default function HomePage() {
             <p className="text-gray-500 mt-3 text-base max-w-lg">
               {TRYOUTS_OPEN
                 ? "All skill levels welcome — we'll find the right fit for every player who brings the effort."
-                : "The 2026 Warriors roster is complete. Reach out to be on the list when 2027 tryouts open."}
+                : `The 2026 ${club.shortName} roster is complete. Reach out to be on the list when 2027 tryouts open.`}
             </p>
           </div>
 
@@ -241,7 +242,7 @@ export default function HomePage() {
               <p className="text-gray-600 text-[15px] leading-relaxed mb-6">
                 Interested in the 2027 season? Email the coaching staff and we&apos;ll add you to the notification list when tryouts open.
               </p>
-              <a href={`mailto:${COACH_EMAIL}?subject=2027 Warriors Interest`}
+              <a href={`mailto:${COACH_EMAIL}?subject=2027 ${club.shortName} Interest`}
                 className="inline-block bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
                 Email Coaching Staff →
               </a>
@@ -257,9 +258,9 @@ export default function HomePage() {
             <div className="text-center">
               <p className="text-[#8b1a2e] text-xs font-bold uppercase tracking-[0.3em] mb-2">2026 Season</p>
               <h2 className="font-display text-5xl text-[#0f2044] mb-4">TRYOUTS CLOSED</h2>
-              <p className="text-gray-500 text-base mb-8">The Warriors roster is full for 2026. Check back for 2027 tryout announcements.</p>
-              <a href={`mailto:${COACH_EMAIL}?subject=2027 Warriors Interest`}
-                className="inline-block bg-[#8b1a2e] hover:bg-[#a82037] text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
+              <p className="text-gray-500 text-base mb-8">The {club.shortName} roster is full for 2026. Check back for 2027 tryout announcements.</p>
+              <a href={`mailto:${COACH_EMAIL}?subject=2027 ${club.shortName} Interest`}
+                className="inline-block bg-crimson hover:bg-crimson-2 text-white font-bold text-sm uppercase tracking-wider px-8 py-4 rounded-xl transition-colors">
                 Get 2027 Notifications →
               </a>
             </div>
@@ -275,7 +276,7 @@ export default function HomePage() {
             <div className="bg-gray-50 rounded-2xl border border-gray-200 p-12 text-center">
               <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-green-50 border border-green-200 flex items-center justify-center text-2xl">✅</div>
               <h3 className="font-display text-3xl text-[#0f2044] mb-2">YOU&apos;RE IN!</h3>
-              <p className="text-gray-500 mb-6">We&apos;ll be in touch with details. Get ready — the Warriors are waiting.</p>
+              <p className="text-gray-500 mb-6">We&apos;ll be in touch with details. Get ready — the {club.shortName} are waiting.</p>
               <button onClick={() => setStatus("idle")}
                 className="bg-[#0f2044] hover:bg-[#1a3160] text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors">
                 Register Another Player
@@ -339,7 +340,7 @@ export default function HomePage() {
                 style={{ boxShadow: "0 8px 24px -4px rgba(139,26,46,0.5)" }}>
                 {status === "loading" ? "Submitting…" : "Secure My Spot →"}
               </button>
-              <p className="text-center text-xs text-gray-400 pt-1">Your info is only shared with the Warriors coaching staff.</p>
+              <p className="text-center text-xs text-gray-400 pt-1">Your info is only shared with the {club.shortName} coaching staff.</p>
             </form>
           )}
             </>
@@ -348,17 +349,17 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="bg-[#0f2044] py-10 px-6">
+      <footer className="bg-navy py-10 px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <Image src="/images/warriors/mascot.png" alt="" width={36} height={36} className="object-contain opacity-70" />
+            <Image src={assets.mascot} alt="" width={36} height={36} className="object-contain opacity-70" />
             <div>
-              <p className="text-white font-bold text-sm">East Cherokee Warriors</p>
-              <p className="text-white/40 text-xs">8U Travel Baseball · {new Date().getFullYear()}</p>
+              <p className="text-white font-bold text-sm">{club.name}</p>
+              <p className="text-white/40 text-xs">{club.tagline} · {new Date().getFullYear()}</p>
             </div>
           </div>
           <div className="flex gap-5 text-sm">
-            <a href={`mailto:${COACH_EMAIL}`} className="text-[#c9a84c] hover:underline">{COACH_EMAIL}</a>
+            <a href={`mailto:${COACH_EMAIL}`} className="text-gold hover:underline">{COACH_EMAIL}</a>
             <a href={`tel:${COACH_PHONE}`} className="text-white/50 hover:text-white transition-colors">{COACH_PHONE}</a>
           </div>
         </div>

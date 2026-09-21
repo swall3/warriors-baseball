@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { assets, club, colors } from "@/lib/brand-config";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const viewport: Viewport = {
-  themeColor: "#0f2044",
+  themeColor: colors.navy,
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -13,24 +14,22 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Warriors Baseball — East Cherokee",
-  description: "East Cherokee Warriors — Elite Travel Baseball",
+  title: `${club.shortName} Baseball — ${club.region}`,
+  description: `${club.name} — Elite Travel Baseball`,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Warriors ⚾",
+    title: `${club.shortName} ⚾`,
     statusBarStyle: "black-translucent",
   },
   icons: {
-    apple: [
-      { url: "/images/warriors/logo.png", sizes: "180x180", type: "image/png" },
-    ],
-    icon: "/images/warriors/logo.png",
+    apple: [{ url: assets.logo, sizes: "180x180", type: "image/png" }],
+    icon: assets.logo,
   },
   openGraph: {
-    title: "East Cherokee Warriors Baseball",
-    description: "Join the Warriors. Elite travel ball. Tryouts now open.",
-    images: ["/images/warriors/logo.jpg"],
+    title: `${club.name} Baseball`,
+    description: `Join the ${club.shortName}. Elite travel ball. Tryouts now open.`,
+    images: [assets.logoJpg],
   },
 };
 

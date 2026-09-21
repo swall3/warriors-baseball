@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1b6d3e"/>
+      <stop offset="100%" stop-color="#0f4d2e"/>
+    </linearGradient>
+    <pattern id="mesh" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#grass)"/>
+  <rect width="1600" height="900" fill="url(#mesh)"/>
+
+  <polygon points="800,760 230,160 1370,160" fill="#1f7a46" fill-opacity="0.7"/>
+
+  <path d="M 230 160 Q 800 -170 1370 160" fill="none" stroke="#ffffff" stroke-opacity="0.7" stroke-width="6"/>
+  <line x1="800" y1="760" x2="230" y2="160" stroke="#ffffff" stroke-width="5"/>
+  <line x1="800" y1="760" x2="1370" y2="160" stroke="#ffffff" stroke-width="5"/>
+
+  <rect x="720" y="600" width="160" height="160" transform="rotate(45 800 680)" fill="#b9834c"/>
+  <circle cx="800" cy="590" r="30" fill="#b9834c"/>
+
+  <rect x="784" y="744" width="32" height="32" transform="rotate(45 800 760)" fill="#ffffff"/>
+  <rect x="644" y="602" width="24" height="24" transform="rotate(45 656 614)" fill="#ffffff"/>
+  <rect x="788" y="458" width="24" height="24" transform="rotate(45 800 470)" fill="#ffffff"/>
+  <rect x="932" y="602" width="24" height="24" transform="rotate(45 944 614)" fill="#ffffff"/>
+
+  <path d="M 780 760 L 820 760 L 820 780 L 800 792 L 780 780 Z" fill="#ffffff"/>
+</svg>
