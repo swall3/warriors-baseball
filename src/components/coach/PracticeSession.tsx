@@ -11,6 +11,8 @@ export type PracticeRow = {
   created_at: string;
   attempts: number;
   correct: number;
+  bundle_assignment_id: string | null;
+  bundle_position: number | null;
 };
 type Run = {
   ids: string[];
@@ -79,12 +81,31 @@ export default function PracticeSession({
       );
     }
   }
-  const available = rows.filter(
+  // Group any position-practice bundle's scenarios together, in the order the
+  // coach assigned them (bundle_position), while leaving standalone
+  // assignments in their existing order. Rows arrive newest-first from the
+  // API, so a stable sort keyed by "bundle group, then position within it"
+  // keeps a bundle's reps contiguous without disturbing anything else.
+  const eligible = rows.filter(
     (r) =>
       r.player_id === playerId &&
       players.some((p) => p.id === r.player_id) &&
       BACKUP_SCENARIOS.some((s) => s.id === r.scenario_id),
   );
+  const groupFirstIndex = new Map<string, number>();
+  eligible.forEach((r, index) => {
+    const group = r.bundle_assignment_id ?? `solo:${r.id}`;
+    if (!groupFirstIndex.has(group)) groupFirstIndex.set(group, index);
+  });
+  const available = eligible
+    .map((r, index) => ({ r, index }))
+    .sort((a, b) => {
+      const groupA = groupFirstIndex.get(a.r.bundle_assignment_id ?? `solo:${a.r.id}`)!;
+      const groupB = groupFirstIndex.get(b.r.bundle_assignment_id ?? `solo:${b.r.id}`)!;
+      if (groupA !== groupB) return groupA - groupB;
+      return (a.r.bundle_position ?? 0) - (b.r.bundle_position ?? 0);
+    })
+    .map(({ r }) => r);
   const current = rows.find((r) => r.id === run?.ids[run.index]);
   const scenario = BACKUP_SCENARIOS.find((s) => s.id === current?.scenario_id);
   const seconds = run

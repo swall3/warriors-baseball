@@ -1,6 +1,7 @@
 import { coachTeamIds } from "@/lib/access/policy";
 import { randomUUID } from "node:crypto";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import { getPositionPracticeBundle } from "@/lib/practice/bundles";
 import type { CoachSession } from "@/lib/coach/session";
 import { client, getGame, LiveError } from "./store";
 export async function assignments(session: CoachSession) {
@@ -16,33 +17,54 @@ export async function assignments(session: CoachSession) {
       503,
     );
   const ids = coachTeamIds(session);
-  if (ids === null) return data ?? [];
+  const rows = ids === null ? (data ?? []) : await filterAllowed(session, ids, data ?? []);
+  return rows;
+}
+// Coach-facing rollup of assigned position-practice bundles (Decision 1).
+// Individual scenario progress underneath is unchanged (see assignments()).
+//
+// Degrades to an empty list (rather than throwing) if the underlying view is
+// missing — e.g. this code has merged ahead of the additive migration that
+// creates training_bundle_progress being applied. Legacy single-scenario
+// assignments must keep working from assignments() regardless.
+export async function bundleAssignments(session: CoachSession) {
+  const { data, error } = await client()
+    .from("training_bundle_progress")
+    .select("*")
+    .eq("org_id", session.orgId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) return [];
+  const ids = coachTeamIds(session);
+  const rows = ids === null ? (data ?? []) : await filterAllowed(session, ids, data ?? []);
+  return rows.map((b) => ({
+    ...b,
+    bundle: getPositionPracticeBundle(b.bundle_id) ?? null,
+  }));
+}
+async function filterAllowed<T extends { player_id: string }>(
+  session: CoachSession,
+  teamIds: string[],
+  rows: T[],
+): Promise<T[]> {
   const players = await client()
     .from("players")
     .select("id")
     .eq("org_id", session.orgId)
-    .in("team_id", ids);
+    .in("team_id", teamIds);
   if (players.error) throw new LiveError("Roster unavailable", 503);
   const allowed = new Set((players.data ?? []).map((p) => p.id));
-  return (data ?? []).filter((a) => allowed.has(a.player_id));
+  return rows.filter((a) => allowed.has(a.player_id));
 }
-export async function assignPractice(
+async function resolvePlayerForAssignment(
   session: CoachSession,
-  body: {
-    playerId: string;
-    gameId?: string;
-    scenarioId: string;
-    note?: string;
-  },
+  body: { playerId?: unknown; gameId?: unknown; note?: unknown },
 ) {
-  if (session.role === "viewer")
-    throw new LiveError("A coach assigns practice.", 403);
   if (
     !body ||
-    !BACKUP_SCENARIOS.some((s) => s.id === body.scenarioId) ||
     typeof body.playerId !== "string" ||
     typeof (body.note ?? "") !== "string" ||
-    (body.note?.length ?? 0) > 500
+    ((body.note as string | undefined)?.length ?? 0) > 500
   )
     throw new LiveError("Choose a player and practice activity.", 400);
   const { data: player, error } = await client()
@@ -55,16 +77,37 @@ export async function assignPractice(
   if (error) throw new LiveError("Roster unavailable", 503);
   if (!player) throw new LiveError("Player not found", 404);
   if (body.gameId) {
+    if (typeof body.gameId !== "string")
+      throw new LiveError("Choose a player from this game's team.", 400);
     const game = await getGame(session.orgId, body.gameId);
     if (game.config.teamId !== player.team_id)
       throw new LiveError("Choose a player from this game's team.", 400);
   }
+  return player;
+}
+export async function assignPractice(
+  session: CoachSession,
+  body: {
+    playerId: string;
+    gameId?: string;
+    scenarioId?: string;
+    bundleId?: string;
+    note?: string;
+  },
+) {
+  if (session.role === "viewer")
+    throw new LiveError("A coach assigns practice.", 403);
+  if (typeof body?.bundleId === "string")
+    return assignBundle(session, body as { playerId: string; gameId?: string; bundleId: string; note?: string });
+  if (!body || !BACKUP_SCENARIOS.some((s) => s.id === body.scenarioId))
+    throw new LiveError("Choose a player and practice activity.", 400);
+  await resolvePlayerForAssignment(session, body);
   const row = {
     org_id: session.orgId,
     id: randomUUID(),
     player_id: body.playerId,
     game_id: body.gameId ?? null,
-    scenario_id: body.scenarioId,
+    scenario_id: body.scenarioId as string,
     note: body.note ?? "",
   };
   const { error: saveError } = await client()
@@ -73,6 +116,51 @@ export async function assignPractice(
   if (saveError)
     throw new LiveError("Practice was not saved. Retry when connected.", 503);
   return row;
+}
+// Assigns a whole position-practice bundle (ordered set of scenario ids) to
+// one player in a single coach action. A parent row in
+// training_practice_bundles records the assignment; each scenario keeps its
+// own training_assignments row (bundle_assignment_id/bundle_position link it
+// back) so the existing per-scenario answer/result path is unchanged.
+async function assignBundle(
+  session: CoachSession,
+  body: { playerId: string; gameId?: string; bundleId: string; note?: string },
+) {
+  const bundle = getPositionPracticeBundle(body.bundleId);
+  if (!bundle) throw new LiveError("Choose a player and practice bundle.", 400);
+  await resolvePlayerForAssignment(session, body);
+  const bundleRow = {
+    org_id: session.orgId,
+    id: randomUUID(),
+    player_id: body.playerId,
+    game_id: body.gameId ?? null,
+    bundle_id: bundle.id,
+    note: body.note ?? "",
+  };
+  const { error: bundleError } = await client()
+    .from("training_practice_bundles")
+    .insert(bundleRow);
+  if (bundleError)
+    throw new LiveError("Practice was not saved. Retry when connected.", 503);
+  const assignmentRows = bundle.scenarioIds.map((scenarioId, index) => ({
+    org_id: session.orgId,
+    id: randomUUID(),
+    player_id: body.playerId,
+    game_id: body.gameId ?? null,
+    scenario_id: scenarioId,
+    note: body.note ?? "",
+    bundle_assignment_id: bundleRow.id,
+    bundle_position: index,
+  }));
+  const { error: assignError } = await client()
+    .from("training_assignments")
+    .insert(assignmentRows);
+  if (assignError)
+    throw new LiveError(
+      "The practice bundle was saved, but its activities were not. Retry when connected.",
+      503,
+    );
+  return { bundleAssignment: bundleRow, assignments: assignmentRows };
 }
 export async function recordAttempt(
   session: CoachSession,

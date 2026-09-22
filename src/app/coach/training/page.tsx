@@ -7,6 +7,7 @@ import Link from "next/link";
 import PracticeAssignment from "@/components/coach/PracticeAssignment";
 import { Diamond, FIELD_POS } from "@/components/Diamond";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import type { PositionPracticeBundle } from "@/lib/practice/bundles";
 type Assignment = {
   id: string;
   player_id: string;
@@ -16,12 +17,28 @@ type Assignment = {
   created_at: string;
   attempts: number;
   correct: number;
+  bundle_assignment_id: string | null;
+  bundle_position: number | null;
+};
+type BundleAssignment = {
+  id: string;
+  player_id: string;
+  game_id: string | null;
+  bundle_id: string;
+  note: string;
+  created_at: string;
+  scenario_count: number;
+  scenarios_completed: number;
+  total_attempts: number;
+  total_correct: number;
+  bundle: PositionPracticeBundle | null;
 };
 export default function Training() {
   const { catalog, error: catalogError, retry } = useCatalog();
   const params = useSearchParams();
   const [player, setPlayer] = useState(params.get("player") ?? "");
   const [rows, setRows] = useState<Assignment[]>([]);
+  const [bundleRows, setBundleRows] = useState<BundleAssignment[]>([]);
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const [active, setActive] = useState<Assignment | null>(null);
@@ -52,6 +69,7 @@ export default function Training() {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
         setRows(d.assignments);
+        setBundleRows(d.bundles ?? []);
         setError("");
       })
       .catch((e) => {
@@ -88,6 +106,9 @@ export default function Training() {
     }
   }
   const scenario = BACKUP_SCENARIOS.find((s) => s.id === active?.scenario_id);
+  const activeBundle = active?.bundle_assignment_id
+    ? bundleRows.find((b) => b.id === active.bundle_assignment_id)
+    : undefined;
   if (active && scenario)
     return (
       <div className="nf-workspace nf-practice">
@@ -113,6 +134,13 @@ export default function Training() {
           <h1 ref={lessonHeading} tabIndex={-1}>
             {feedback?.correct ? "You’ve got it!" : scenario.question}
           </h1>
+          {activeBundle?.bundle && (
+            <p className="nf-eyebrow">
+              {activeBundle.bundle.label} · rep{" "}
+              {(active.bundle_position ?? 0) + 1} of{" "}
+              {activeBundle.bundle.scenarioIds.length}
+            </p>
+          )}
           {active.note && (
             <p className="nf-coach-note">Coach says: {active.note}</p>
           )}
@@ -188,6 +216,34 @@ export default function Training() {
               {feedback?.correct && (
                 <>
                   <p>Saved to {name}’s practice progress.</p>
+                  {(() => {
+                    if (!active.bundle_assignment_id) return null;
+                    const next = rows
+                      .filter(
+                        (a) =>
+                          a.bundle_assignment_id === active.bundle_assignment_id &&
+                          a.id !== active.id &&
+                          a.correct === 0,
+                      )
+                      .sort(
+                        (x, y) =>
+                          (x.bundle_position ?? 0) - (y.bundle_position ?? 0),
+                      )[0];
+                    if (!next) return null;
+                    return (
+                      <button
+                        onClick={() => {
+                          setActive(next);
+                          setAnswer(null);
+                          setFeedback(null);
+                          setPending(null);
+                          setError("");
+                        }}
+                      >
+                        Next rep in this practice →
+                      </button>
+                    );
+                  })()}
                   <button
                     onClick={() => {
                       setActive(null);
@@ -269,8 +325,57 @@ export default function Training() {
         />
       )}
       <div className="nf-roster">
+        {bundleRows
+          .filter((b) => b.player_id === playerId)
+          .map((b) => {
+            const members = rows
+              .filter((a) => a.bundle_assignment_id === b.id)
+              .sort((x, y) => (x.bundle_position ?? 0) - (y.bundle_position ?? 0));
+            const next = members.find((a) => a.correct === 0) ?? members[0];
+            const done = b.scenario_count > 0 && b.scenarios_completed >= b.scenario_count;
+            return (
+              <section className="nf-card" key={b.id}>
+                <p className="nf-eyebrow">
+                  {done ? "COMPLETED" : "ASSIGNED PRACTICE"}
+                </p>
+                <h3>{b.bundle?.label ?? "Position practice unavailable"}</h3>
+                {b.bundle?.skillFocus && (
+                  <p className="nf-muted">{b.bundle.skillFocus}</p>
+                )}
+                {b.note && <p>{b.note}</p>}
+                <p className="nf-muted">
+                  Assigned {new Date(b.created_at).toLocaleDateString()}
+                </p>
+                {b.game_id && (
+                  <p>
+                    <Link href={`/coach/live/${b.game_id}/insights`}>
+                      View source game →
+                    </Link>
+                  </p>
+                )}
+                <p>
+                  {b.scenarios_completed} of {b.scenario_count} activities
+                  complete · {b.total_correct} successful reps ·{" "}
+                  {b.total_attempts} answers
+                </p>
+                {next && (
+                  <button
+                    onClick={() => {
+                      setActive(next);
+                      setAnswer(null);
+                      setFeedback(null);
+                      setPending(null);
+                      setError("");
+                    }}
+                  >
+                    {done ? "Practice again →" : "Let’s practice →"}
+                  </button>
+                )}
+              </section>
+            );
+          })}
         {rows
-          .filter((a) => a.player_id === playerId)
+          .filter((a) => a.player_id === playerId && !a.bundle_assignment_id)
           .map((a) => (
             <section className="nf-card" key={a.id}>
               <p className="nf-eyebrow">
@@ -308,9 +413,11 @@ export default function Training() {
             </section>
           ))}
       </div>
-      {!error && !rows.some((a) => a.player_id === playerId) && (
-        <p className="nf-card">No assigned practice for {name} yet.</p>
-      )}
+      {!error &&
+        !rows.some((a) => a.player_id === playerId) &&
+        !bundleRows.some((b) => b.player_id === playerId) && (
+          <p className="nf-card">No assigned practice for {name} yet.</p>
+        )}
       {catalog && catalog.role !== "viewer" && (
         <div className="nf-section">
           <PracticeAssignment
