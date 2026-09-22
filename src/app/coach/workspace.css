@@ -1211,3 +1211,52 @@
     flex-direction: column;
   }
 }
+
+/* Account / email sign-in form (/account). The bare <form><label><input>
+   <button> had no field-level styling, so the focused input's ring bled into
+   the button below it (button overlap). Scoped to .nf-account-form so it does
+   not touch other .nf-card forms. */
+.nf-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 8px;
+}
+.nf-account-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #3a4a42;
+}
+.nf-account-form input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  color: #101720;
+  background: white;
+  border: 1px solid #cdd5cd;
+  border-radius: 12px;
+}
+.nf-account-form input:focus-visible {
+  outline: 2px solid var(--nf-green);
+  outline-offset: 2px;
+  border-color: var(--nf-green);
+}
+.nf-account-form button {
+  align-self: flex-start;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  background: var(--nf-green);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.nf-account-form button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
