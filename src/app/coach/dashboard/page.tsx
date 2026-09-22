@@ -515,18 +515,18 @@ export default function Dashboard() {
       <header className="border-b border-d-sel/40 bg-d-surface p-4 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-d-sel">{brandTeam.name} Heat Map Dashboard</h1>
-            <p className="mt-1 text-sm text-d-ink-2">Scope by current game, selected games, or all recorded games.</p>
+            <h1 className="text-2xl font-black tracking-tight text-d-sel">{brandTeam.name} Historical Analytics</h1>
+            <p className="mt-1 text-sm text-d-ink-2">Imported and older device-only games. Review shared games from the main Review page.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
-            <Link href="/coach" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Back To Scoring
+            <Link href="/coach/today" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
+              Game day
             </Link>
 <Link href="/coach/import" className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-neg touch-manipulation active:scale-95">
               Import Game
             </Link>
-            <Link href="/coach/lineup" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
-              Lineup
+            <Link href="/coach/live/new" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
+              Prepare game
             </Link>
             <Link href="/coach/intel" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Intel
@@ -573,7 +573,7 @@ export default function Dashboard() {
                   className={`rounded-lg border px-3 py-2 text-sm font-semibold touch-manipulation active:scale-95 capitalize ${scope === value ? 'border-d-sel bg-d-sel text-white' : 'border-d-line bg-d-sunken text-d-ink'}`}
                   onClick={() => setScope(value)}
                 >
-                  {value === 'current' ? 'Current Game' : value === 'multiple' ? 'Selected Games' : 'All Games'}
+                  {value === 'current' ? 'Saved Device Game' : value === 'multiple' ? 'Selected Games' : 'All Games'}
                 </button>
               ))}
             </div>

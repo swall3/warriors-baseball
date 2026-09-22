@@ -69,6 +69,15 @@ export default function Insights() {
         <Link className="nf-button" href="/coach/dashboard">
           Open historical analytics →
         </Link>
+        <details className="nf-section">
+          <summary>Recover an older device-only game</summary>
+          <p>
+            These tools read games previously saved on this device. Use Prepare
+            for all new shared games.
+          </p>
+          <Link href="/coach/legacy">Open legacy scorer</Link> ·{" "}
+          <Link href="/coach/legacy/lineup">Open legacy rotation plan</Link>
+        </details>
       </section>
     </Workspace>
   );

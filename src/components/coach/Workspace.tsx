@@ -122,8 +122,8 @@ export function Workspace({
         )}
         {children}
         <footer className="nf-footer">
-          <Link href="/coach">Device-only scorer</Link>
-          <Link href="/coach/lineup">Rotation planner</Link>
+          <Link href="/coach/team">Manage team</Link>
+          <Link href="/coach/live/new">Prepare game</Link>
           <Link href="/coach/import">Import games</Link>
           <Link href="/games">Public training games</Link>
         </footer>
