@@ -102,7 +102,7 @@ export function EmailPreferences({ team }: { team: string }) {
           <fieldset disabled={busy} className="space-y-4 my-5">
             <legend className="sr-only">Email categories</legend>
             {(Object.keys(labels) as (keyof Preferences)[]).map((k) => (
-              <label key={k} className="flex gap-3 items-start">
+              <label key={k} className="nf-email-choice">
                 <input
                   type="checkbox"
                   checked={draft[k]}
