@@ -134,6 +134,7 @@ export function Workspace({
         <footer className="nf-footer">
           <Link href="/coach/team">Manage team</Link>
           <Link href="/coach/live/new">Prepare game</Link>
+          <Link href="/coach/practice">Practice library</Link>
           {(!catalog?.personalAccount || catalog?.canManageOrganization) && (
             <Link href="/coach/import">Import games</Link>
           )}

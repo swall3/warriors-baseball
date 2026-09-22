@@ -1,0 +1,92 @@
+/* Practice library / plan builder — additions scoped under .dugout-theme,
+   following coach.css's rule against bare element selectors. Reuses the
+   .nf-card / .nf-eyebrow / .nf-button tokens defined in workspace.css rather
+   than inventing a second design language. */
+
+.dugout-theme .nf-drill-grid,
+.dugout-theme .nf-template-grid,
+.dugout-theme .nf-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.dugout-theme .nf-drill-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.dugout-theme .nf-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--d-sunken);
+  color: var(--d-ink-2);
+  font-size: 12px;
+  border: 1px solid var(--d-line);
+}
+
+.dugout-theme .nf-station {
+  border: 1px solid var(--d-line);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: var(--d-surface);
+}
+
+.dugout-theme .nf-station-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.dugout-theme .nf-drill-picker {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--d-line);
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 8px;
+}
+
+.dugout-theme .nf-drill-picker label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.dugout-theme .nf-equipment-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.dugout-theme .nf-equipment-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--d-line);
+}
+
+/* Printable plan view: hide app chrome, keep only the plan content. Applied
+   via a `.nf-print-area` wrapper around the printable content on the plan
+   view page; everything else on that page carries `.nf-no-print`. */
+@media print {
+  .dugout-theme .nf-no-print {
+    display: none !important;
+  }
+  .dugout-theme .nf-print-area {
+    color: #000;
+    background: #fff;
+  }
+  .dugout-theme .nf-print-area .nf-card {
+    border: 1px solid #999;
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}
