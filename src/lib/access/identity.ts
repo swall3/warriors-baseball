@@ -45,7 +45,7 @@ export async function accountSession(
       .eq("user_id", user.id),
     db
       .from("parent_players")
-      .select("player_id")
+      .select("player_id,team_id")
       .eq("org_id", orgId)
       .eq("user_id", user.id),
   ]);
@@ -53,6 +53,21 @@ export async function accountSession(
     throw new Error("Account access unavailable");
   if (!org.data?.active || !member.data) return null;
   const admin = ["owner", "manager"].includes(member.data.role);
+  const playerNames =
+    players.data.length &&
+    (await db
+      .from("players")
+      .select("id,display_name")
+      .eq("org_id", orgId)
+      .in(
+        "id",
+        players.data.map((p) => p.player_id),
+      ));
+  const nameOf = (id: string) =>
+    (playerNames &&
+      !playerNames.error &&
+      playerNames.data.find((n) => n.id === id)?.display_name) ||
+    id;
   return {
     orgId,
     userId: user.id,
@@ -64,6 +79,11 @@ export async function accountSession(
         : "viewer",
     teamRoles: Object.fromEntries(teams.data.map((t) => [t.team_id, t.role])),
     playerIds: players.data.map((p) => p.player_id),
+    players: players.data.map((p) => ({
+      id: p.player_id,
+      teamId: p.team_id,
+      displayName: nameOf(p.player_id),
+    })),
   };
 }
 export async function legacyAllowed(orgId: string) {
