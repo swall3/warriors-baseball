@@ -1,6 +1,6 @@
 # Work order: position-based practice assignment + practice/drill library
 
-Status: **all five decisions IMPLEMENTED and merged 2026-09-22** (D1 PR #15, D2 PR #21, D3/D4 PR #22, D5 PR #19). Remaining follow-ups: run-practice timer mode, team-authored custom drills, insights→drill suggestions chain.
+Status: **all five decisions IMPLEMENTED and merged 2026-09-22** (D1 PR #15, D2 PR #21, D3/D4 PR #22, D5 PR #19). The three practice follow-ups are implemented on `feat/practice-workflows-ui-audit`: durable run-practice timer mode, org/team-scoped custom drills, and postgame insight → suggested drills → saved practice provenance.
 Companion to `DUGOUT-MASTER-DEEP-DIVE.md` (which stays the detailed reference)
 and `SEATS-AND-GAME-ACCESS.md` (games/drills content is paid-tier per that doc's
 Decision 2; the same entitlement applies here).
@@ -28,7 +28,7 @@ scenario-by-scenario per kid is too granular.
 
 ## Decision 2 — Practice/drill library like Dugout Master
 
-**Implemented (MVP) 2026-09-22** (PR #21: 37 drills, 8 templates, custom team plans at /coach/practice; timer mode + custom drills deferred).
+**Implemented (MVP) 2026-09-22** (PR #21: 37 drills, 8 templates, custom team plans at `/coach/practice`). Follow-up implementation adds team-authored drills and a device-durable station timer with pause, resume, station navigation, wake-lock support, and reload recovery.
 
 Stuart wants the Dugout Master-style item: **preloaded practices/drills plus
 custom team practices**.

@@ -77,8 +77,10 @@ export default function Insights() {
             These tools read games previously saved on this device. Use Prepare
             for all new shared games.
           </p>
-          <Link href="/coach/legacy">Open legacy scorer</Link> ·{" "}
-          <Link href="/coach/legacy/lineup">Open legacy rotation plan</Link>
+          <div className="nf-legacy-actions">
+            <Link href="/coach/legacy">Open legacy scorer</Link>
+            <Link href="/coach/legacy/lineup">Open legacy rotation plan</Link>
+          </div>
         </details>
       </section>
     </Workspace>

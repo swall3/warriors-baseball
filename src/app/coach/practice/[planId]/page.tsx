@@ -7,6 +7,7 @@ import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
 import { getDrill } from "@/lib/practice/drills";
 import type { PracticeBlock } from "@/lib/practice/templates";
 import { aggregateEquipment, totalPlanDuration, unresolvedDrillIds } from "@/lib/practice/aggregate";
+import type { TeamDrill } from "@/lib/practice/custom-drills";
 
 type PlanRow = {
   id: string;
@@ -17,6 +18,8 @@ type PlanRow = {
   blocks: PracticeBlock[];
   created_at: string;
   updated_at: string;
+  source_game_id: string | null;
+  recommendation_context: Record<string, unknown> | null;
 };
 
 export default function PracticePlanView() {
@@ -26,6 +29,7 @@ export default function PracticePlanView() {
   const [plan, setPlan] = useState<PlanRow | null>(null);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [customDrills, setCustomDrills] = useState<TeamDrill[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,6 +38,7 @@ export default function PracticePlanView() {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
         setPlan(d.plan);
+        setCustomDrills(d.customDrills ?? []);
         setError("");
       })
       .catch((e) => {
@@ -60,6 +65,8 @@ export default function PracticePlanView() {
   }
 
   const canEdit = catalog?.role !== "viewer";
+  const customDrillMap = new Map(customDrills.map((drill) => [drill.id, drill]));
+  const resolveDrill = (id: string) => getDrill(id) ?? customDrillMap.get(id);
 
   return (
     <Workspace catalog={catalog} active="Practice library">
@@ -72,7 +79,7 @@ export default function PracticePlanView() {
             <p className="nf-eyebrow">
               {plan.source_template_id ? "FROM TEMPLATE" : "CUSTOM PLAN"}
             </p>
-            <div className="nf-station-head">
+            <div className="nf-action-row">
               <Link className="nf-secondary" href="/coach/practice">
                 ← Back to library
               </Link>
@@ -86,6 +93,9 @@ export default function PracticePlanView() {
                   </button>
                 </>
               )}
+              <Link className="nf-button" href={`/coach/practice/${plan.id}/run`}>
+                Run practice
+              </Link>
               <button onClick={() => window.print()}>Print</button>
             </div>
           </div>
@@ -93,6 +103,9 @@ export default function PracticePlanView() {
           <section className="nf-print-area nf-card nf-section">
             <h2>{plan.name}</h2>
             {plan.description && <p>{plan.description}</p>}
+            {plan.source_game_id && (
+              <p className="nf-notice">Created from a postgame recommendation. <Link href={`/coach/live/${plan.source_game_id}/insights`}>Review the source game →</Link></p>
+            )}
             <p className="nf-muted">
               {plan.blocks.length} station{plan.blocks.length === 1 ? "" : "s"} ·{" "}
               {totalPlanDuration(plan.blocks)} min planned total
@@ -104,7 +117,7 @@ export default function PracticePlanView() {
                   Station {i + 1}: {block.label} ({block.durationMinutes} min)
                 </h3>
                 {block.drillIds.map((id) => {
-                  const drill = getDrill(id);
+                  const drill = resolveDrill(id);
                   if (!drill)
                     return (
                       <p className="nf-notice" key={id} role="alert">
@@ -137,7 +150,7 @@ export default function PracticePlanView() {
 
             <h3>Equipment checklist</h3>
             <ul className="nf-equipment-list">
-              {aggregateEquipment(plan.blocks).map((e) => (
+              {aggregateEquipment(plan.blocks, resolveDrill).map((e) => (
                 <li key={e.item}>
                   <span>{e.item}</span>
                   <span className="nf-muted">
@@ -146,17 +159,13 @@ export default function PracticePlanView() {
                 </li>
               ))}
             </ul>
-            {unresolvedDrillIds(plan.blocks).length > 0 && (
+            {unresolvedDrillIds(plan.blocks, resolveDrill).length > 0 && (
               <p className="nf-notice nf-no-print" role="alert">
                 This plan references drills no longer in the catalog. Edit the plan to update them.
               </p>
             )}
           </section>
 
-          <p className="nf-muted nf-no-print">
-            Run-practice timer mode is a planned follow-up — this page is the
-            saved plan and its printable layout only.
-          </p>
         </>
       )}
     </Workspace>

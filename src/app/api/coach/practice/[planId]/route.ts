@@ -1,4 +1,4 @@
-import { getPlan, updatePlan, deletePlan } from "@/lib/practice/plans";
+import { planWithDrills, updatePlan, deletePlan } from "@/lib/practice/plans";
 import { failure, reply, sessionFor } from "@/lib/coach/live/http";
 export async function GET(
   request: Request,
@@ -6,8 +6,8 @@ export async function GET(
 ) {
   try {
     const session = await sessionFor(request);
-    const plan = await getPlan(session, (await params).planId);
-    return reply({ ok: true, plan });
+    const result = await planWithDrills(session, (await params).planId);
+    return reply({ ok: true, ...result });
   } catch (e) {
     return failure(e);
   }

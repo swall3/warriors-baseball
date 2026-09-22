@@ -7,6 +7,7 @@ import { DRILLS, DRILL_CATEGORIES, type DrillCategory } from "@/lib/practice/dri
 import { getPracticeTemplate } from "@/lib/practice/templates";
 import type { PracticeBlock } from "@/lib/practice/templates";
 import { aggregateEquipment, totalPlanDuration } from "@/lib/practice/aggregate";
+import type { TeamDrill } from "@/lib/practice/custom-drills";
 
 function newBlock(): PracticeBlock {
   return { id: crypto.randomUUID(), label: "New station", durationMinutes: 15, drillIds: [] };
@@ -28,6 +29,7 @@ export default function PracticeBuilder() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadedEdit, setLoadedEdit] = useState(!editId);
+  const [customDrills, setCustomDrills] = useState<TeamDrill[]>([]);
 
   useEffect(() => {
     if (!catalog) return;
@@ -67,11 +69,34 @@ export default function PracticeBuilder() {
     return () => controller.abort();
   }, [editId]);
 
+  useEffect(() => {
+    if (!teamId) return;
+    const controller = new AbortController();
+    fetch(`/api/coach/practice/drills?teamId=${encodeURIComponent(teamId)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        setCustomDrills(data.drills ?? []);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted) setError(caught.message);
+      });
+    return () => controller.abort();
+  }, [teamId]);
+
+  const allDrills = useMemo(() => [...DRILLS, ...customDrills], [customDrills]);
   const shownDrills = useMemo(
-    () => (category === "all" ? DRILLS : DRILLS.filter((d) => d.category === category)),
-    [category],
+    () => (category === "all" ? allDrills : allDrills.filter((d) => d.category === category)),
+    [allDrills, category],
   );
-  const equipment = useMemo(() => aggregateEquipment(blocks), [blocks]);
+  const drillMap = useMemo(() => new Map(allDrills.map((drill) => [drill.id, drill])), [allDrills]);
+  const equipment = useMemo(
+    () => aggregateEquipment(blocks, (id) => drillMap.get(id)),
+    [blocks, drillMap],
+  );
   const totalMinutes = useMemo(() => totalPlanDuration(blocks), [blocks]);
   const emptyBlocks = blocks.filter((b) => b.drillIds.length === 0);
 
@@ -166,11 +191,13 @@ export default function PracticeBuilder() {
               <div className="nf-station" key={block.id}>
                 <div className="nf-station-head">
                   <input
+                    className="nf-station-name"
                     value={block.label}
                     onChange={(e) => updateBlock(block.id, { label: e.target.value })}
                     aria-label="Station name"
                   />
                   <input
+                    className="nf-station-minutes"
                     type="number"
                     min={1}
                     value={block.durationMinutes}
@@ -207,7 +234,10 @@ export default function PracticeBuilder() {
                         checked={block.drillIds.includes(d.id)}
                         onChange={() => toggleDrill(block.id, d.id)}
                       />
-                      {d.name} ({d.durationMinutes} min · {d.category})
+                      <span>
+                        {d.name} ({d.durationMinutes} min · {d.category})
+                        {"source" in d && d.source === "team" ? " · Team drill" : ""}
+                      </span>
                     </label>
                   ))}
                 </div>

@@ -193,7 +193,9 @@
   border: 1px solid #d9e0d8;
   border-radius: 12px;
   padding: 20px;
+  min-width: 0;
 }
+.nf-game-row > * { min-width: 0; }
 .nf-game-row > span:nth-child(2) {
   flex: 1;
 }
@@ -246,7 +248,8 @@
   margin-bottom: 24px;
 }
 .nf-workspace select,
-.nf-workspace input {
+.nf-workspace input,
+.nf-workspace textarea {
   border: 1px solid #bac9bd;
   border-radius: 8px;
   min-height: 48px;
@@ -255,6 +258,20 @@
   color: #20352a;
   font-size: 16px;
   width: 100%;
+}
+.nf-workspace input[type="checkbox"],
+.nf-workspace input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--nf-green);
+}
+.nf-workspace textarea {
+  resize: vertical;
+  line-height: 1.5;
 }
 .nf-roster {
   display: grid;
@@ -314,8 +331,12 @@
   .nf-game-row {
     padding: 16px;
     gap: 12px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
   }
+  .nf-game-row > b { grid-column: 1; }
+  .nf-game-row > span:last-child { grid-column: 2; justify-self: end; }
   .nf-game-row strong {
     font-size: 14px;
   }
@@ -406,11 +427,28 @@
 }
 .nf-step-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px;
   margin: 24px 0;
 }
+.nf-legacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 12px;
+}
+.nf-legacy-actions a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+}
 .nf-workspace .nf-secondary {
+  background: white;
+  color: var(--nf-green);
+  border-color: #b9c9bc;
+}
+.nf-workspace .nf-button-secondary {
   background: white;
   color: var(--nf-green);
   border-color: #b9c9bc;

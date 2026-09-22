@@ -7,6 +7,7 @@ import {
   totalPlanDuration,
   unresolvedDrillIds,
 } from "../src/lib/practice/aggregate.ts";
+import { recommendPractice } from "../src/lib/practice/recommendations.ts";
 
 const VALID_POSITIONS = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
 const VALID_AGE_BANDS = ["8U", "9U", "10U", "11U", "12U"];
@@ -194,4 +195,49 @@ test("unresolvedDrillIds flags ids missing from the catalog and ignores valid on
 test("unresolvedDrillIds on an all-valid plan is empty", () => {
   const blocks = PRACTICE_TEMPLATES[0].blocks;
   assert.deepEqual(unresolvedDrillIds(blocks), []);
+});
+
+test("plan aggregation can resolve a team-authored drill", () => {
+  const teamDrill = {
+    ...DRILLS[0],
+    id: "custom-test",
+    name: "Our custom rep",
+    equipment: ["cones"],
+  };
+  const resolve = (id) => id === teamDrill.id ? teamDrill : getDrill(id);
+  const blocks = [{ drillIds: [teamDrill.id], durationMinutes: 10 }];
+  assert.deepEqual(unresolvedDrillIds(blocks, resolve), []);
+  assert.deepEqual(aggregateEquipment(blocks, resolve), [
+    { item: "cones", blockCount: 1, drillCount: 1 },
+  ]);
+});
+
+test("postgame recommendation prioritizes a recorded defensive error", () => {
+  const result = recommendPractice({
+    zones: [["RF", 5], ["SS", 2]],
+    contacts: [
+      { side: "them", zone: "SS", result: "error" },
+      { side: "them", zone: "RF", result: "single" },
+    ],
+  });
+  assert.ok(result);
+  assert.equal(result.zone, "SS");
+  assert.match(result.reason, /recorded error/i);
+  assert.ok(result.drills.length >= 1);
+  assert.ok(result.blocks.every((block) => block.drillIds.length > 0));
+});
+
+test("postgame recommendation labels opportunity volume without grading the defense", () => {
+  const result = recommendPractice({
+    zones: [["CF", 4]],
+    contacts: [{ side: "them", zone: "CF", result: "single" }],
+  });
+  assert.ok(result);
+  assert.equal(result.zone, "CF");
+  assert.match(result.reason, /opportunity volume, not a grade/i);
+  assert.ok(
+    result.drills.every((drill) =>
+      drill.category === "team-defense" || drill.positions.some((position) => ["CF"].includes(position)),
+    ),
+  );
 });

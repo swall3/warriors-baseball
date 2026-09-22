@@ -1,5 +1,6 @@
 import type { Command, LiveGame, Snapshot, Side } from "./model.ts";
 import { battingSide } from "./model.ts";
+import { recommendPractice } from "../../practice/recommendations.ts";
 export type Receipt = {
   id: string;
   revision: number;
@@ -53,7 +54,7 @@ export function gameInsights(game: LiveGame, receipts: Receipt[]) {
         return a;
       }, {}),
   ).sort((a, b) => b[1] - a[1]);
-  return {
+  const base = {
     pitchers: Object.entries(game.pitchCounts).map(([id, count]) => ({
       id,
       name: names[id] ?? id.split(":").slice(1).join(":"),
@@ -75,4 +76,5 @@ export function gameInsights(game: LiveGame, receipts: Receipt[]) {
         at: r.created_at,
       })),
   };
+  return { ...base, practiceRecommendation: recommendPractice(base) };
 }
