@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { PitchRuleEditor, PitchWorkload } from "./PitchWorkload";
 import type { Catalog } from "./Workspace";
 import {
   fieldPositions,
@@ -68,6 +69,13 @@ export function GamePreparation({
     if (id) positions[position] = id;
     else delete positions[position];
     update({ positions });
+  }
+  let readinessError = "";
+  try {
+    validateConfig(config);
+    validateDefense(config.positions, config, true);
+  } catch (e) {
+    readinessError = e instanceof Error ? e.message : "Check the lineup.";
   }
   async function save() {
     try {
@@ -303,6 +311,15 @@ export function GamePreparation({
           </section>
         </>
       )}
+      {step === 0 && config.format === "kid_pitch" && (
+        <>
+          <PitchRuleEditor
+            config={config}
+            onChange={(pitchRules) => update({ pitchRules })}
+          />
+          <PitchWorkload config={config} />
+        </>
+      )}
       {step === 1 && (
         <section className="nf-card">
           <p className="nf-eyebrow">PHONES FOR RECORDING · IPAD FOR DISPLAY</p>
@@ -364,13 +381,31 @@ export function GamePreparation({
                 ? "Separate pitch and play recorders"
                 : "One recorder for pitches and plays"}
             </li>
-            <li>Pitch totals start at zero and follow each pitcher</li>
+            <li>
+              {readinessError
+                ? `Needs attention: ${readinessError}`
+                : "Lineup and defensive assignments checked"}
+            </li>
+            <li>
+              {config.format === "kid_pitch"
+                ? config.pitchRules
+                  ? `${config.pitchRules.name}: ${config.pitchRules.dailyLimit} pitches daily; ${config.pitchRules.rest.length} rest thresholds`
+                  : "Pitch rules not configured — confirm limits with your league"
+                : "Coach-pitch format — no player pitch eligibility calculation"}
+            </li>
+            <li>
+              Assign device links after saving, then check the dugout display
+              before starting.
+            </li>
           </ul>
           <p className="nf-muted">
             Saving creates the game. Start it from the game screen when both
             teams are ready.
           </p>
-          <button disabled={busy || !teams.length} onClick={save}>
+          <button
+            disabled={busy || !teams.length || !!readinessError}
+            onClick={save}
+          >
             {busy
               ? "Saving…"
               : initial

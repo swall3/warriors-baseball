@@ -100,7 +100,7 @@ export async function createGame(session: CoachSession, config: Config) {
 }
 const digest = (token: string) =>
   createHash("sha256").update(token).digest("hex");
-export type Actor = { lane: Lane; id: string };
+export type Actor = { lane: Lane; id: string; label?: string; expiresAt?: string };
 export async function actorFor(
   session: CoachSession,
   gameId: string,
@@ -111,7 +111,7 @@ export async function actorFor(
   if (token) {
     const { data, error } = await client()
       .from("live_game_grants")
-      .select("id,lane,expires_at,revoked")
+      .select("id,lane,label,expires_at,revoked")
       .eq("org_id", session.orgId)
       .eq("game_id", gameId)
       .eq("token_hash", digest(token))
@@ -122,7 +122,7 @@ export async function actorFor(
         "This recording assignment has expired or was revoked. Ask the coach for a new link.",
         403,
       );
-    return { lane: data.lane as Lane, id: data.id };
+    return { lane: data.lane as Lane, id: data.id, label:data.label, expiresAt:data.expires_at };
   }
   return session.role === "viewer"
     ? { lane: "display", id: "viewer-session" }

@@ -65,6 +65,14 @@ export function gameInsights(game: LiveGame, receipts: Receipt[]) {
     missingContext: effective.filter(
       (r) => r.command.type === "result" && !r.before_state,
     ).length,
-    corrections: undone.size,
+    corrections:
+      undone.size +
+      effective.filter((r) => r.command.type === "correct").length,
+    correctionNotes: effective
+      .filter((r) => r.command.type === "correct")
+      .map((r) => ({
+        reason: (r.command as Extract<Command, { type: "correct" }>).reason,
+        at: r.created_at,
+      })),
   };
 }

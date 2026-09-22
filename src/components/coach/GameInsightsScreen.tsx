@@ -62,6 +62,22 @@ export default function GameInsightsScreen({ gameId }: { gameId: string }) {
               {result.insights.corrections} corrections
             </span>
           </div>
+          {result.insights.correctionNotes?.length > 0 && (
+            <section className="nf-card">
+              <h3>Coach corrections</h3>
+              <ul>
+                {result.insights.correctionNotes.map((note, i) => (
+                  <li key={i}>
+                    {note.reason} · {new Date(note.at).toLocaleString()}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                These notes explain adjustments to counts, runners and scores.
+                Historical contact rulings remain as recorded.
+              </p>
+            </section>
+          )}
           <div className="nf-grid">
             <section className="nf-card">
               <h3>Every pitcher’s workload</h3>

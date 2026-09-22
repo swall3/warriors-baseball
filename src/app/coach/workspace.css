@@ -936,10 +936,122 @@
   }
 }
 
-.nf-steps { display:flex; gap:8px; margin:22px 0 30px; overflow-x:auto; padding:4px 2px 10px; }
-.nf-steps a { display:flex; align-items:center; gap:9px; flex:1; min-width:132px; padding:12px; border:1px solid #d3dfd4; background:white; border-radius:12px; color:#41594c; }
-.nf-steps a[aria-current="step"] { background:#1b4d3e; color:white; border-color:#1b4d3e; }
-.nf-steps a>span { display:grid; place-items:center; width:24px; height:24px; border:1px solid currentColor; border-radius:50%; font-size:11px; flex-shrink:0; }
-.nf-steps strong { display:block; font-size:13px; }.nf-steps small { display:block; font-size:10px; margin-top:3px; }
-.nf-entry-links { display:flex; gap:18px; flex-wrap:wrap; }.nf-entry-links a { font-size:12px; }
-@media(max-width:600px) { .nf-steps a { min-width:108px; padding:10px 8px; }.nf-steps small { display:none; }.nf-entry { flex-wrap:wrap; } }
+.nf-steps {
+  display: flex;
+  gap: 8px;
+  margin: 22px 0 30px;
+  overflow-x: auto;
+  padding: 4px 2px 10px;
+}
+.nf-steps a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 132px;
+  padding: 12px;
+  border: 1px solid #d3dfd4;
+  background: white;
+  border-radius: 12px;
+  color: #41594c;
+}
+.nf-steps a[aria-current="step"] {
+  background: #1b4d3e;
+  color: white;
+  border-color: #1b4d3e;
+}
+.nf-steps a > span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.nf-steps strong {
+  display: block;
+  font-size: 13px;
+}
+.nf-steps small {
+  display: block;
+  font-size: 10px;
+  margin-top: 3px;
+}
+.nf-entry-links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.nf-entry-links a {
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .nf-steps a {
+    min-width: 108px;
+    padding: 10px 8px;
+  }
+  .nf-steps small {
+    display: none;
+  }
+  .nf-entry {
+    flex-wrap: wrap;
+  }
+}
+
+.nf-sync {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nf-sync button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+.nf-recorder-guide {
+  margin: 16px 0;
+}
+.nf-recorder-guide summary {
+  cursor: pointer;
+}
+.nf-recorder-guide ol {
+  padding-left: 22px;
+  line-height: 1.7;
+}
+.nf-label input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+}
+.nf-table-wrap {
+  overflow-x: auto;
+}
+
+.nf-practice-clock {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  margin: 0.5rem 0;
+}
+
+.nf-pitch-readiness {
+  border-left: 4px solid #d77622;
+  padding: 10px 14px;
+  margin: 12px 0;
+  background: #fff6df;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.nf-pitch-readiness p {
+  margin: 4px 0;
+}
+.nf-pitch-readiness summary {
+  cursor: pointer;
+  font-size: 12px;
+}
+.nf-sync {
+  display: flex;
+  align-items: center;
+}
+.nf-sync > span {
+  white-space: nowrap;
+}

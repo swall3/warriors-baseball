@@ -73,7 +73,8 @@ export async function middleware(req: NextRequest) {
 
   const url = req.nextUrl.clone();
   url.pathname = "/coach/login";
-  url.searchParams.set("from", pathname);
+  url.search = "";
+  url.searchParams.set("from", pathname + req.nextUrl.search);
   return NextResponse.redirect(url);
 }
 
