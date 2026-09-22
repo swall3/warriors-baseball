@@ -65,7 +65,7 @@ export function Workspace({
     >
       <header className="nf-top">
         <Link href="/coach/today" className="nf-wordmark">
-          NINETY FEET <span>/</span>
+          InningWise <span>/</span>
         </Link>
         <span>Game day & player development</span>
       </header>

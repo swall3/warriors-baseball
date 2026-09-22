@@ -13,25 +13,27 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Ninety Feet",
+  metadataBase: new URL(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL || "warriors-baseball-omega.vercel.app"}`),
+  applicationName: "InningWise",
+  title: "InningWise",
   description:
-    "Baseball training, team management, live scoring and player development.",
+    "Smarter players. Stronger teams. Baseball training, team management, live scoring and player development.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    title: "Ninety Feet",
+    title: "InningWise",
     statusBarStyle: "black-translucent",
   },
   icons: {
     apple: [
-      { url: "/ninety-feet.svg", sizes: "180x180", type: "image/svg+xml" },
+      { url: "/inningwise-apple.png", sizes: "180x180", type: "image/png" },
     ],
-    icon: "/ninety-feet.svg",
+    icon: "/inningwise.svg",
   },
   openGraph: {
-    title: "Ninety Feet",
-    description: "Build better players and a stronger team.",
-    images: ["/ninety-feet.svg"],
+    title: "InningWise",
+    description: "Smarter players. Stronger teams.",
+    images: [{ url: "/inningwise-social.png", width: 1200, height: 630, alt: "InningWise — Smarter players. Stronger teams." }],
   },
 };
 

@@ -32,7 +32,7 @@ export async function generateMetadata(): Promise<Metadata> {
   try { orgId = (await getOrgContext()).orgId; }
   catch (error) { if (!(error instanceof NoOrgSessionError)) throw error; }
   const brand = await getCoachBrand(orgId);
-  return { title: orgId ? `${brand.name} · Coach` : "Team sign-in", robots: { index: false, follow: false } };
+  return { title: orgId ? `${brand.name} · InningWise` : "Team sign-in · InningWise", robots: { index: false, follow: false } };
 }
 
 // MT-3: this is also where the client learns which tenant it is rendering for.

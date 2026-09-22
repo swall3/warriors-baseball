@@ -92,7 +92,7 @@ export default function Training() {
     return (
       <div className="nf-workspace nf-practice">
         <header className="nf-top">
-          <strong className="nf-wordmark">NINETY FEET /</strong>
+          <strong className="nf-wordmark">InningWise /</strong>
           <button
             className="nf-secondary"
             disabled={!!pending}
