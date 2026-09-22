@@ -1,10 +1,16 @@
 "use client";
+import { isContact } from "@/lib/coach/contact-density";
 import AnalyticsWorkspace from "@/components/coach/AnalyticsWorkspace";
 
 import { useEffect, useState } from "react";
 import HeatmapCanvas from "@/components/coach/heatmap-canvas";
 import type { EventPin } from "@/lib/coach/game-types";
-import { computeOpponentIntelligence, computeZoneStats, computePlayerTendencies, type PlayerTendency } from "@/lib/coach/analytics";
+import {
+  computeOpponentIntelligence,
+  computeZoneStats,
+  computePlayerTendencies,
+  type PlayerTendency,
+} from "@/lib/coach/analytics";
 
 type GameSummary = {
   id: string;
@@ -22,19 +28,22 @@ type OpponentOption = {
 };
 
 export default function IntelligencePage() {
-  const [loadError,setLoadError]=useState("");
-  const [reload,setReload]=useState(0);
+  const [loadError, setLoadError] = useState("");
+  const [reload, setReload] = useState(0);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOpponent, setSelectedOpponent] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"our-offense" | "opponent-offense">("opponent-offense");
+  const [viewMode, setViewMode] = useState<"our-offense" | "opponent-offense">(
+    "opponent-offense",
+  );
 
   useEffect(() => {
     const loadGames = async () => {
       try {
-        const res = await fetch("/api/coach/games");
+        const res = await fetch("/api/coach/reports");
         const data = await res.json();
-        if (!res.ok || !data.ok) throw new Error(data.error ?? "Historical games unavailable.");
+        if (!res.ok || !data.ok)
+          throw new Error(data.error ?? "Game reports unavailable.");
         if (data.ok) {
           setLoadError("");
           setGames(data.games || []);
@@ -47,7 +56,9 @@ export default function IntelligencePage() {
           }
         }
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : "Historical games unavailable.");
+        setLoadError(
+          e instanceof Error ? e.message : "Game reports unavailable.",
+        );
       } finally {
         setLoading(false);
       }
@@ -56,35 +67,48 @@ export default function IntelligencePage() {
   }, [reload]);
 
   const opponentOptions: OpponentOption[] = Array.from(
-    new Set(games.map(g => g.opponentTeamName).filter(Boolean))
-  ).map(name => ({
+    new Set(games.map((g) => g.opponentTeamName).filter(Boolean)),
+  ).map((name) => ({
     name,
-    games: games.filter(g => g.opponentTeamName === name).length,
+    games: games.filter((g) => g.opponentTeamName === name).length,
   }));
 
   const filteredGames = selectedOpponent
-    ? games.filter(g => g.opponentTeamName === selectedOpponent)
+    ? games.filter((g) => g.opponentTeamName === selectedOpponent)
     : games;
 
-  const allPins = filteredGames.flatMap(g => g.pins);
+  const allPins = filteredGames.flatMap((g) => g.pins).filter(isContact);
 
   const ourOffense = computeZoneStats(allPins, "us");
   const opponentOffense = computeZoneStats(allPins, "them");
 
   const opponentIntel = selectedOpponent
-    ? computeOpponentIntelligence(games, selectedOpponent)
+    ? computeOpponentIntelligence(
+        games.map((g) => ({ ...g, pins: g.pins.filter(isContact) })),
+        selectedOpponent,
+      )
     : null;
 
-  const currentStats = viewMode === "our-offense" ? ourOffense : opponentOffense;
+  const currentStats =
+    viewMode === "our-offense" ? ourOffense : opponentOffense;
 
-  const playerTendencies = selectedOpponent && viewMode === "opponent-offense"
-    ? computePlayerTendencies(allPins, "them")
-    : [];
+  const playerTendencies =
+    selectedOpponent && viewMode === "opponent-offense"
+      ? computePlayerTendencies(allPins, "them")
+      : [];
 
   return (
-    <AnalyticsWorkspace title="Know the next opponent." description="Review contact tendencies and find patterns to discuss with your team.">
+    <AnalyticsWorkspace
+      title="Know the next opponent."
+      description="Review contact tendencies and find patterns to discuss with your team."
+    >
       <div className="nf-opponent-report">
-        {loadError && <div className="nf-notice" role="alert">{loadError}<button onClick={()=>setReload(v=>v+1)}>Retry</button></div>}
+        {loadError && (
+          <div className="nf-notice" role="alert">
+            {loadError}
+            <button onClick={() => setReload((v) => v + 1)}>Retry</button>
+          </div>
+        )}
         {/* Opponent Selector */}
         <div className="mb-6 nf-card">
           <label className="block text-xs font-semibold uppercase tracking-widest text-d-ink-3 mb-2">
@@ -97,7 +121,7 @@ export default function IntelligencePage() {
             className="w-full rounded-xl border border-d-line bg-d-bg px-4 py-3 text-lg font-medium focus:outline-none focus:border-d-sel"
           >
             <option value="">All opponents</option>
-            {opponentOptions.map(opt => (
+            {opponentOptions.map((opt) => (
               <option key={opt.name} value={opt.name}>
                 {opt.name} ({opt.games} game{opt.games > 1 ? "s" : ""})
               </option>
@@ -132,11 +156,13 @@ export default function IntelligencePage() {
         {/* Key Stats */}
         <div className="mb-6 grid grid-cols-2 gap-3">
           <div className="nf-card">
-            <div className="text-xs text-d-ink-3">Total Plays</div>
-            <div className="text-4xl font-semibold tabular-nums mt-1">{currentStats.totalPlays}</div>
+            <div className="text-xs text-d-ink-3">Mapped contacts</div>
+            <div className="text-4xl font-semibold tabular-nums mt-1">
+              {currentStats.totalPlays}
+            </div>
           </div>
           <div className="nf-card">
-            <div className="text-xs text-d-ink-3">On-Base Rate</div>
+            <div className="text-xs text-d-ink-3">Reached on contact</div>
             <div className="text-4xl font-semibold tabular-nums mt-1 text-d-pos">
               {currentStats.overallOnBaseRate}%
             </div>
@@ -146,19 +172,30 @@ export default function IntelligencePage() {
         {/* Opponent Intelligence Card */}
         {opponentIntel && viewMode === "opponent-offense" && (
           <div className="mb-6 rounded-2xl border border-d-neg/40 bg-d-neg/10 p-5">
-            <div className="text-d-neg text-sm font-semibold tracking-widest mb-1">INTELLIGENCE</div>
-            <div className="text-xl font-bold mb-3">{opponentIntel.opponentName}</div>
-            
+            <div className="text-d-neg text-sm font-semibold tracking-widest mb-1">
+              INTELLIGENCE
+            </div>
+            <div className="text-xl font-bold mb-3">
+              {opponentIntel.opponentName}
+            </div>
+
             <div className="text-sm text-d-ink-2 mb-4">
-              {opponentIntel.gamesPlayed} game{opponentIntel.gamesPlayed > 1 ? "s" : ""} • {opponentIntel.totalPlays} tracked plays
+              {opponentIntel.gamesPlayed} game
+              {opponentIntel.gamesPlayed > 1 ? "s" : ""} •{" "}
+              {opponentIntel.totalPlays} tracked plays
             </div>
 
             {opponentIntel.topThreatZones.length > 0 && (
               <div className="mb-4">
-                <div className="text-xs uppercase tracking-widest text-d-neg mb-2">Top Damage Zones</div>
+                <div className="text-xs uppercase tracking-widest text-d-neg mb-2">
+                  Top Damage Zones
+                </div>
                 <div className="flex flex-wrap gap-2">
-                  {opponentIntel.topThreatZones.map(zone => (
-                    <div key={zone} className="rounded-full bg-d-neg/10 px-3 py-1 text-sm text-d-neg border border-d-neg/40">
+                  {opponentIntel.topThreatZones.map((zone) => (
+                    <div
+                      key={zone}
+                      className="rounded-full bg-d-neg/10 px-3 py-1 text-sm text-d-neg border border-d-neg/40"
+                    >
                       {zone.replace(/_/g, " ")}
                     </div>
                   ))}
@@ -167,7 +204,9 @@ export default function IntelligencePage() {
             )}
 
             <div className="rounded-xl bg-d-surface border border-d-line p-4 text-sm">
-              <span className="font-semibold text-d-neg">Defensive Recommendation:</span>{" "}
+              <span className="font-semibold text-d-neg">
+                Defensive Recommendation:
+              </span>{" "}
               {opponentIntel.recommendedShift}
             </div>
           </div>
@@ -178,8 +217,12 @@ export default function IntelligencePage() {
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3 px-1">
               <div>
-                <div className="text-xs uppercase tracking-widest text-d-neg">Known Hitters</div>
-                <div className="text-sm text-d-ink-2">When we face {selectedOpponent} again</div>
+                <div className="text-xs uppercase tracking-widest text-d-neg">
+                  Known Hitters
+                </div>
+                <div className="text-sm text-d-ink-2">
+                  When we face {selectedOpponent} again
+                </div>
               </div>
             </div>
 
@@ -189,12 +232,16 @@ export default function IntelligencePage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-semibold text-lg">{p.batter}</div>
-                      <div className="text-xs text-d-ink-3">{p.total} tracked ABs • {p.successRate}% on-base</div>
+                      <div className="text-xs text-d-ink-3">
+                        {p.total} tracked ABs • {p.successRate}% on-base
+                      </div>
                     </div>
                     {p.favoriteZone && (
                       <div className="text-right text-xs">
                         <div className="text-d-ink-3">Favors</div>
-                        <div className="font-mono text-d-neg">{p.favoriteZone.replace(/_/g, " ")}</div>
+                        <div className="font-mono text-d-neg">
+                          {p.favoriteZone.replace(/_/g, " ")}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -207,8 +254,14 @@ export default function IntelligencePage() {
                           .sort((a, b) => b[1].total - a[1].total)
                           .slice(0, 4)
                           .map(([zone, z]) => (
-                            <div key={zone} className="rounded-full bg-d-sunken px-2.5 py-0.5 text-[10px] tabular-nums">
-                              {zone.replace(/_/g, " ")} <span className="text-d-neg">{z.successRate}%</span>
+                            <div
+                              key={zone}
+                              className="rounded-full bg-d-sunken px-2.5 py-0.5 text-[10px] tabular-nums"
+                            >
+                              {zone.replace(/_/g, " ")}{" "}
+                              <span className="text-d-neg">
+                                {z.successRate}%
+                              </span>
                             </div>
                           ))}
                       </div>
@@ -219,7 +272,8 @@ export default function IntelligencePage() {
             </div>
 
             <div className="mt-3 text-[10px] text-d-ink-3 px-1">
-              Use this to set your defense before the game. Tap a player in the lineup to see their heat.
+              Use this to set your defense before the game. Tap a player in the
+              lineup to see their heat.
             </div>
           </div>
         )}
@@ -230,38 +284,62 @@ export default function IntelligencePage() {
             <div>
               <div className="font-semibold">Zone Heatmap</div>
               <div className="text-xs text-d-ink-3">
-                {viewMode === "opponent-offense" ? "Where they do damage" : "Where we do damage"}
+                {viewMode === "opponent-offense"
+                  ? "Where they do damage"
+                  : "Where we do damage"}
               </div>
             </div>
-            <div className="text-xs text-d-ink-3">Phone friendly • Tap to inspect</div>
+            <div className="text-xs text-d-ink-3">
+              Phone friendly • Tap to inspect
+            </div>
           </div>
 
           <div className="p-4">
-            <HeatmapCanvas 
-              events={allPins.filter(p => p.battingTeam === (viewMode === "our-offense" ? "us" : "them")).map(p => ({
-                ...p,
-                id: String(p.id),
-                timestamp: new Date().toISOString(),
-                eventType: "ball_in_play" as const,
-                description: "",
-                stateAfter: { outs: 0, usRuns: 0, opponentRuns: 0, bases: { first: null, second: null, third: null } }
-              }))}
+            <HeatmapCanvas
+              events={allPins
+                .filter(
+                  (p) =>
+                    p.battingTeam ===
+                    (viewMode === "our-offense" ? "us" : "them"),
+                )
+                .map((p) => ({
+                  ...p,
+                  id: String(p.id),
+                  timestamp: new Date().toISOString(),
+                  eventType: "ball_in_play" as const,
+                  description: "",
+                  stateAfter: {
+                    outs: 0,
+                    usRuns: 0,
+                    opponentRuns: 0,
+                    bases: { first: null, second: null, third: null },
+                  },
+                }))}
             />
           </div>
         </div>
 
         {/* Zone Breakdown */}
         <div className="mt-6">
-          <div className="text-xs uppercase tracking-widest text-d-ink-3 mb-3 px-1">Zone Breakdown</div>
+          <div className="text-xs uppercase tracking-widest text-d-ink-3 mb-3 px-1">
+            Zone Breakdown
+          </div>
           <div className="space-y-2">
             {Object.values(currentStats.zoneStats)
               .sort((a, b) => b.total - a.total)
-              .map(stat => (
-                <div key={stat.zone} className="flex items-center justify-between rounded-2xl border border-d-line bg-d-surface px-4 py-3">
-                  <div className="font-medium capitalize">{stat.zone.replace(/_/g, " ")}</div>
+              .map((stat) => (
+                <div
+                  key={stat.zone}
+                  className="flex items-center justify-between rounded-2xl border border-d-line bg-d-surface px-4 py-3"
+                >
+                  <div className="font-medium capitalize">
+                    {stat.zone.replace(/_/g, " ")}
+                  </div>
                   <div className="flex items-center gap-4 text-sm tabular-nums">
                     <div className="text-d-ink-3">{stat.total} plays</div>
-                    <div className="font-mono text-d-pos">{stat.successRate}% OB</div>
+                    <div className="font-mono text-d-pos">
+                      {stat.successRate}% OB
+                    </div>
                     <div className="text-d-neg">{stat.outs} outs</div>
                   </div>
                 </div>
@@ -270,7 +348,9 @@ export default function IntelligencePage() {
         </div>
 
         {loading && (
-          <div className="text-center py-12 text-d-ink-3">Loading historical data...</div>
+          <div className="text-center py-12 text-d-ink-3">
+            Loading historical data...
+          </div>
         )}
 
         {!loading && !loadError && games.length === 0 && (

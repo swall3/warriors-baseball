@@ -31,42 +31,84 @@ import { OWNER_ORG_ID } from "@/lib/tenant/context";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { playerName, age, parentName, phone, email, position, experience, notes } = body;
-
-    if (!playerName || !age || !parentName || !phone || !email) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const supabase = getPublicSupabaseClient();
-    const { error } = await supabase.from("tryout_signups").insert([{
-      player_name: playerName,
-      age: parseInt(age),
-      parent_name: parentName,
+    const {
+      playerName,
+      age,
+      parentName,
       phone,
       email,
-      position: position || null,
-      experience: experience || null,
-      notes: notes || null,
-      signed_up_at: new Date().toISOString(),
-      // Stamped explicitly, never left to the column default migration 008
-      // added. That default exists as a floor under older deployed code (see
-      // 008's header) and is scheduled for removal in MT-3; a write that
-      // depends on it would start failing then, silently and in the one place
-      // where the failure costs a family's tryout registration.
-      //
-      // It must also equal the literal in 013's public_signup_insert policy,
-      // or every submission is refused. That coupling is documented at both
-      // ends — see OWNER_ORG_ID in src/lib/tenant/context.ts.
-      org_id: OWNER_ORG_ID,
-    }]);
+      position,
+      experience,
+      notes,
+    } = body;
+
+    const required = [playerName, parentName, phone, email];
+    const parsedAge =
+      typeof age === "number"
+        ? age
+        : typeof age === "string" && /^\d{1,2}$/.test(age)
+          ? Number(age)
+          : NaN;
+    if (
+      required.some(
+        (v) => typeof v !== "string" || !v.trim() || v.length > 200,
+      ) ||
+      !Number.isInteger(parsedAge) ||
+      parsedAge < 4 ||
+      parsedAge > 19 ||
+      !/^\S+@\S+\.\S+$/.test(email) ||
+      [position, experience, notes].some(
+        (v) =>
+          v !== undefined &&
+          v !== null &&
+          (typeof v !== "string" || v.length > 2000),
+      )
+    )
+      return NextResponse.json(
+        { error: "Enter valid player and parent contact details." },
+        { status: 400 },
+      );
+
+    const supabase = getPublicSupabaseClient();
+    const { error } = await supabase.from("tryout_signups").insert([
+      {
+        player_name: playerName,
+        age: parsedAge,
+        parent_name: parentName,
+        phone,
+        email,
+        position: position || null,
+        experience: experience || null,
+        notes: notes || null,
+        signed_up_at: new Date().toISOString(),
+        // Stamped explicitly, never left to the column default migration 008
+        // added. That default exists as a floor under older deployed code (see
+        // 008's header) and is scheduled for removal in MT-3; a write that
+        // depends on it would start failing then, silently and in the one place
+        // where the failure costs a family's tryout registration.
+        //
+        // It must also equal the literal in 013's public_signup_insert policy,
+        // or every submission is refused. That coupling is documented at both
+        // ends — see OWNER_ORG_ID in src/lib/tenant/context.ts.
+        org_id: OWNER_ORG_ID,
+      },
+    ]);
 
     if (error) {
       console.error("Supabase error:", error);
-      return NextResponse.json({ error: "Failed to save signup" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to save signup" },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    if (err instanceof SyntaxError || err instanceof TypeError)
+      return NextResponse.json(
+        { error: "Invalid signup payload" },
+        { status: 400 },
+      );
     console.error(err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }

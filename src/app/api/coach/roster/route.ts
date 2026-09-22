@@ -11,7 +11,7 @@ function check(error: { code?: string; message: string } | null) {
   if (error)
     throw new LiveError(
       error.code === "23505"
-        ? "That jersey number is already assigned on this team (including inactive players)."
+        ? "That team name or jersey number already exists (including inactive players)."
         : "Unable to save the roster. Please retry.",
       error.code === "23505" ? 409 : 503,
     );
@@ -47,6 +47,7 @@ async function save(request: Request, create: boolean) {
     const team = await db
       .from("teams")
       .select("id")
+      .eq("kind", "own")
       .eq("org_id", session.orgId)
       .eq("id", teamId)
       .maybeSingle();
@@ -55,7 +56,10 @@ async function save(request: Request, create: boolean) {
     if (!create && body.kind === "team") {
       const result = await db
         .from("teams")
-        .update({ name: text(body.name, "Team name", 80) })
+        .update({
+          name: text(body.name, "Team name", 80),
+          normalized_name: text(body.name, "Team name", 80).toLowerCase(),
+        })
         .eq("org_id", session.orgId)
         .eq("id", teamId)
         .select("id,name")

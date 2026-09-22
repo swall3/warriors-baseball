@@ -14,6 +14,7 @@ export async function GET(request: Request) {
       db
         .from("teams")
         .select("id,name")
+        .eq("kind", "own")
         .eq("org_id", session.orgId)
         .order("name"),
       db

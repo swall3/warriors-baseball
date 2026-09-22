@@ -55,7 +55,10 @@ export function getSessionSecret(): string | null {
 function toBase64Url(bytes: Uint8Array): string {
   let binary = "";
   for (const b of bytes) binary += String.fromCharCode(b);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 function fromBase64Url(value: string): Uint8Array | null {
@@ -78,7 +81,11 @@ async function hmac(secret: string, message: string): Promise<Uint8Array> {
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(message),
+  );
   return new Uint8Array(sig);
 }
 
@@ -116,7 +123,9 @@ export async function signSession(
     iat: now,
     exp: now + maxAgeSeconds,
   };
-  const encoded = toBase64Url(new TextEncoder().encode(JSON.stringify(payload)));
+  const encoded = toBase64Url(
+    new TextEncoder().encode(JSON.stringify(payload)),
+  );
   const signature = toBase64Url(await hmac(secret, encoded));
   return `${encoded}.${signature}`;
 }
@@ -160,7 +169,19 @@ export async function verifySession(
 
   if (typeof payload?.orgId !== "string" || !payload.orgId) return null;
   if (!ROLES.includes(payload?.role)) return null;
-  if (typeof payload?.exp !== "number" || payload.exp <= now) return null;
+  if (
+    typeof payload?.exp !== "number" ||
+    !Number.isFinite(payload.exp) ||
+    payload.exp <= now
+  )
+    return null;
+  if (
+    typeof payload?.iat !== "number" ||
+    !Number.isFinite(payload.iat) ||
+    payload.iat > now + 60 ||
+    payload.exp <= payload.iat
+  )
+    return null;
 
   return payload;
 }

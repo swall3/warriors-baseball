@@ -19,12 +19,12 @@ export default function AnalyticsWorkspace({
   return (
     <Workspace catalog={catalog} active="Review">
       <section className="nf-intro">
-        <p className="nf-eyebrow">REVIEW / HISTORICAL GAMES</p>
+        <p className="nf-eyebrow">REVIEW / ALL GAMES</p>
         <h2>{title}</h2>
         <p>{description}</p>
       </section>
       {error && <LoadError error={error} retry={retry} />}
-      <nav className="nf-report-nav" aria-label="Historical reports">
+      <nav className="nf-report-nav" aria-label="Game reports">
         {[
           ["Team overview", "/coach/dashboard"],
           ["Spray charts", "/coach/stats"],
@@ -41,10 +41,13 @@ export default function AnalyticsWorkspace({
         ))}
       </nav>
       <p className="nf-report-source">
-        Imported and older device-only games.{" "}
-        <Link href="/coach/insights">Open shared-game reviews →</Link>
+        Shared and imported games in one view. Field zones are approximate
+        contact locations.{" "}
+        <Link href="/coach/insights">Browse game reviews →</Link>
       </p>
-      <div className="nf-analytics">{mounted ? children : <p role="status">Loading reports…</p>}</div>
+      <div className="nf-analytics">
+        {mounted ? children : <p role="status">Loading reports…</p>}
+      </div>
     </Workspace>
   );
 }
