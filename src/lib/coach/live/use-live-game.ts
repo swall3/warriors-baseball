@@ -1,4 +1,5 @@
 "use client";
+import { useCoachOrg } from "@/lib/coach/org-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { applyCommand, type Command, type Lane, type LiveGame } from "./model";
 export type PendingCommand = {
@@ -12,6 +13,8 @@ export function useLiveGame(
   gameId: string,
   readOnly = false,
 ) {
+  const { userId } = useCoachOrg();
+  const deviceScope = userId ? `${orgId}:user:${userId}` : orgId;
   const [game, setGame] = useState<LiveGame | null>(null);
   const [confirmed, setConfirmed] = useState<LiveGame | null>(null);
   const [lane, setLane] = useState<Lane>("display");
@@ -158,7 +161,7 @@ export function useLiveGame(
     setError("");
     writer.current = false;
     setRecordingAllowed(false);
-    const tokenKey = `coach:${orgId}:recording:${gameId}`;
+    const tokenKey = `coach:${deviceScope}:recording:${gameId}`;
     try {
       const fragment = new URLSearchParams(location.hash.slice(1));
       const incoming = fragment.get("record");
@@ -167,7 +170,7 @@ export function useLiveGame(
         history.replaceState(null, "", location.pathname + location.search);
       }
       token.current = sessionStorage.getItem(tokenKey) ?? "";
-      storageKey.current = `coach:${orgId}:live:v1:${gameId}:${readOnly ? "board" : token.current ? token.current.slice(-12) : "session"}`;
+      storageKey.current = `coach:${deviceScope}:live:v1:${gameId}:${readOnly ? "board" : token.current ? token.current.slice(-12) : "session"}`;
       const saved = localStorage.getItem(storageKey.current);
       if (saved) {
         const value = JSON.parse(saved) as Cache;
@@ -324,7 +327,7 @@ export function useLiveGame(
       document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("beforeunload", beforeUnload);
     };
-  }, [orgId, gameId, headers, drain, readOnly]);
+  }, [orgId, deviceScope, gameId, headers, drain, readOnly]);
   async function send(command: Command) {
     if (!writer.current || readOnly)
       throw new Error(

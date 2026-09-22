@@ -3,6 +3,10 @@ import Link from "next/link";
 import GameDaySteps from "./GameDaySteps";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 export type Catalog = {
+  orgRole?: "owner" | "manager" | "member";
+  personalAccount?: boolean;
+  familyAccess?: boolean;
+  canManageOrganization?: boolean;
   organization: {
     id: string;
     name: string;
@@ -88,7 +92,13 @@ export function Workspace({
                 "Your dugout"}
             </h1>
           </div>
-          <span className="nf-role">{catalog?.role ?? "Loading"}</span>
+          <span className="nf-role">
+            {catalog?.orgRole === "manager"
+              ? "Organization manager"
+              : catalog?.orgRole === "owner"
+                ? "Organization owner"
+                : (catalog?.role ?? "Loading")}
+          </span>
         </div>
         <nav className="nf-nav" aria-label="Coach navigation">
           {[
@@ -124,9 +134,16 @@ export function Workspace({
         <footer className="nf-footer">
           <Link href="/coach/team">Manage team</Link>
           <Link href="/coach/live/new">Prepare game</Link>
-          <Link href="/coach/import">Import games</Link>
+          {(!catalog?.personalAccount || catalog?.canManageOrganization) && (
+            <Link href="/coach/import">Import games</Link>
+          )}
           <Link href="/games">Public training games</Link>
           <Link href="/coach/billing">Team billing</Link>
+          <Link href="/coach/access">People & access</Link>
+          {catalog?.familyAccess && (
+            <Link href="/coach/family">Family view</Link>
+          )}
+          <Link href="/account">My account</Link>
         </footer>
       </main>
     </div>

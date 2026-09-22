@@ -87,23 +87,21 @@ export async function queueTest(org: string, team: string, user: string) {
     throw new LiveError("Notification email is not configured.", 503);
   // At most one test every ten minutes, including retries from multiple tabs.
   const event = `test:${Math.floor(Date.now() / 600000)}`;
-  const r = await client()
-    .from("notification_outbox")
-    .upsert(
-      {
-        org_id: org,
-        team_id: team,
-        user_id: user,
-        event_key: event,
-        category: "test",
-        kind: "test",
-        details: {},
-      },
-      {
-        onConflict: "org_id,team_id,user_id,event_key",
-        ignoreDuplicates: true,
-      },
-    );
+  const r = await client().from("notification_outbox").upsert(
+    {
+      org_id: org,
+      team_id: team,
+      user_id: user,
+      event_key: event,
+      category: "test",
+      kind: "test",
+      details: {},
+    },
+    {
+      onConflict: "org_id,team_id,user_id,event_key",
+      ignoreDuplicates: true,
+    },
+  );
   checked(r.error);
 }
 export async function deliverPending(org: string, team: string | null = null) {
@@ -138,13 +136,38 @@ export async function deliverPending(org: string, team: string | null = null) {
       checked(owner.error);
       const organization = await db
         .from("organizations")
-        .select("active")
+        .select("active,account_access_enabled")
         .eq("id", org)
         .maybeSingle();
       checked(organization.error);
+      let membershipValid = true;
+      if (organization.data?.account_access_enabled) {
+        const [orgMember, teamMember] = await Promise.all([
+          db
+            .from("org_members")
+            .select("role")
+            .eq("org_id", org)
+            .eq("user_id", row.user_id)
+            .maybeSingle(),
+          db
+            .from("team_members")
+            .select("role")
+            .eq("org_id", org)
+            .eq("team_id", row.team_id)
+            .eq("user_id", row.user_id)
+            .maybeSingle(),
+        ]);
+        checked(orgMember.error);
+        checked(teamMember.error);
+        membershipValid =
+          !!orgMember.data &&
+          (["owner", "manager"].includes(orgMember.data.role) ||
+            !!teamMember.data);
+      }
       const prefs = await preferences(org, row.team_id, row.user_id);
       if (
         !organization.data?.active ||
+        !membershipValid ||
         owner.data?.owner_user_id !== row.user_id ||
         (row.category !== "test" && !prefs[row.category as keyof Preferences])
       ) {

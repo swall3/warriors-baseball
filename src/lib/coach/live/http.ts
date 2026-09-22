@@ -1,6 +1,7 @@
 import { requireCoach } from "@/lib/coach/auth";
 import { GameRuleError } from "./model";
 import { LiveError } from "./store";
+import { authorizeRequest } from "@/lib/access/authorize";
 export const reply = (data: unknown, status = 200) =>
   Response.json(data, {
     status,
@@ -26,6 +27,7 @@ export async function sessionFor(request: Request, mutation = false) {
     )
       throw new LiveError("Open this action from the coaching app.", 403);
   }
+  await authorizeRequest(session, request);
   return session;
 }
 export function failure(e: unknown) {

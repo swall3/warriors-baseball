@@ -16,6 +16,8 @@ export default function WorkspaceEntry() {
       "/coach/intel",
       "/coach/import",
       "/coach/billing",
+      "/coach/access",
+      "/coach/family",
     ].some((p) => pathname.startsWith(p))
   )
     return null;

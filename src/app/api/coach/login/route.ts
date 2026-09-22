@@ -14,6 +14,7 @@
 //     getPasscode() returns null and null is not a string a caller can submit.
 //   * SESSION_SECRET unset -> no signed cookie can be minted at all; see the
 //     narrow, owner-only fallback below.
+import { legacyAllowed } from "@/lib/access/identity";
 import { NextRequest, NextResponse } from "next/server";
 import {
   AUTH_COOKIE,
@@ -147,6 +148,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  if (!(await legacyAllowed(resolved.org_id)))
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "This organization uses individual accounts. Choose Sign in with email.",
+      },
+      { status: 403 },
+    );
   const secret = getSessionSecret();
 
   // SESSION_SECRET is a new env var as of this commit and is NOT yet set in

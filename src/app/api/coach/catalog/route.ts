@@ -1,3 +1,4 @@
+import { coachTeamIds, orgAdmin } from "@/lib/access/policy";
 import { client, LiveError } from "@/lib/coach/live/store";
 import { failure, reply, sessionFor } from "@/lib/coach/live/http";
 export async function GET(request: Request) {
@@ -34,8 +35,20 @@ export async function GET(request: Request) {
       ok: true,
       organization: org.data,
       role: session.role,
-      teams: teams.data ?? [],
-      players: players.data ?? [],
+      teams: (teams.data ?? []).filter(
+        (t) =>
+          coachTeamIds(session) === null ||
+          coachTeamIds(session)!.includes(t.id),
+      ),
+      players: (players.data ?? []).filter(
+        (p) =>
+          coachTeamIds(session) === null ||
+          coachTeamIds(session)!.includes(p.team_id),
+      ),
+      orgRole: session.orgRole,
+      personalAccount: !!session.userId,
+      familyAccess: Object.values(session.teamRoles ?? {}).includes("parent"),
+      canManageOrganization: orgAdmin(session),
     });
   } catch (e) {
     return failure(e);

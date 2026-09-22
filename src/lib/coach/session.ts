@@ -28,7 +28,14 @@ export type OrgRole = "owner" | "coach" | "viewer";
 // What a caller gets back. Deliberately NOT the whole payload: iat/exp are the
 // cookie's business, not the route handler's, and a handler that can see `exp`
 // eventually grows logic that depends on it.
-export type CoachSession = { orgId: string; role: OrgRole };
+export type CoachSession = {
+  orgId: string;
+  role: OrgRole;
+  userId?: string;
+  orgRole?: "owner" | "manager" | "member";
+  teamRoles?: Record<string, "head_coach" | "assistant_coach" | "parent">;
+  playerIds?: string[];
+};
 
 // What actually goes in the cookie. Seconds, not milliseconds — JWT convention,
 // and this shape is deliberately JWT-adjacent so that MT-5's move to a real

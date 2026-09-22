@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveCoachSession } from "@/lib/coach/auth";
+import { authorizeRequest } from "@/lib/access/authorize";
+import { isFamilyOnly, orgAdmin } from "@/lib/access/policy";
 
 // Gate for the ported Outlaws coach tool. Allow-by-default: the matcher
 // below is the entire allowlist. Anything not matched (Warriors' public
@@ -66,6 +68,35 @@ export async function middleware(req: NextRequest) {
     (name) => req.cookies.get(name)?.value,
   );
   if (session) {
+    if (session.userId) {
+      if (pathname.startsWith("/api/")) {
+        try {
+          await authorizeRequest(session, req);
+        } catch (e) {
+          return NextResponse.json(
+            { error: e instanceof Error ? e.message : "Access denied" },
+            {
+              status: (e as { status?: number }).status ?? 503,
+              headers: { "Cache-Control": "no-store, private" },
+            },
+          );
+        }
+      } else if (
+        isFamilyOnly(session) &&
+        !pathname.startsWith("/coach/family") &&
+        !/^\/coach\/live\/[^/]+(?:\/board)?$/.test(pathname)
+      ) {
+        return NextResponse.redirect(new URL("/coach/family", req.url));
+      } else if (
+        !orgAdmin(session) &&
+        !/^\/coach\/(today|team|live|training|insights|access|family|billing)(\/|$)/.test(
+          pathname,
+        ) &&
+        !/\.(png|svg|webp|jpg)$/.test(pathname)
+      ) {
+        return NextResponse.redirect(new URL("/coach/insights", req.url));
+      }
+    }
     const response = NextResponse.next();
     if (pathname.startsWith("/api/"))
       response.headers.set("Cache-Control", "no-store, private");
@@ -84,5 +115,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
+  runtime: "nodejs",
   matcher: ["/coach/:path*", "/api/coach/:path*"],
 };

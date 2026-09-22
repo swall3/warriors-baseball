@@ -1,3 +1,4 @@
+import { coachTeamIds } from "@/lib/access/policy";
 import { randomUUID } from "node:crypto";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
 import type { CoachSession } from "@/lib/coach/session";
@@ -14,7 +15,16 @@ export async function assignments(session: CoachSession) {
       "Practice records are unavailable. Retry when connected.",
       503,
     );
-  return data ?? [];
+  const ids = coachTeamIds(session);
+  if (ids === null) return data ?? [];
+  const players = await client()
+    .from("players")
+    .select("id")
+    .eq("org_id", session.orgId)
+    .in("team_id", ids);
+  if (players.error) throw new LiveError("Roster unavailable", 503);
+  const allowed = new Set((players.data ?? []).map((p) => p.id));
+  return (data ?? []).filter((a) => allowed.has(a.player_id));
 }
 export async function assignPractice(
   session: CoachSession,
@@ -94,15 +104,13 @@ export async function recordAttempt(
   )
     throw new LiveError("Choose a position on the field.", 400);
   const correct = body.answer === scenario.targetZone;
-  const { error: saveError } = await client()
-    .from("training_attempts")
-    .insert({
-      org_id: session.orgId,
-      assignment_id: id,
-      id: body.id,
-      answer: body.answer,
-      correct,
-    });
+  const { error: saveError } = await client().from("training_attempts").insert({
+    org_id: session.orgId,
+    assignment_id: id,
+    id: body.id,
+    answer: body.answer,
+    correct,
+  });
   if (saveError && saveError.code !== "23505")
     throw new LiveError(
       "Your answer has not been saved. Retry this answer when connected.",

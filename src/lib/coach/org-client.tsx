@@ -35,11 +35,15 @@ import {
 export type CoachOrg = {
   // null on /coach/login, which renders inside this layout with no session yet.
   orgId: string | null;
+  userId?: string;
   isOwnerOrg: boolean;
   brand?: { name: string; fullName: string; slug: string };
 };
 
-const CoachOrgContext = createContext<CoachOrg>({ orgId: null, isOwnerOrg: false });
+const CoachOrgContext = createContext<CoachOrg>({
+  orgId: null,
+  isOwnerOrg: false,
+});
 
 export function CoachOrgProvider({
   value,
@@ -51,10 +55,17 @@ export function CoachOrgProvider({
   // `value` is a fresh object from the server component on every render, so
   // memoize on its fields rather than on the object identity.
   const memo = useMemo(
-    () => ({ orgId: value.orgId, isOwnerOrg: value.isOwnerOrg, brand: value.brand }),
-    [value.orgId, value.isOwnerOrg, value.brand],
+    () => ({
+      orgId: value.orgId,
+      userId: value.userId,
+      isOwnerOrg: value.isOwnerOrg,
+      brand: value.brand,
+    }),
+    [value.orgId, value.userId, value.isOwnerOrg, value.brand],
   );
-  return <CoachOrgContext.Provider value={memo}>{children}</CoachOrgContext.Provider>;
+  return (
+    <CoachOrgContext.Provider value={memo}>{children}</CoachOrgContext.Provider>
+  );
 }
 
 export function useCoachOrg(): CoachOrg {
@@ -74,7 +85,9 @@ export function useCoachStorageKeys(): CoachStorageKeys {
     // Reachable only from a page rendered without a session — i.e. /coach/login,
     // which stores nothing. Anywhere else this is a bug in the gate, and a
     // thrown error is better than silently reading another org's keys.
-    throw new Error("useCoachStorageKeys: no org in context (is this page gated?)");
+    throw new Error(
+      "useCoachStorageKeys: no org in context (is this page gated?)",
+    );
   }
   ensureCoachStorageMigrated(
     orgId,
@@ -85,5 +98,11 @@ export function useCoachStorageKeys(): CoachStorageKeys {
 }
 
 export function useCoachBrand() {
-  return useCoachOrg().brand ?? { name: "Your team", fullName: "Team workspace", slug: "team" };
+  return (
+    useCoachOrg().brand ?? {
+      name: "Your team",
+      fullName: "Team workspace",
+      slug: "team",
+    }
+  );
 }
