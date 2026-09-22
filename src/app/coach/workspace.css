@@ -1294,3 +1294,56 @@
   gap: 10px 18px;
   margin: 8px 0 20px;
 }
+
+/* Signed-in account view (/account). The org buttons and Sign out were bare
+   siblings with no container, so they crowded together with no gap. Stack them
+   with spacing; separate Sign out as a distinct action. */
+.nf-account-signedin {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 8px;
+}
+.nf-account-signedin h2 {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #3a4a42;
+  margin: 10px 0 0;
+}
+.nf-account-orgs {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  width: 100%;
+}
+.nf-account-orgs button {
+  justify-content: space-between;
+  padding: 14px 18px;
+  font-size: 15px;
+  font-weight: 800;
+  color: white;
+  background: var(--nf-green);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+.nf-account-signout {
+  align-self: flex-start;
+  margin-top: 12px;
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3a4a42;
+  background: white;
+  border: 1.5px solid #cdd5cd;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.nf-account-signedin button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
