@@ -35,11 +35,17 @@ Direction (implementer may refine mechanics, not the model):
 Per-seat price discounts as the org adds teams — a standard rec park runs 20+
 teams, so the tiers are shaped for that market:
 
-| Seats (teams) | Discount off base per-seat price |
-| --- | --- |
-| 1–9 | none (base price) |
-| 10–19 | 20% |
-| 20+ | 30% |
+**Base price decided (Stuart, 2026-09-22): $99/year per team seat.**
+
+| Seats (teams) | Discount | Per-seat price/year |
+| --- | --- | --- |
+| 1–9 | none | $99 |
+| 10–19 | 20% | $79.20 (suggest rounding to $79) |
+| 20+ | 30% | $69.30 (Stuart quotes "~$70"; suggest $69) |
+
+So a standard 20-team rec park pays roughly $1,386–1,400/year total. Rounding of
+the discounted tiers ($79/$69 vs exact percentages) is an implementer/Stuart
+detail — pick clean numbers and note the final amounts here.
 
 - Implement as **Stripe tiered volume pricing** on the org subscription's price
   (all seats billed at the tier rate the total quantity lands in) — not coupons or
@@ -48,8 +54,9 @@ teams, so the tiers are shaped for that market:
 - Tier boundaries above are the plan of record; a deeper tier for very large
   leagues (e.g. 40+) is expected later — keep the tier table config/data-driven,
   not hardcoded in checkout logic.
-- The **base per-seat dollar amount is still undecided**; tiers are defined as
-  percentages so the base can be set independently before launch.
+- Pricing is **annual-first** ($99/seat/year). TEAM-BILLING.md's existing monthly
+  price ID slot remains; whether to offer monthly at all (and at what premium) is
+  still an open decision — annual is the product's primary offer.
 
 ## Decision 2 — Gate player-development games; public sample only
 
