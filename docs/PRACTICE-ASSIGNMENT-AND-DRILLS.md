@@ -1,11 +1,13 @@
 # Work order: position-based practice assignment + practice/drill library
 
-Status: **product decisions made 2026-09-22 (Stuart) — not yet implemented.**
+Status: **all five decisions IMPLEMENTED and merged 2026-09-22** (D1 PR #15, D2 PR #21, D3/D4 PR #22, D5 PR #19). Remaining follow-ups: run-practice timer mode, team-authored custom drills, insights→drill suggestions chain.
 Companion to `DUGOUT-MASTER-DEEP-DIVE.md` (which stays the detailed reference)
 and `SEATS-AND-GAME-ACCESS.md` (games/drills content is paid-tier per that doc's
 Decision 2; the same entitlement applies here).
 
 ## Decision 1 — Assign position practice, not individual scenarios
+
+**Implemented 2026-09-22** (PR #15: 9 position bundles, migration 20260922150000).
 
 Coach pain point: today `assignPractice` (`src/lib/coach/live/training-store.ts`)
 assigns one `scenarioId` from `BACKUP_SCENARIOS` to one player. Assigning
@@ -25,6 +27,8 @@ scenario-by-scenario per kid is too granular.
   practices, falling back to scenarios only inside the bundle detail.
 
 ## Decision 2 — Practice/drill library like Dugout Master
+
+**Implemented (MVP) 2026-09-22** (PR #21: 37 drills, 8 templates, custom team plans at /coach/practice; timer mode + custom drills deferred).
 
 Stuart wants the Dugout Master-style item: **preloaded practices/drills plus
 custom team practices**.
@@ -87,6 +91,8 @@ correct-answer streaks on the device).
   encouraging — no public leaderboards of failures.
 
 ## Decision 5 — Multi-kid parents (Stuart, 2026-09-22 evening)
+
+**Implemented 2026-09-22** (PR #19: schema was already many-to-many; fixed same-team second-kid invite revocation bug, added kid switcher).
 
 A parent may have **multiple kids on the same team or on different teams**
 (possibly different orgs). The #14 accounts model (TEAM-ACCESS.md linked
