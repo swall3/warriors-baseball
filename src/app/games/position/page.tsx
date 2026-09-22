@@ -105,9 +105,9 @@ export default function PositionPage() {
             <Link href="/games" aria-label="Back to training games" className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
               ‹
             </Link>
-            <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="Ninety Feet home">
-              <Image src="/ninety-feet.svg" alt="" width={22} height={22} className="object-contain" />
-              <span className="font-display text-white text-xs tracking-wide hidden sm:inline">NINETY FEET</span>
+            <Link href="/" className="flex items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity" aria-label="InningWise home">
+              <Image src="/inningwise.svg" alt="" width={22} height={22} className="object-contain" />
+              <span className="font-display text-white text-xs tracking-wide hidden sm:inline">InningWise</span>
             </Link>
           </div>
 
@@ -203,7 +203,7 @@ export default function PositionPage() {
           <button onClick={reset} className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 text-lg flex items-center justify-center transition-colors shrink-0">
             ‹
           </button>
-          <Image src="/ninety-feet.svg" alt="" width={22} height={22} className="object-contain opacity-60" />
+          <Image src="/inningwise.svg" alt="" width={22} height={22} className="object-contain opacity-60" />
           <div className="flex-1" />
           <div className="rounded-full px-3.5 py-1.5 text-[#c9a84c] font-extrabold text-sm border-[1.5px]"
                style={{ background: "rgba(201,168,76,0.15)", borderColor: "rgba(201,168,76,0.35)" }}>

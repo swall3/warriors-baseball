@@ -1,8 +1,8 @@
 {
-  "name": "Ninety Feet Coach",
-  "short_name": "Coach",
-  "description": "Team scorekeeping, spray charts, lineups and game stats.",
-  "start_url": "/coach",
+  "name": "InningWise Coach",
+  "short_name": "InningWise",
+  "description": "Smarter players. Stronger teams. Baseball training, team management and live scoring.",
+  "start_url": "/coach/today",
   "scope": "/coach",
   "display": "standalone",
   "display_override": [
@@ -11,25 +11,37 @@
     "browser"
   ],
   "orientation": "portrait",
-  "background_color": "#f8fafc",
-  "theme_color": "#111827",
+  "background_color": "#f5f6f3",
+  "theme_color": "#1b4d3e",
   "categories": [
     "sports",
     "productivity"
   ],
   "icons": [
     {
-      "src": "/coach/icons/coach-icon.svg",
+      "src": "/inningwise.svg",
       "sizes": "any",
       "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/inningwise-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/inningwise-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any"
     }
   ],
   "shortcuts": [
     {
-      "name": "Score Game",
+      "name": "Game-day workspace",
       "short_name": "Score",
-      "url": "/coach",
+      "url": "/coach/today",
       "icons": [
         {
           "src": "/coach/icons/coach-icon.svg",
@@ -40,9 +52,9 @@
       ]
     },
     {
-      "name": "Stats",
+      "name": "Team insights",
       "short_name": "Stats",
-      "url": "/coach/stats",
+      "url": "/coach/insights",
       "icons": [
         {
           "src": "/coach/icons/coach-icon.svg",

@@ -26,7 +26,7 @@ export default function WorkspaceEntry() {
           shared games use Prepare.
         </p>
       )}
-      <Link href="/coach/today">Ninety Feet · Open game-day workspace →</Link>
+      <Link href="/coach/today">InningWise · Open game-day workspace →</Link>
       <div className="nf-entry-links">
         <Link href="/coach/today">Today</Link>
         <Link href="/coach/team">Manage team</Link>

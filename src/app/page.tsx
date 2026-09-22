@@ -4,16 +4,16 @@ export default function AppHome() {
   return (
     <main className="nf-home">
       <header className="nf-home-nav">
-        <Link href="/" aria-label="Ninety Feet home">
-          NINETY FEET<span>◆</span>
+        <Link href="/" aria-label="InningWise home">
+          InningWise<span>◆</span>
         </Link>
         <span>BASEBALL. TOGETHER.</span>
       </header>
       <div className="nf-home-content">
         <p className="nf-home-eyebrow">FROM THE FIRST REP TO THE FINAL OUT</p>
         <h1>
-          Better players.
-          <br />A stronger team.
+          Smarter players.
+          <br />Stronger teams.
         </h1>
         <p className="nf-home-lead">
           One place to learn the game, run your dugout, and see what comes next.
