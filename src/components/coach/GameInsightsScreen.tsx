@@ -5,6 +5,7 @@ import { Workspace, useCatalog, LoadError } from "./Workspace";
 import PracticeAssignment from "./PracticeAssignment";
 import type { LiveGame } from "@/lib/coach/live/model";
 import type { gameInsights } from "@/lib/coach/live/insights";
+import SuggestedPractice from "./SuggestedPractice";
 export default function GameInsightsScreen({ gameId }: { gameId: string }) {
   const { catalog, error: catalogError, retry } = useCatalog();
   const [result, setResult] = useState<{
@@ -152,12 +153,16 @@ export default function GameInsightsScreen({ gameId }: { gameId: string }) {
             </section>
           </div>
           {catalog && catalog.role !== "viewer" && (
-            <div className="nf-section">
-              <PracticeAssignment
-                players={result.game.config.roster}
-                gameId={gameId}
-                zone={result.insights.zones[0]?.[0]}
-              />
+            <div className="nf-section nf-practice-chain">
+              {result.insights.practiceRecommendation && (
+                <SuggestedPractice
+                  recommendation={result.insights.practiceRecommendation}
+                  teamId={result.game.config.teamId}
+                  opponent={result.game.config.opponent}
+                  gameId={gameId}
+                />
+              )}
+              <PracticeAssignment players={result.game.config.roster} gameId={gameId} zone={result.insights.zones[0]?.[0]} />
             </div>
           )}
           <section className="nf-card nf-section">

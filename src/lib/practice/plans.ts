@@ -9,8 +9,9 @@
 import { randomUUID } from "node:crypto";
 import type { CoachSession } from "@/lib/coach/session";
 import { coachTeamIds } from "@/lib/access/policy";
-import { client, LiveError } from "@/lib/coach/live/store";
+import { client, getGame, LiveError } from "@/lib/coach/live/store";
 import { getDrill } from "./drills.ts";
+import { listCustomDrills, validCustomDrillIds } from "./custom-drills.ts";
 import { getPracticeTemplate, type PracticeBlock } from "./templates.ts";
 import { totalPlanDuration, unresolvedDrillIds } from "./aggregate.ts";
 
@@ -25,15 +26,28 @@ export type PracticePlan = {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  source_game_id: string | null;
+  recommendation_context: Record<string, unknown> | null;
 };
 
 const MAX_BLOCKS = 20;
 const MAX_DRILLS_PER_BLOCK = 12;
 const MAX_BLOCK_DURATION = 8 * 60; // 8 hours — generous ceiling, not a real cap
 
-function validateBlocks(input: unknown): PracticeBlock[] {
+async function validateBlocks(
+  session: CoachSession,
+  teamId: string,
+  input: unknown,
+): Promise<PracticeBlock[]> {
   if (!Array.isArray(input) || input.length === 0 || input.length > MAX_BLOCKS)
     throw new LiveError("A practice plan needs at least one station.", 400);
+  const rawIds = input.flatMap((raw) =>
+    raw && typeof raw === "object" && Array.isArray((raw as { drillIds?: unknown }).drillIds)
+      ? (raw as { drillIds: unknown[] }).drillIds.filter((id): id is string => typeof id === "string")
+      : [],
+  );
+  const customIds = [...new Set(rawIds.filter((id) => !getDrill(id)))];
+  const validCustom = await validCustomDrillIds(session, teamId, customIds);
   return input.map((raw, index) => {
     if (
       !raw ||
@@ -51,7 +65,7 @@ function validateBlocks(input: unknown): PracticeBlock[] {
     if (block.drillIds.length === 0 || block.drillIds.length > MAX_DRILLS_PER_BLOCK)
       throw new LiveError(`Station "${block.label}" needs 1-${MAX_DRILLS_PER_BLOCK} drills.`, 400);
     const drillIds = block.drillIds.map((id) => {
-      if (typeof id !== "string" || !getDrill(id))
+      if (typeof id !== "string" || (!getDrill(id) && !validCustom.has(id)))
         throw new LiveError(`Station "${block.label}" references an unknown drill.`, 400);
       return id;
     });
@@ -106,6 +120,8 @@ export async function createPlan(
     description?: string;
     sourceTemplateId?: string;
     blocks?: unknown;
+    sourceGameId?: string;
+    recommendationContext?: Record<string, unknown>;
   },
 ) {
   if (session.role === "viewer") throw new LiveError("A coach builds practice plans.", 403);
@@ -122,7 +138,12 @@ export async function createPlan(
     throw new LiveError("Unknown practice template.", 400);
   if (body.description !== undefined && typeof body.description !== "string")
     throw new LiveError("Invalid description.", 400);
-  const blocks = validateBlocks(body.blocks);
+  const blocks = await validateBlocks(session, body.teamId, body.blocks);
+  if (body.sourceGameId) {
+    const game = await getGame(session.orgId, body.sourceGameId);
+    if (game.config.teamId !== body.teamId)
+      throw new LiveError("That game belongs to a different team.", 400);
+  }
   const row = {
     org_id: session.orgId,
     id: randomUUID(),
@@ -132,6 +153,8 @@ export async function createPlan(
     source_template_id: body.sourceTemplateId ?? null,
     blocks,
     created_by: session.userId ?? null,
+    source_game_id: body.sourceGameId ?? null,
+    recommendation_context: body.recommendationContext ?? null,
   };
   const { error } = await client().from("practice_plans").insert(row);
   if (error) throw new LiveError("The practice plan was not saved. Retry when connected.", 503);
@@ -156,7 +179,8 @@ export async function updatePlan(
       throw new LiveError("Invalid description.", 400);
     patch.description = body.description.slice(0, 2000);
   }
-  if (body.blocks !== undefined) patch.blocks = validateBlocks(body.blocks);
+  if (body.blocks !== undefined)
+    patch.blocks = await validateBlocks(session, existing.team_id, body.blocks);
   const { data, error } = await client()
     .from("practice_plans")
     .update(patch)
@@ -197,3 +221,9 @@ export function planFromTemplate(templateId: string, teamId: string) {
 }
 
 export { totalPlanDuration, unresolvedDrillIds };
+
+export async function planWithDrills(session: CoachSession, id: string) {
+  const plan = await getPlan(session, id);
+  const customDrills = await listCustomDrills(session, plan.team_id, true);
+  return { plan, customDrills };
+}

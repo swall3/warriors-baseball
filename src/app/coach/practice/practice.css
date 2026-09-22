@@ -73,6 +73,205 @@
   border-bottom: 1px solid var(--d-line);
 }
 
+.dugout-theme .nf-action-row,
+.dugout-theme .nf-section-heading,
+.dugout-theme .nf-timer-actions,
+.dugout-theme .nf-run-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dugout-theme .nf-action-row .nf-button,
+.dugout-theme .nf-section-heading .nf-button,
+.dugout-theme .nf-compact-button {
+  width: auto;
+  margin-top: 0;
+}
+
+.dugout-theme .nf-station-name {
+  flex: 1 1 240px;
+  width: auto;
+}
+
+.dugout-theme .nf-station-minutes {
+  flex: 0 0 92px;
+  width: 92px;
+}
+
+.dugout-theme .nf-form-stack,
+.dugout-theme .nf-practice-chain,
+.dugout-theme .nf-practice-runner {
+  display: grid;
+  gap: 20px;
+}
+
+.dugout-theme .nf-wide-label {
+  max-width: none;
+}
+
+.dugout-theme .nf-option-group {
+  border: 0;
+  padding: 0;
+  margin: 24px 0 0;
+}
+
+.dugout-theme .nf-option-group legend {
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.dugout-theme .nf-chip-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dugout-theme .nf-chip-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--d-line);
+  border-radius: 999px;
+  background: var(--d-surface);
+  cursor: pointer;
+}
+
+.dugout-theme .nf-chip-options input {
+  width: 18px;
+  min-height: 18px;
+  margin: 0;
+}
+
+.dugout-theme .nf-instruction-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dugout-theme .nf-instruction-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.dugout-theme .nf-instruction-row > span {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--d-sunken);
+  font-weight: 800;
+}
+
+.dugout-theme .nf-run-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.dugout-theme .nf-run-status {
+  text-align: center;
+}
+
+.dugout-theme .nf-run-status progress {
+  width: 100%;
+  height: 12px;
+  accent-color: var(--nf-green);
+}
+
+.dugout-theme .nf-run-heading {
+  text-align: left;
+}
+
+.dugout-theme .nf-practice-clock {
+  line-height: 1;
+  color: var(--nf-green);
+}
+
+.dugout-theme .nf-clock-done {
+  color: #a84a13;
+}
+
+.dugout-theme .nf-timer-actions {
+  justify-content: center;
+}
+
+.dugout-theme .nf-timer-primary {
+  min-width: 160px;
+  font-size: 18px;
+}
+
+.dugout-theme .nf-run-drills details {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--d-line);
+}
+
+.dugout-theme .nf-run-drills summary {
+  cursor: pointer;
+}
+
+.dugout-theme .nf-coach-cue {
+  padding: 12px 14px;
+  border-left: 4px solid #d77622;
+  background: #fff6df;
+}
+
+.dugout-theme .nf-recommended-drills {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.dugout-theme .nf-recommended-drills > div {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--d-line);
+  border-radius: 10px;
+  background: var(--d-sunken);
+}
+
+.dugout-theme .nf-recommended-drills span {
+  color: var(--d-ink-2);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .dugout-theme .nf-section-heading,
+  .dugout-theme .nf-run-heading,
+  .dugout-theme .nf-run-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .dugout-theme .nf-section-heading .nf-button,
+  .dugout-theme .nf-action-row .nf-button,
+  .dugout-theme .nf-action-row > button,
+  .dugout-theme .nf-timer-actions > button {
+    width: 100%;
+  }
+  .dugout-theme .nf-instruction-row {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .dugout-theme .nf-instruction-row > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .dugout-theme .nf-station-minutes {
+    flex-basis: 110px;
+    width: 110px;
+  }
+}
+
 /* Printable plan view: hide app chrome, keep only the plan content. Applied
    via a `.nf-print-area` wrapper around the printable content on the plan
    view page; everything else on that page carries `.nf-no-print`. */

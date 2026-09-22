@@ -15,6 +15,7 @@
 import { getDrill, type Drill } from "./drills.ts";
 
 export type PlanBlockLike = { drillIds: string[]; durationMinutes: number };
+export type DrillResolver = (id: string) => Drill | undefined;
 
 export function totalPlanDuration(blocks: PlanBlockLike[]): number {
   return blocks.reduce((sum, b) => sum + Math.max(0, b.durationMinutes || 0), 0);
@@ -26,9 +27,12 @@ export type EquipmentItem = {
   drillCount: number;
 };
 
-export function resolveBlockDrills(block: PlanBlockLike): Drill[] {
+export function resolveBlockDrills(
+  block: PlanBlockLike,
+  resolve: DrillResolver = getDrill,
+): Drill[] {
   return block.drillIds
-    .map((id) => getDrill(id))
+    .map((id) => resolve(id))
     .filter((d): d is Drill => !!d);
 }
 
@@ -36,10 +40,13 @@ export function resolveBlockDrills(block: PlanBlockLike): Drill[] {
 // blockCount = how many blocks include at least one drill needing this item
 // (useful for "how many stations need cones"); drillCount = total drills
 // across the whole plan that call for it.
-export function aggregateEquipment(blocks: PlanBlockLike[]): EquipmentItem[] {
+export function aggregateEquipment(
+  blocks: PlanBlockLike[],
+  resolve: DrillResolver = getDrill,
+): EquipmentItem[] {
   const byItem = new Map<string, EquipmentItem>();
   for (const block of blocks) {
-    const drills = resolveBlockDrills(block);
+    const drills = resolveBlockDrills(block, resolve);
     const itemsInBlock = new Set<string>();
     for (const drill of drills) {
       for (const item of drill.equipment) {
@@ -61,9 +68,12 @@ export function aggregateEquipment(blocks: PlanBlockLike[]): EquipmentItem[] {
 // building a plan and to guard the aggregation functions from a plan that
 // references a drill id that no longer exists in the code catalog (e.g. an
 // old saved plan after a catalog edit).
-export function unresolvedDrillIds(blocks: PlanBlockLike[]): string[] {
+export function unresolvedDrillIds(
+  blocks: PlanBlockLike[],
+  resolve: DrillResolver = getDrill,
+): string[] {
   const missing: string[] = [];
   for (const block of blocks)
-    for (const id of block.drillIds) if (!getDrill(id)) missing.push(id);
+    for (const id of block.drillIds) if (!resolve(id)) missing.push(id);
   return missing;
 }

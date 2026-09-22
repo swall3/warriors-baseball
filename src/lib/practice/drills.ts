@@ -21,6 +21,7 @@ export type DrillCategory =
   | "team-defense";
 
 export type AgeBand = "8U" | "9U" | "10U" | "11U" | "12U";
+export const AGE_BANDS: AgeBand[] = ["8U", "9U", "10U", "11U", "12U"];
 
 // Loosely mirrors the scenario categories Decision 3 introduces for
 // BACKUP_SCENARIOS (cover / backup / relay / miss-recovery). This is a soft,

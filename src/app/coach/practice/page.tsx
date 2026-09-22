@@ -7,6 +7,7 @@ import { DRILLS, DRILL_CATEGORIES, type DrillCategory } from "@/lib/practice/dri
 import { PRACTICE_TEMPLATES } from "@/lib/practice/templates";
 import { totalPlanDuration } from "@/lib/practice/aggregate";
 import type { PracticeBlock } from "@/lib/practice/templates";
+import type { TeamDrill } from "@/lib/practice/custom-drills";
 
 type PlanRow = {
   id: string;
@@ -25,6 +26,7 @@ export default function PracticeLibrary() {
   const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState<DrillCategory | "all">("all");
   const [version, setVersion] = useState(0);
+  const [customDrills, setCustomDrills] = useState<TeamDrill[]>([]);
   const canEdit = catalog?.role !== "viewer";
 
   useEffect(() => {
@@ -42,6 +44,20 @@ export default function PracticeLibrary() {
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [version]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/coach/practice/drills", { cache: "no-store", signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error);
+        setCustomDrills(data.drills ?? []);
+      })
+      .catch((caught) => {
+        if (!controller.signal.aborted) setError(caught.message);
       });
     return () => controller.abort();
   }, [version]);
@@ -116,6 +132,28 @@ export default function PracticeLibrary() {
                 </Link>
               )}
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="nf-card nf-section" aria-label="Your team's custom drills">
+        <div className="nf-section-heading">
+          <div>
+            <h3>Team-authored drills</h3>
+            <p className="nf-muted">Write your own drill once, then reuse it in any saved practice.</p>
+          </div>
+          {canEdit && <Link className="nf-button nf-compact-button" href="/coach/practice/drills/new">Create team drill →</Link>}
+        </div>
+        {!customDrills.length && <p className="nf-muted">No custom drills yet.</p>}
+        <div className="nf-drill-grid">
+          {customDrills.map((drill) => (
+            <article className="nf-card" key={drill.id}>
+              <p className="nf-eyebrow">TEAM DRILL</p>
+              <h3>{drill.name}</h3>
+              <p className="nf-muted">{drill.durationMinutes} min · {drill.category}</p>
+              <p>{drill.setup}</p>
+              {canEdit && <Link href={`/coach/practice/drills/${drill.id}`}>Edit drill →</Link>}
+            </article>
           ))}
         </div>
       </section>
