@@ -103,6 +103,7 @@ export default function Account() {
               <p>Loading account…</p>
             ) : !data.user ? (
               <form
+                className="nf-account-form"
                 onSubmit={(e) => {
                   e.preventDefault();
                   void act(sent ? "verify" : "send");
