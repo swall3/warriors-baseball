@@ -419,11 +419,14 @@ export default function Dashboard() {
     () => loadGames(storageKeys.state, storageKeys.history),
     [storageKeys.state, storageKeys.history],
   );
+  const [loadError, setLoadError] = useState('');
+  const [reload, setReload] = useState(0);
   const [serverGames, setServerGames] = useState<StoredGame[]>([]);
 
   useEffect(() => {
-    fetch('/api/coach/games')
-      .then((r) => r.json())
+    const controller = new AbortController();
+    fetch('/api/coach/games', {cache:'no-store',signal:controller.signal})
+      .then(async r => {const data = await r.json(); if (!r.ok) throw new Error(data.error ?? 'Historical games unavailable.'); return data;})
       .then((data) => {
         if (data.ok && Array.isArray(data.games)) {
           const localIds = new Set(localGames.map((g) => g.id));
@@ -437,11 +440,12 @@ export default function Dashboard() {
               score: g.score,
               pins: Array.isArray(g.pins) ? g.pins : [],
             }));
-          setServerGames(newFromServer);
+          setServerGames(newFromServer); setLoadError('');
         }
       })
-      .catch(() => {});
-  }, [localGames]);
+      .catch(e => {if (!controller.signal.aborted) setLoadError(e.message);});
+    return () => controller.abort();
+  }, [localGames, reload]);
 
   const games = useMemo(() => [...localGames, ...serverGames], [localGames, serverGames]);
   const [selectedGameIds, setSelectedGameIds] = useState<string[]>(localGames.length ? [localGames[0].id] : []);
@@ -512,6 +516,7 @@ export default function Dashboard() {
 
   return (
     <AnalyticsWorkspace title="See the story behind each play." description="Explore contact patterns, player reports, and defensive playing time.">
+      {loadError && <div className="nf-notice" role="alert">{loadError} Displayed data may be device-only or previously loaded.<button onClick={()=>setReload(v=>v+1)}>Retry historical games</button></div>}
       <div className="nf-report-actions"><button onClick={onExportMarkdown}>Export Markdown</button><button onClick={onExportCsv}>Export CSV</button></div>
       <div className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

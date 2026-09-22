@@ -4,7 +4,7 @@ import type { GameEventV2, TeamAtBat } from "@/lib/coach/game-types";
 // Bundled at build time so it ships with serverless functions (e.g. Vercel),
 // where the local data/ file is absent and the filesystem is read-only.
 import seedDb from "@/lib/coach/seed-db.json";
-import { isSupabaseEnabled, sbSelectAll, type OrgScope } from "@/lib/supabase";
+import { isSupabaseEnabled, getSupabaseClient, type OrgScope } from "@/lib/supabase";
 
 export type LocalDb = {
   teams: Array<{ id: string; name: string; normalizedName: string; createdAt: string }>;
@@ -72,23 +72,13 @@ function coerceDb(parsed: Partial<LocalDb>): LocalDb {
 // beside it — and in MT-3 that line becomes `session.orgId` with no other
 // change (T5).
 //
-// The local/seed fallback below is NOT scoped, and does not need to be:
-// data/local-db.json and seed-db.json are single-tenant development fixtures
-// that never contain another org's rows. They are reached only when Supabase
-// is unconfigured or unreachable.
+// Fixture fallback is limited to unconfigured, non-production owner development.
+// Configured databases and other tenants never receive bundled sample games.
 export async function readDb(scope: OrgScope): Promise<LocalDb> {
-  // Primary source: shared Supabase DB (real cross-device data).
-  if (isSupabaseEnabled()) {
-    try {
-      return await readDbFromSupabase(scope);
-    } catch (error) {
-      // B1 fix: Supabase being *configured* doesn't mean it's *reachable*
-      // (paused project, network blip, etc). Previously this threw straight
-      // through to a 500 on every data screen. Now it degrades to the local
-      // fallback below instead of taking the whole read path down.
-      console.error("Supabase read failed, falling back to local/seed data", error);
-    }
-  }
+  // Configured databases are authoritative: surface outages rather than substitute sample games.
+  if (isSupabaseEnabled()) return readDbFromSupabase(scope);
+  if (process.env.NODE_ENV === "production" || scope.orgId !== "org-outlaws")
+    throw new Error("Historical game storage is unavailable.");
   // Local dev fallback: working-copy JSON file, else the bundled seed.
   try {
     const raw = await readFile(DB_FILE, "utf8");
@@ -114,21 +104,32 @@ type EventRow = {
   bases_after: { first: string | null; second: string | null; third: string | null }; created_at: string;
 };
 
+async function historicalRows<T>(scope: OrgScope, table: "teams" | "games" | "play_events"): Promise<T[]> {
+  if (!scope.orgId) throw new Error("Organization required");
+  const rows: T[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const {data,error} = await getSupabaseClient().from(table).select("*").eq("org_id",scope.orgId).order("id").range(offset,offset+499).abortSignal(AbortSignal.timeout(10_000));
+    if (error) throw new Error(`Historical ${table} read failed: ${error.message}`);
+    rows.push(...(data ?? []) as T[]);
+    if ((data ?? []).length < 500) return rows;
+  }
+}
+
 async function readDbFromSupabase(scope: OrgScope): Promise<LocalDb> {
   // These three selects are the reason §2.3 denormalizes org_id onto
   // play_events rather than deriving it through games: this runs on every
   // dashboard load and pulls the entire event table, so the tenant predicate
   // has to be an index scan on one column, not a three-deep FK walk.
   const [teams, games, events] = await Promise.all([
-    sbSelectAll<TeamRow>(scope, "teams"),
-    sbSelectAll<GameRow>(scope, "games", "select=*&order=played_at.desc"),
-    sbSelectAll<EventRow>(scope, "play_events", "select=*&order=event_index.asc"),
+    historicalRows<TeamRow>(scope, "teams"),
+    historicalRows<GameRow>(scope, "games"),
+    historicalRows<EventRow>(scope, "play_events"),
   ]);
   return {
     teams: teams.map((t) => ({
       id: t.id, name: t.name, normalizedName: t.normalized_name, createdAt: t.created_at,
     })),
-    games: games.map((g) => ({
+    games: games.sort((a,b) => b.played_at.localeCompare(a.played_at)).map((g) => ({
       id: g.id, clientGameId: g.client_game_id, label: g.label, playedAt: g.played_at,
       opponentTeamId: g.opponent_team_id, usScore: g.us_score, opponentScore: g.opponent_score,
       source: "local_storage", schemaVersion: g.schema_version, usAreHome: g.us_home ?? false,
@@ -157,7 +158,7 @@ export function normalizeTeamName(name?: string): string {
 export function toV2EventFallback(row: LocalDb["playEvents"][number]): GameEventV2 {
   return {
     id: row.id,
-    eventType: "ball_in_play",
+    eventType: row.eventType === "pitch" ? "pitch" : "ball_in_play",
     timestamp: row.eventTimestamp || row.createdAt,
     inning: row.inning,
     batter: row.batter,

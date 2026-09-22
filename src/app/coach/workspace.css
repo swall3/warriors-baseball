@@ -1079,3 +1079,19 @@
 @media(max-width:640px) { .nf-report-nav { display:grid; grid-template-columns:1fr 1fr; } .nf-report-nav a { padding:12px; text-align:center; } .nf-report-actions { justify-content:flex-start; } .nf-analytics .nf-card { padding:18px; } }
 
 .nf-analytics input[type="checkbox"] { width:18px; height:18px; min-height:18px; flex-shrink:0; padding:0; accent-color:var(--nf-green); }
+
+.nf-heatmap { display:grid; grid-template-columns:minmax(0,1fr); min-width:0; gap:16px; }
+.nf-heatmap > * { min-width:0; }
+.nf-heat-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.nf-heat-controls [role="group"] { display:flex; flex-wrap:wrap; gap:6px; }
+.nf-heat-controls label { display:flex; align-items:center; gap:8px; font-size:12px; color:#526258; }
+.nf-heat-controls input[type="range"] { width:100px; accent-color:#1b4d3e; }
+.nf-heat-controls input[type="checkbox"] { width:18px; height:18px; min-height:18px; }
+.nf-heat-field { position:relative; width:100%; max-width:900px; margin:auto; border:1px solid #d4ded8; border-radius:16px; overflow:hidden; }
+.nf-heat-field canvas { width:100%; height:auto; display:block; cursor:crosshair; }
+.nf-heat-empty { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:12px; background:#eef3eecc; text-align:center; padding:24px; color:#314c41; }
+.nf-heat-legend { display:flex; align-items:center; justify-content:center; gap:12px; font-size:12px; color:#526258; }
+.nf-heat-legend div { width:220px; max-width:40%; height:10px; border-radius:8px; background:linear-gradient(90deg,#1c48c4,#00aee1,#1ad3a9,#a0e141,#ffd836,#ff7d20,#da252f); }
+.nf-heat-caption { font-size:12px; color:#526258; line-height:1.6; }
+.nf-heat-detail { border-left:3px solid #1b4d3e; padding:10px 16px; background:#edf3ed; font-size:13px; }
+.nf-heatmap summary { cursor:pointer; font-size:13px; color:#1b4d3e; font-weight:700; }
