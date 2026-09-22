@@ -1347,3 +1347,58 @@
   opacity: 0.55;
   cursor: default;
 }
+
+/* ============================================================
+   Layout crowding pass (2026-09-22) — coach surface.
+   Fixes: (1) game-day step bubbles overflowing/clipping at narrow
+   widths; (2) action-button clusters with zero or too-small gaps;
+   (3) big default buttons forcing 2-button rows to wrap cramped.
+   ============================================================ */
+
+/* (1) Step bubbles: below the panel/tablet width, wrap into rows
+   instead of horizontal-scrolling and clipping the 5th ("Practice")
+   card. Cards shrink and share the row rather than each demanding
+   132px. */
+@media (max-width: 760px) {
+  .nf-steps {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+  .nf-steps a {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+  }
+}
+
+/* (2) Shared action-row: a horizontal cluster of buttons/links with
+   breathing room. Several containers had NO css (zero gap) or only
+   8px, which crowded once the buttons wrapped. */
+.nf-action-row,
+.nf-timer-actions,
+.nf-run-toolbar,
+.nf-instruction-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.iw-member-actions,
+.iw-kid-switcher,
+.iw-position-answers,
+.nf-answer-buttons {
+  gap: 12px;
+}
+
+/* (3) Compact buttons inside inline action clusters: smaller than the
+   primary page CTAs so two fit side-by-side in a narrow panel instead
+   of wrapping into a cramped stack (the /coach/access case). Scoped —
+   does NOT touch the global .nf-workspace button rule. */
+.nf-action-row button,
+.iw-member-actions button,
+.nf-run-toolbar button,
+.nf-timer-actions button {
+  min-height: 40px;
+  padding: 9px 16px;
+  font-size: 14px;
+}
