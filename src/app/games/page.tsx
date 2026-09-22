@@ -5,13 +5,19 @@
 // label the three membership-gated cards without re-deriving it per card.
 import { requireCoach } from "@/lib/coach/auth";
 import { playerDevGamesAccess } from "@/lib/access/games";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import { BACKUP_SCENARIOS, CATEGORY_LABELS } from "@/lib/gameData";
 import GamesHub from "./GamesHub";
 
 export default async function GamesPage() {
   const session = await requireCoach();
   const access = await playerDevGamesAccess(session);
   return (
-    <GamesHub backupCount={BACKUP_SCENARIOS.length} locked={!access.allowed} />
+    <GamesHub
+      backupCount={BACKUP_SCENARIOS.length}
+      locked={!access.allowed}
+      // CATEGORY_LABELS is display text only — no questions, no answers — so
+      // passing it to the client hub keeps the PR #16 property intact.
+      skillLabels={CATEGORY_LABELS}
+    />
   );
 }

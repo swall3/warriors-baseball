@@ -1,11 +1,16 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import {
+  BACKUP_SCENARIOS,
+  CATEGORY_LABELS,
+  SCENARIO_CATEGORIES,
+} from "@/lib/gameData";
 import {
   POSITION_PRACTICE_BUNDLES,
   bundleForZone,
 } from "@/lib/practice/bundles";
+import { QUIZ_SESSION_SIZE } from "@/lib/practice/sessions";
 import type { Player } from "@/lib/coach/live/model";
 export default function PracticeAssignment({
   players,
@@ -103,9 +108,29 @@ export default function PracticeAssignment({
         )}
       </div>
       {!advanced && (
-        <p className="nf-muted">
-          {POSITION_PRACTICE_BUNDLES.find((b) => b.id === bundle)?.skillFocus}
-        </p>
+        <>
+          <p className="nf-muted">
+            {POSITION_PRACTICE_BUNDLES.find((b) => b.id === bundle)?.skillFocus}
+          </p>
+          {(() => {
+            const selected = POSITION_PRACTICE_BUNDLES.find(
+              (b) => b.id === bundle,
+            );
+            if (!selected) return null;
+            const mix = SCENARIO_CATEGORIES.filter(
+              (c) => selected.categoryCounts[c] > 0,
+            )
+              .map((c) => `${CATEGORY_LABELS[c]} ${selected.categoryCounts[c]}`)
+              .join(" · ");
+            return (
+              <p className="nf-muted">
+                Skill mix: {mix}. The player works it in sessions of{" "}
+                {QUIZ_SESSION_SIZE}, mixed across skills, with progress carried
+                over between sessions.
+              </p>
+            );
+          })()}
+        </>
       )}
       <label className="nf-label nf-section">
         Coach note (optional)

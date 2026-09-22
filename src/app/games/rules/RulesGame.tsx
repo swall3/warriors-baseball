@@ -4,6 +4,23 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { RulesQuestion } from "@/lib/gameData";
+import {
+  recordSkillAttempt,
+  recordSessionComplete,
+  getCompletedSessions,
+  type SessionProgress,
+} from "@/lib/gameStorage";
+import {
+  planSession,
+  sessionSlice,
+  type SessionPlan,
+} from "@/lib/practice/sessions";
+import SessionProgressPanel from "@/components/games/SessionProgressPanel";
+
+// The rules quiz is a single skill, so it gets one label rather than the
+// four scenario categories.
+const RULES_SKILLS = { rules: "Rules & baseball IQ" };
+const POOL_KEY = "rules";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -53,14 +70,22 @@ export default function RulesGame({
   const [wrongKey, setWrongKey]   = useState(0);
   const [wrongIdx, setWrongIdx]   = useState<number | null>(null);
   const [pointsGain, setPointsGain] = useState(0);
+  const [plan, setPlan] = useState<SessionPlan | null>(null);
+  const [progress, setProgress] = useState<SessionProgress | null>(null);
 
   const scoreRef  = useRef(0);
   const pointsRef = useRef(0);
   const streakRef = useRef(0);
   const praiseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Session cap (Decision 4). Previously a hard-coded `.slice(0, 15)` off a
+  // reshuffle, which meant a kid could see the same 15 questions three rounds
+  // running and never reach the rest of the bank. Now the bank is walked in
+  // order, QUIZ_SESSION_SIZE at a time, with the session itself shuffled.
   const init = useCallback(() => {
-    setQuestions(shuffle(pool).slice(0, 15));
+    const done = getCompletedSessions(POOL_KEY);
+    setPlan(planSession(pool.length, done));
+    setQuestions(shuffle(sessionSlice(pool, done)));
     setCurrent(0);
     setSelected(null);
     setScore(0);
@@ -85,6 +110,7 @@ export default function RulesGame({
     setSelected(idx);
 
     const q = questions[current];
+    recordSkillAttempt("rules", idx === q.correct);
     if (idx === q.correct) {
       scoreRef.current += 1;
       const newStreak = streakRef.current + 1;
@@ -120,6 +146,7 @@ export default function RulesGame({
         setHighScore(finalPts);
         setNewHS(true);
       }
+      setProgress(recordSessionComplete(POOL_KEY));
       setGameState("done");
     } else {
       setCurrent(c => c + 1);
@@ -159,6 +186,14 @@ export default function RulesGame({
             {streak > 0 && <p className="text-gray-500 text-sm mt-2">Best streak during this game: you had some great runs! 🔥</p>}
           </div>
 
+          {progress && plan && (
+            <SessionProgressPanel
+              plan={plan}
+              progress={progress}
+              skillLabels={RULES_SKILLS}
+            />
+          )}
+
           <div className="bg-[#0f2044]/5 rounded-2xl py-3 px-4 mb-6">
             <p className="text-gray-500 text-xs font-semibold">HOW POINTS WORK</p>
             <p className="text-gray-600 text-sm mt-1">Streak of 1–2: 1.5× · Streak of 3–4: 2× · Streak 5+: 3× 🔥</p>
@@ -169,7 +204,7 @@ export default function RulesGame({
               onClick={init}
               className="bg-[#8b1a2e] hover:bg-[#a82037] active:scale-95 text-white font-bold text-sm uppercase tracking-wider py-4 rounded-2xl transition-all shadow-lg"
             >
-              Play Again
+              {plan && plan.count > 1 ? "Next Session →" : "Play Again"}
             </button>
             <Link
               href="/games"
@@ -215,7 +250,14 @@ export default function RulesGame({
               </span>
             )}
           </div>
-          <div className="text-white/40 text-[13px] font-bold shrink-0">{current + 1}/{total}</div>
+          <div className="text-white/40 text-[13px] font-bold shrink-0 text-right leading-tight">
+            {current + 1}/{total}
+            {plan && plan.count > 1 && (
+              <span className="block text-white/25 text-[10px] font-bold uppercase tracking-wider">
+                Session {plan.number}/{plan.count}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Segmented progress bar */}

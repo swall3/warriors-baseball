@@ -11,7 +11,26 @@
 // how a coach thinks about "second base defense" — both "the ball comes to
 // you" reps and "you have to cover/back up" reps belong to the same drill
 // set. Scenario order is stable (catalog order in gameData.ts).
-import { BACKUP_SCENARIOS, type BackupScenario } from "../gameData.ts";
+//
+// Decision 3 update: the catalog now carries a `category` (cover / backup /
+// relay / miss_recovery), so every position bundle automatically picks up all
+// four skills for that position — no new grouping rule needed, because a
+// cover scenario for 2B still has 2B as its ballZone or targetZone. What IS
+// new is `categoryCounts`, so coaches can see the mix, and the fact that the
+// session layer (practice/sessions.ts) interleaves by category so a single
+// sitting mixes skills instead of being twelve straight backup questions.
+//
+// `scenarioIds` deliberately stays in catalog order. `training_assignments`
+// rows written by assignBundle() carry a `bundle_position` alongside their
+// `scenario_id`, and coach-facing progress reads back in that order — so the
+// stored order is data, not presentation. Mixing happens at the session
+// layer, where nothing is persisted.
+import {
+  BACKUP_SCENARIOS,
+  SCENARIO_CATEGORIES,
+  type BackupScenario,
+  type ScenarioCategory,
+} from "../gameData.ts";
 
 export type FieldPosition = BackupScenario["ballZone"];
 
@@ -21,6 +40,8 @@ export type PositionPracticeBundle = {
   label: string;
   skillFocus: string;
   scenarioIds: string[];
+  /** How many scenarios of each skill this bundle contains. */
+  categoryCounts: Record<ScenarioCategory, number>;
 };
 
 const POSITION_META: Record<
@@ -95,17 +116,39 @@ function scenarioIdsForPosition(position: FieldPosition): string[] {
   return BACKUP_SCENARIOS.filter((s) => ids.has(s.id)).map((s) => s.id);
 }
 
+function emptyCategoryCounts(): Record<ScenarioCategory, number> {
+  return Object.fromEntries(SCENARIO_CATEGORIES.map((c) => [c, 0])) as Record<
+    ScenarioCategory,
+    number
+  >;
+}
+
+function categoryCountsFor(scenarioIds: string[]): Record<ScenarioCategory, number> {
+  const counts = emptyCategoryCounts();
+  const wanted = new Set(scenarioIds);
+  for (const s of BACKUP_SCENARIOS) if (wanted.has(s.id)) counts[s.category] += 1;
+  return counts;
+}
+
 export const POSITION_PRACTICE_BUNDLES: PositionPracticeBundle[] =
   POSITION_ORDER.map((position) => {
     const meta = POSITION_META[position];
+    const scenarioIds = scenarioIdsForPosition(position);
     return {
       id: `pos-${position.toLowerCase()}`,
       position,
       label: meta.label,
       skillFocus: meta.skillFocus,
-      scenarioIds: scenarioIdsForPosition(position),
+      scenarioIds,
+      categoryCounts: categoryCountsFor(scenarioIds),
     };
   }).filter((b) => b.scenarioIds.length > 0);
+
+/** The scenarios of one bundle, in catalog order. */
+export function bundleScenarios(bundle: PositionPracticeBundle): BackupScenario[] {
+  const wanted = new Set(bundle.scenarioIds);
+  return BACKUP_SCENARIOS.filter((s) => wanted.has(s.id));
+}
 
 export function getPositionPracticeBundle(
   id: string,

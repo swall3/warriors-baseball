@@ -5,7 +5,26 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BackupScenario } from "@/lib/gameData";
 import { Diamond, PositionKey, TapState } from "@/components/Diamond";
-import { recordAttempt } from "@/lib/gameStorage";
+import {
+  recordAttempt,
+  recordSkillAttempt,
+  recordSessionComplete,
+  getCompletedSessions,
+  type SessionProgress,
+} from "@/lib/gameStorage";
+import {
+  interleaveByGroup,
+  planSession,
+  sessionSlice,
+  type SessionPlan,
+} from "@/lib/practice/sessions";
+import SessionProgressPanel from "@/components/games/SessionProgressPanel";
+
+// Pool keys match the position-practice bundle ids in practice/bundles.ts
+// (`pos-2b`, `pos-ss`, …) so a kid's session progress lines up with the
+// bundle a coach assigned, without this client component importing bundles.ts
+// (which would drag the whole catalog into the chunk — see PR #16).
+const poolKeyFor = (pos: PositionKey) => `pos-${pos.toLowerCase()}`;
 
 const POSITION_NAMES: Record<PositionKey, string> = {
   LF: "Left Field",
@@ -34,8 +53,12 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function PositionGame({
   scenarios: pool,
+  skillLabels,
 }: {
   scenarios: BackupScenario[];
+  // Display text only — see BackupGame for why this is a prop and not an
+  // import of CATEGORY_LABELS.
+  skillLabels: Record<string, string>;
 }) {
   const [position, setPosition] = useState<PositionKey | null>(null);
   const [scenarios, setScenarios] = useState<BackupScenario[]>([]);
@@ -44,6 +67,8 @@ export default function PositionGame({
   const [tapState, setTapState] = useState<TapState>(null);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const [plan, setPlan] = useState<SessionPlan | null>(null);
+  const [progress, setProgress] = useState<SessionProgress | null>(null);
 
   // A scenario belongs to a position if that position either starts the play
   // (ballZone) or is the correct responder (targetZone) — NOT targetZone alone.
@@ -62,9 +87,20 @@ export default function PositionGame({
     return counts;
   }, [pool]);
 
+  // Session cap (Decision 4): a position bundle can run past 30 scenarios —
+  // more than twice the cap — so it is walked one session at a time. The
+  // bundle is interleaved by skill category first, so each sitting mixes
+  // cover / backup / relay / when-we-miss reps for that position rather than
+  // serving a block of one skill.
   const choosePosition = (zone: string) => {
     const pos = zone as PositionKey;
-    const matches = shuffle(pool.filter(s => relevantTo(s, pos)));
+    const ordered = interleaveByGroup(
+      pool.filter(s => relevantTo(s, pos)),
+      s => s.category,
+    );
+    const done = getCompletedSessions(poolKeyFor(pos));
+    setPlan(planSession(ordered.length, done));
+    const matches = shuffle(sessionSlice(ordered, done));
     setPosition(pos);
     setScenarios(matches);
     setCurrent(0);
@@ -87,11 +123,13 @@ export default function PositionGame({
     setTappedZone(zone);
     setTapState(correct ? "correct" : "wrong");
     recordAttempt(position, correct);
+    recordSkillAttempt(s.category, correct);
     if (correct) setCorrectCount(c => c + 1);
   };
 
   const handleNext = () => {
     if (current + 1 >= scenarios.length) {
+      if (position) setProgress(recordSessionComplete(poolKeyFor(position)));
       setDone(true);
     } else {
       setCurrent(c => c + 1);
@@ -173,12 +211,21 @@ export default function PositionGame({
           <p className="text-gray-500 text-lg mb-6">
             <span className="font-bold text-[#0f2044]">{correctCount}</span> / {total} correct
           </p>
+          {progress && plan && (
+            <SessionProgressPanel
+              plan={plan}
+              progress={progress}
+              skillLabels={skillLabels}
+            />
+          )}
           <div className="flex flex-col gap-3">
             <button
               onClick={() => choosePosition(position)}
               className="bg-[#1a4a72] hover:bg-[#1f5a8a] active:scale-95 text-white font-bold text-sm uppercase tracking-wider py-4 rounded-2xl transition-all shadow-lg"
             >
-              Practice {position} Again
+              {plan && plan.count > 1
+                ? `Next ${position} Session →`
+                : `Practice ${position} Again`}
             </button>
             <button
               onClick={reset}
@@ -213,7 +260,14 @@ export default function PositionGame({
                style={{ background: "rgba(201,168,76,0.15)", borderColor: "rgba(201,168,76,0.35)" }}>
             Practicing {position}
           </div>
-          <div className="text-white/40 text-[13px] font-bold shrink-0">{current + 1}/{scenarios.length}</div>
+          <div className="text-white/40 text-[13px] font-bold shrink-0 text-right leading-tight">
+            {current + 1}/{scenarios.length}
+            {plan && plan.count > 1 && (
+              <span className="block text-white/25 text-[10px] font-bold uppercase tracking-wider">
+                Session {plan.number}/{plan.count}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="bg-white/10 rounded-2xl px-4 py-2.5 mb-3">

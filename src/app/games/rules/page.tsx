@@ -7,6 +7,7 @@
 import { requireCoach } from "@/lib/coach/auth";
 import { playerDevGamesAccess } from "@/lib/access/games";
 import { RULES_QUESTIONS } from "@/lib/gameData";
+import { QUIZ_SESSION_SIZE } from "@/lib/practice/sessions";
 import RulesGame from "./RulesGame";
 import LockedGameTeaser from "@/components/games/LockedGameTeaser";
 
@@ -20,7 +21,7 @@ export default async function RulesQuizPage() {
         icon="⚾"
         title="Know the Rules"
         detail="Make the call. Build your baseball IQ one question at a time."
-        meta="15 questions per round"
+        meta={`${QUIZ_SESSION_SIZE} questions per session`}
       />
     );
   }
