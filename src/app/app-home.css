@@ -28,6 +28,32 @@
   color: #64736a;
   font-weight: 700;
 }
+.nf-home-navright {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.nf-home-navright > span {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #64736a;
+  font-weight: 700;
+}
+.nf-home-signin {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #101720;
+  border: 1.5px solid #cdd5cd;
+  border-radius: 10px;
+  padding: 9px 18px;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.nf-home-signin:hover {
+  border-color: #101720;
+  color: #c66a2f;
+}
 .nf-home-content {
   max-width: 1120px;
   margin: auto;
@@ -131,7 +157,8 @@
   .nf-home-nav {
     padding: 22px;
   }
-  .nf-home-nav > span {
+  .nf-home-nav > span,
+  .nf-home-navright > span {
     display: none;
   }
   .nf-home-content {
