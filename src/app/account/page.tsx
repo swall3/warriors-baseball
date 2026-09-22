@@ -152,7 +152,7 @@ export default function Account() {
                 )}
               </form>
             ) : (
-              <>
+              <div className="nf-account-signedin">
                 <p>
                   Signed in as <strong>{data.user.email}</strong>
                 </p>
@@ -162,15 +162,17 @@ export default function Account() {
                   </button>
                 )}
                 <h2>Your organizations</h2>
-                {data.organizations.map((o) => (
-                  <button
-                    key={o.id}
-                    disabled={busy}
-                    onClick={() => act("select", o.id)}
-                  >
-                    {o.name} →
-                  </button>
-                ))}
+                <div className="nf-account-orgs">
+                  {data.organizations.map((o) => (
+                    <button
+                      key={o.id}
+                      disabled={busy}
+                      onClick={() => act("select", o.id)}
+                    >
+                      {o.name} →
+                    </button>
+                  ))}
+                </div>
                 {!data.organizations.length && (
                   <p>
                     Your coach or organization manager can invite this email
@@ -182,10 +184,14 @@ export default function Account() {
                   <Link href="/coach/billing">Team billing</Link>
                   <Link href="/coach/access">People &amp; access</Link>
                 </nav>
-                <button disabled={busy} onClick={() => act("signout")}>
+                <button
+                  className="nf-account-signout"
+                  disabled={busy}
+                  onClick={() => act("signout")}
+                >
                   Sign out
                 </button>
-              </>
+              </div>
             )}
           </section>
         </main>
