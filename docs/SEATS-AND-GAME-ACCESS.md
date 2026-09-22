@@ -47,6 +47,13 @@ discount percentages are marketing approximations, not the source of truth:**
 A standard 20-team rec park pays $1,400/year total. Configure Stripe tier unit
 amounts as exactly $99 / $80 / $70 (9900/8000/7000 cents).
 
+**Monthly billing exists at a premium (Stuart, 2026-09-22):** $10 / $8 / $7 per
+seat/month for the same 1–9 / 10–19 / 20+ tiers (1000/800/700 cents) — ≈21%
+premium over annual, i.e. annual saves ~2 months. Both the monthly and annual
+Stripe prices use the same tiered volume structure; the existing
+`STRIPE_TEAM_MONTHLY_PRICE_ID` / `STRIPE_TEAM_ANNUAL_PRICE_ID` slots carry over
+to the org-level product.
+
 - Implement as **Stripe tiered volume pricing** on the org subscription's price
   (all seats billed at the tier rate the total quantity lands in) — not coupons or
   multiple price IDs, so seat-count changes reprice automatically through the
@@ -54,9 +61,8 @@ amounts as exactly $99 / $80 / $70 (9900/8000/7000 cents).
 - Tier boundaries above are the plan of record; a deeper tier for very large
   leagues (e.g. 40+) is expected later — keep the tier table config/data-driven,
   not hardcoded in checkout logic.
-- Pricing is **annual-first** ($99/seat/year). TEAM-BILLING.md's existing monthly
-  price ID slot remains; whether to offer monthly at all (and at what premium) is
-  still an open decision — annual is the product's primary offer.
+- Pricing is **annual-first**: annual is the primary offer; monthly exists at the
+  ~21% premium above. Present annual as the default in checkout UI.
 
 ## Decision 2 — Gate player-development games; public sample only
 
