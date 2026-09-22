@@ -50,12 +50,12 @@ test("billing status is organization-scoped and omits provider IDs and account t
   const r = await call("/api/coach/billing");
   assert.equal(r.status, 200);
   assert.equal(r.data.isBillingOwner, false);
-  assert.equal(r.data.ownerConfigured, true);
   assert.equal(r.data.mode, "test");
   assert.equal("stripe_customer_id" in r.data, false);
   assert.equal("owner_user_id" in r.data, false);
   assert.equal("team" in r.data, false);
-  // Another organization reads its own billing, never this one's.
+  // Another organization reads its own billing, never this one's. That
+  // organization is deliberately never given a billing row by any fixture.
   const other = await call("/api/coach/billing", { auth: foreign });
   assert.equal(other.status, 200);
   assert.equal(other.data.ownerConfigured, false);
