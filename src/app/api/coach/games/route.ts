@@ -5,15 +5,24 @@ import { requireCoach } from "@/lib/coach/auth";
 export async function GET() {
   const session = await requireCoach();
   if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 },
+    );
   }
   try {
     const db = await readDb({ orgId: session.orgId });
+    const teams = new Map(db.teams.map((t) => [t.id, t]));
+    const contacts = new Map<string, typeof db.playEvents>();
+    for (const event of db.playEvents) {
+      if (event.eventType !== "ball_in_play") continue;
+      const rows = contacts.get(event.gameId) ?? [];
+      rows.push(event);
+      contacts.set(event.gameId, rows);
+    }
     const games = db.games.map((g) => {
-      const team = db.teams.find((t) => t.id === g.opponentTeamId);
-      const pins = db.playEvents
-        .filter((e) => e.gameId === g.id)
-        .filter((e) => e.eventType === "ball_in_play")
+      const team = teams.get(g.opponentTeamId);
+      const pins = (contacts.get(g.id) ?? [])
         .sort((a, b) => a.eventIndex - b.eventIndex)
         .map((event) => ({
           id: event.clientPinId || event.id,
@@ -37,9 +46,15 @@ export async function GET() {
         pins,
       };
     });
-    return NextResponse.json({ ok: true, games });
+    return NextResponse.json(
+      { ok: true, games },
+      { headers: { "Cache-Control": "no-store, private" } },
+    );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load games";
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error("[historical-games] read failed", error);
+    return NextResponse.json(
+      { ok: false, error: "Historical games are unavailable. Please retry." },
+      { status: 503, headers: { "Cache-Control": "no-store, private" } },
+    );
   }
 }

@@ -22,6 +22,8 @@ type OpponentOption = {
 };
 
 export default function IntelligencePage() {
+  const [loadError,setLoadError]=useState("");
+  const [reload,setReload]=useState(0);
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOpponent, setSelectedOpponent] = useState<string>("");
@@ -32,7 +34,9 @@ export default function IntelligencePage() {
       try {
         const res = await fetch("/api/coach/games");
         const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error ?? "Historical games unavailable.");
         if (data.ok) {
+          setLoadError("");
           setGames(data.games || []);
           // Auto-select most recent opponent if available
           if (data.games?.length > 0) {
@@ -43,13 +47,13 @@ export default function IntelligencePage() {
           }
         }
       } catch (e) {
-        console.error("Failed to load games", e);
+        setLoadError(e instanceof Error ? e.message : "Historical games unavailable.");
       } finally {
         setLoading(false);
       }
     };
     loadGames();
-  }, []);
+  }, [reload]);
 
   const opponentOptions: OpponentOption[] = Array.from(
     new Set(games.map(g => g.opponentTeamName).filter(Boolean))
@@ -80,6 +84,7 @@ export default function IntelligencePage() {
   return (
     <AnalyticsWorkspace title="Know the next opponent." description="Review contact tendencies and find patterns to discuss with your team.">
       <div className="nf-opponent-report">
+        {loadError && <div className="nf-notice" role="alert">{loadError}<button onClick={()=>setReload(v=>v+1)}>Retry</button></div>}
         {/* Opponent Selector */}
         <div className="mb-6 nf-card">
           <label className="block text-xs font-semibold uppercase tracking-widest text-d-ink-3 mb-2">
@@ -233,14 +238,14 @@ export default function IntelligencePage() {
 
           <div className="p-4">
             <HeatmapCanvas 
-              events={allPins.length > 0 ? allPins.map(p => ({
+              events={allPins.filter(p => p.battingTeam === (viewMode === "our-offense" ? "us" : "them")).map(p => ({
                 ...p,
                 id: String(p.id),
                 timestamp: new Date().toISOString(),
                 eventType: "ball_in_play" as const,
                 description: "",
                 stateAfter: { outs: 0, usRuns: 0, opponentRuns: 0, bases: { first: null, second: null, third: null } }
-              })) : undefined}
+              }))}
             />
           </div>
         </div>
@@ -268,7 +273,7 @@ export default function IntelligencePage() {
           <div className="text-center py-12 text-d-ink-3">Loading historical data...</div>
         )}
 
-        {!loading && games.length === 0 && (
+        {!loading && !loadError && games.length === 0 && (
           <div className="text-center py-12 text-d-ink-3">
             No saved games yet. Play some games and they’ll appear here.
           </div>

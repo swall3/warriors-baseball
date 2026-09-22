@@ -56,6 +56,7 @@ type Stats = {
 export default function StatsPage() {
   const brandTeam = useCoachBrand();
   const storageKeys = useCoachStorageKeys();
+  const [loadError,setLoadError]=useState('');
   const [stats, setStats] = useState<Stats | null>(null);
   const [plays, setPlays] = useState<Play[]>([]);
   const [sprayEvents, setSprayEvents] = useState<PlayEvent[]>([]);
@@ -86,7 +87,9 @@ export default function StatsPage() {
         }
       }
 
-      const response = await fetch('/api/coach/games');
+      setLoadError('');
+      const response = await fetch('/api/coach/games', {cache:'no-store'});
+      if (!response.ok) setLoadError('Historical games unavailable. Showing only this device’s data.');
       if (response.ok) {
         const data = await response.json();
         if (data.ok && Array.isArray(data.games)) {
@@ -168,7 +171,7 @@ export default function StatsPage() {
       setScore(nextScore);
       setOpponentName(nextOpponentName);
     } catch (error) {
-      console.error('Stats load error:', error);
+      setLoadError('Unable to load reports. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -239,6 +242,7 @@ export default function StatsPage() {
 
   return (
     <AnalyticsWorkspace title="Where the ball goes." description="Explore contact locations, outcomes, and the recorded game score.">
+    {loadError && <div className="nf-notice" role="alert">{loadError}<button onClick={()=>void loadStats()}>Retry</button></div>}
     <div className="grid gap-5 lg:grid-cols-3">
       <section className="overflow-hidden nf-card  lg:col-span-2">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
