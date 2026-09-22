@@ -32,6 +32,79 @@ const call = (
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+
+test("invitation API binds the email, accepts once, and honors revocation", async () => {
+  const invite = async () => {
+    const response = await call("owner", "/api/coach/access", {
+      action: "invite",
+      teamId: "access-api-a",
+      email: "other@access.example.test",
+      role: "assistant_coach",
+    });
+    assert.equal(response.status, 200, await response.clone().text());
+    const data = await response.json();
+    return {
+      ...data,
+      token: new URLSearchParams(new URL(data.inviteLink).hash.slice(1)).get(
+        "invite",
+      ),
+    };
+  };
+  const i = await invite();
+  assert.equal(
+    (
+      await call("parent", "/api/account", {
+        action: "accept",
+        invite: i.token,
+      })
+    ).status,
+    409,
+  );
+  assert.equal(
+    (await call("other", "/api/account", { action: "accept", invite: i.token }))
+      .status,
+    200,
+  );
+  assert.equal(
+    (await call("other", "/api/account", { action: "accept", invite: i.token }))
+      .status,
+    409,
+  );
+  const c = await (await call("other", "/api/coach/catalog")).json();
+  assert.deepEqual(
+    c.teams.map((t: any) => t.id),
+    ["access-api-a"],
+  );
+  assert.equal(
+    (
+      await call("owner", "/api/coach/access", {
+        action: "remove_member",
+        userId: "bbbbbbbb-0000-4000-8000-000000000004",
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await call("other", "/api/coach/catalog")).status, 401);
+  const pending = await invite();
+  assert.equal(
+    (
+      await call("owner", "/api/coach/access", {
+        action: "revoke_invite",
+        invitationId: pending.invitationId,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (
+      await call("other", "/api/account", {
+        action: "accept",
+        invite: pending.token,
+      })
+    ).status,
+    409,
+  );
+});
 test("catalog and roster isolate assigned teams, not just organizations", async () => {
   const r = await call("coach", "/api/coach/catalog");
   assert.equal(r.status, 200);
