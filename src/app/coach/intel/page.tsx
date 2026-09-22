@@ -1,6 +1,6 @@
 "use client";
+import AnalyticsWorkspace from "@/components/coach/AnalyticsWorkspace";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import HeatmapCanvas from "@/components/coach/heatmap-canvas";
 import type { EventPin } from "@/lib/coach/game-types";
@@ -78,29 +78,15 @@ export default function IntelligencePage() {
     : [];
 
   return (
-    <div className="min-h-screen bg-d-bg text-d-ink p-4 pb-24">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Intelligence</h1>
-              <p className="text-sm text-d-ink-3">Opponent tendencies & zone analytics</p>
-            </div>
-            <nav className="flex flex-wrap gap-2 text-sm">
-              <Link href="/coach/today" className="text-d-sel">Game day</Link>
-              <Link href="/coach/dashboard" className="text-d-pos">Dashboard</Link>
-              <Link href="/coach/stats" className="text-d-sel">Spray</Link>
-            </nav>
-          </div>
-        </div>
-
+    <AnalyticsWorkspace title="Know the next opponent." description="Review contact tendencies and find patterns to discuss with your team.">
+      <div className="nf-opponent-report">
         {/* Opponent Selector */}
-        <div className="mb-6 rounded-2xl border border-d-line bg-d-surface p-4">
+        <div className="mb-6 nf-card">
           <label className="block text-xs font-semibold uppercase tracking-widest text-d-ink-3 mb-2">
             Opponent
           </label>
           <select
+            aria-label="Opponent"
             value={selectedOpponent}
             onChange={(e) => setSelectedOpponent(e.target.value)}
             className="w-full rounded-xl border border-d-line bg-d-bg px-4 py-3 text-lg font-medium focus:outline-none focus:border-d-sel"
@@ -140,11 +126,11 @@ export default function IntelligencePage() {
 
         {/* Key Stats */}
         <div className="mb-6 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-d-line bg-d-surface p-4">
+          <div className="nf-card">
             <div className="text-xs text-d-ink-3">Total Plays</div>
             <div className="text-4xl font-semibold tabular-nums mt-1">{currentStats.totalPlays}</div>
           </div>
-          <div className="rounded-2xl border border-d-line bg-d-surface p-4">
+          <div className="nf-card">
             <div className="text-xs text-d-ink-3">On-Base Rate</div>
             <div className="text-4xl font-semibold tabular-nums mt-1 text-d-pos">
               {currentStats.overallOnBaseRate}%
@@ -194,7 +180,7 @@ export default function IntelligencePage() {
 
             <div className="space-y-3">
               {playerTendencies.slice(0, 6).map((p: PlayerTendency) => (
-                <div key={p.batter} className="rounded-2xl border border-d-line bg-d-surface p-4">
+                <div key={p.batter} className="nf-card">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-semibold text-lg">{p.batter}</div>
@@ -288,6 +274,6 @@ export default function IntelligencePage() {
           </div>
         )}
       </div>
-    </div>
+    </AnalyticsWorkspace>
   );
 }

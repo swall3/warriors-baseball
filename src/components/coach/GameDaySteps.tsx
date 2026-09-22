@@ -16,7 +16,7 @@ export default function GameDaySteps({
       ? "Prepare"
       : gameStatus === "final"
         ? "Review"
-        : path.includes("/insights")
+        : path.includes("/insights") || ["/coach/dashboard", "/coach/stats", "/coach/intel", "/coach/import"].includes(path)
           ? "Review"
           : path === "/coach/training"
             ? "Practice"

@@ -11,6 +11,10 @@ export default function WorkspaceEntry() {
       "/coach/live",
       "/coach/training",
       "/coach/insights",
+      "/coach/dashboard",
+      "/coach/stats",
+      "/coach/intel",
+      "/coach/import",
     ].some((p) => pathname.startsWith(p))
   )
     return null;

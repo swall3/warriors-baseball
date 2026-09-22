@@ -1,4 +1,5 @@
 "use client";
+import AnalyticsWorkspace from "@/components/coach/AnalyticsWorkspace";
 import { useCoachBrand } from "@/lib/coach/org-client";
 
 import { useState, useEffect } from "react";
@@ -158,21 +159,15 @@ export default function GameImportPage() {
     }
   };
 
-  if (typeof window === "undefined") {
-    return (
-      <div className="flex h-full items-center justify-center bg-d-bg">
-        <p className="text-xl font-bold text-d-sel">Loading...</p>
-      </div>
-    );
-  }
 
   return (
-    <div className="mx-auto grid min-h-screen w-full max-w-4xl gap-4 p-4 lg:grid-cols-4">
+    <AnalyticsWorkspace title="Bring your past games along." description="Import recorded plays to include them in historical team reports.">
+    <div className="grid gap-5 lg:grid-cols-4">
       {/* Left Sidebar - Team Selection */}
-      <aside className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl">
+      <aside className="overflow-hidden nf-card ">
         <header>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Opponent</p>
-          <h1 className="text-2xl font-black tracking-tight">Team</h1>
+          <h3 className="text-2xl font-black tracking-tight">Team</h3>
         </header>
         
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -256,11 +251,11 @@ export default function GameImportPage() {
       </aside>
 
       {/* Main Content - Game Events */}
-      <main className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl lg:col-span-3">
+      <section className="overflow-hidden nf-card  lg:col-span-3">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Game Events</p>
-            <h1 className="text-2xl font-black tracking-tight">{currentGameId.startsWith("current") ? gameLabel || "Current Game" : `#${currentGameId.replace('current-game-', '').replace('game-', '').replace('outlaws-','').replace('-woohoos', '')}`}</h1>
+            <h3 className="text-2xl font-black tracking-tight">{currentGameId.startsWith("current") ? gameLabel || "Current Game" : `#${currentGameId.replace('current-game-', '').replace('game-', '').replace('outlaws-','').replace('-woohoos', '')}`}</h3>
           </div>
           <button
             onClick={() => router.push("/coach/dashboard")}
@@ -441,7 +436,8 @@ export default function GameImportPage() {
             <strong>Instructions:</strong> Add each play as an event. Fill in the batter, result, zone, and coordinates if applicable. Click &quot;Add Event&quot; for each play. When done, click &quot;Sync Game&quot; to save to the database.
           </p>
         </div>
-      </main>
+      </section>
     </div>
+    </AnalyticsWorkspace>
   );
 }
