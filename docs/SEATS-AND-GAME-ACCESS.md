@@ -30,6 +30,27 @@ Direction (implementer may refine mechanics, not the model):
   customers/charges exist per TEAM-BILLING.md release checks) may be collapsed to
   org scope without a compatibility layer.
 
+### Volume discount tiers (Stuart, 2026-09-22)
+
+Per-seat price discounts as the org adds teams — a standard rec park runs 20+
+teams, so the tiers are shaped for that market:
+
+| Seats (teams) | Discount off base per-seat price |
+| --- | --- |
+| 1–9 | none (base price) |
+| 10–19 | 20% |
+| 20+ | 30% |
+
+- Implement as **Stripe tiered volume pricing** on the org subscription's price
+  (all seats billed at the tier rate the total quantity lands in) — not coupons or
+  multiple price IDs, so seat-count changes reprice automatically through the
+  existing webhook reconciliation.
+- Tier boundaries above are the plan of record; a deeper tier for very large
+  leagues (e.g. 40+) is expected later — keep the tier table config/data-driven,
+  not hardcoded in checkout logic.
+- The **base per-seat dollar amount is still undecided**; tiers are defined as
+  percentages so the base can be set independently before launch.
+
 ## Decision 2 — Gate player-development games; public sample only
 
 The player-development games under `/games` (daily drill, "Where do I go?",
