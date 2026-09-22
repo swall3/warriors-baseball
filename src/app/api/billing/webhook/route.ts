@@ -1,3 +1,5 @@
+import { after } from "next/server";
+import { safelyDeliver } from "@/lib/notifications/server";
 import {
   stripeClient,
   lease,
@@ -78,6 +80,7 @@ export async function POST(request: Request) {
         .insert({ event_id: event.id, event_type: event.type });
       if (inserted.error?.code !== "23505") checked(inserted.error);
     });
+    after(() => safelyDeliver(lookup.data.org_id, lookup.data.team_id));
     return reply({ received: true });
   } catch (e) {
     // Non-2xx responses intentionally let Stripe retry transient failures.

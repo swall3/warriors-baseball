@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { EmailPreferences } from "@/components/coach/EmailPreferences";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
 type Billing = {
   team: { id: string; name: string };
@@ -310,6 +311,9 @@ export default function BillingPage() {
                   Sign out of billing
                 </button>
               </div>
+            )}
+            {billing.isBillingOwner && (
+              <EmailPreferences key={team} team={team} />
             )}
             <button
               className="nf-button nf-button-secondary mt-4"
