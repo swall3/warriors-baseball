@@ -7,7 +7,12 @@ export default function AppHome() {
         <Link href="/" aria-label="InningWise home">
           InningWise<span>◆</span>
         </Link>
-        <span>BASEBALL. TOGETHER.</span>
+        <div className="nf-home-navright">
+          <span>BASEBALL. TOGETHER.</span>
+          <Link href="/coach/login" className="nf-home-signin">
+            Sign In
+          </Link>
+        </div>
       </header>
       <div className="nf-home-content">
         <p className="nf-home-eyebrow">FROM THE FIRST REP TO THE FINAL OUT</p>
