@@ -1950,9 +1950,9 @@ export const BACKUP_SCENARIOS: BackupScenario[] = [
     category: 'backup',
     runners: { first: true, second: false, third: true },
     ballZone: '3B',
-    question: 'Runners on 1st and 3rd. The batter squeezes, the THIRD BASEMAN fields it and fires home. Tap the infielder who must cover first base for the catcher\'s follow-up throw.',
+    question: 'Runners on 1st and 3rd. The batter squeezes, the THIRD BASEMAN fields it and fires home. Tap the infielder who must get back to first base so the bag is not left empty.',
     targetZone: '1B',
-    explanation: '1B has to get back to the bag! On a squeeze the first baseman usually charges with everyone else, but the play often ends with a throw to first for the batter. Field or charge, then recover — the first baseman\'s last job is almost always the bag.',
+    explanation: '1B has to get back to the bag! On a squeeze the first baseman charges with everyone else, but once the ball is fielded by somebody else his job is to recover to first — an empty bag is a free base for the batter. Charge, then recover: the first baseman\'s last job is almost always the base.',
     ballReachesTarget: false,
   },
   {

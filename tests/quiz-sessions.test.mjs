@@ -213,3 +213,34 @@ test("interleaving an empty or single-group list is a no-op", () => {
   const same = [{ id: 1, g: "x" }, { id: 2, g: "x" }];
   assert.deepEqual(interleaveByGroup(same, (i) => i.g), same);
 });
+
+// ── Assigned-practice run splitting (mirrors PracticeSession.tsx) ──
+// The coach-side timed runner walks assigned rows in the coach's order. This
+// mirrors how it splits that list so a 30-rep bundle isn't 30 timed blocks.
+
+test("an assigned bundle splits into capped, contiguous, in-order sessions", () => {
+  const assigned = Array.from({ length: 36 }, (_, i) => ({
+    id: `row${i}`,
+    bundle_position: i,
+  }));
+  const sessions = chunkIntoSessions(assigned);
+  assert.equal(sessions.length, 3);
+  for (const s of sessions) assert.ok(s.length <= QUIZ_SESSION_SIZE);
+  // Contiguous and in the coach's assigned order — session 2 picks up exactly
+  // where session 1 stopped.
+  assert.deepEqual(
+    sessions.flat().map((r) => r.bundle_position),
+    assigned.map((r) => r.bundle_position),
+  );
+});
+
+test("a small assignment stays a single session with no split UI needed", () => {
+  const assigned = Array.from({ length: 4 }, (_, i) => ({ id: `row${i}` }));
+  const sessions = chunkIntoSessions(assigned);
+  assert.equal(sessions.length, 1);
+  assert.equal(sessions[0].length, 4);
+});
+
+test("no assigned rows means no session to start", () => {
+  assert.deepEqual(chunkIntoSessions([]), []);
+});
