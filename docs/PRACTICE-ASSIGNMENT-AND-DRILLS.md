@@ -50,6 +50,42 @@ custom team practices**.
   library is part of the paid product; the public site's free game sample
   (SEATS-AND-GAME-ACCESS.md) does not include the drill library.
 
+## Decision 3 — Scenario content expansion (Stuart, 2026-09-22 evening)
+
+The current catalog (~41 backup situations) is too narrow. Expand to cover, for
+every position and common game situation:
+
+- **Who covers** (base coverage responsibilities — e.g. who covers 2B on a steal
+  with a RH batter)
+- **Who backs up** (existing category, keep growing it)
+- **Who to throw to** (relay/cutoff targets and priority decisions)
+- **What happens when we miss** (ball gets past a fielder / overthrow — where
+  does everyone rotate, who chases, who covers the vacated base)
+
+Content quality bar: every scenario must be verifiably correct youth-baseball
+fundamentals (standard rec/travel-ball teaching, not MLB-specific tactics),
+original wording, age-appropriate (8U–12U), with an explanation that teaches
+the *why*. Scenario types get a `category` so bundles/quizzes can mix or filter
+by skill (cover / backup / relay / miss-recovery).
+
+## Decision 4 — Quiz session size + kid streaks (Stuart, 2026-09-22 evening)
+
+- A quiz/practice session presented to a kid is **capped at 10–15 questions**
+  (pick one number and make it config). A larger bundle spans multiple
+  sessions with progress carried over — never dump 41 questions on a kid.
+- Show kids their **streaks and progress**: daily-play streak already exists;
+  extend the same streak/progress affordances to quiz sessions and bundles
+  (per-skill progress, session completion, correct-answer streaks). Keep it
+  encouraging — no public leaderboards of failures.
+
+## Decision 5 — Multi-kid parents (Stuart, 2026-09-22 evening)
+
+A parent may have **multiple kids on the same team or on different teams**
+(possibly different orgs). The #14 accounts model (TEAM-ACCESS.md linked
+parents) must support one verified parent account linked to N players across
+teams, with a kid switcher in the family/player views. Invitations must not
+assume one-parent-one-player.
+
 ## Sequencing suggestion
 
 Decision 1 is small and relieves a live coaching pain — it can ship
