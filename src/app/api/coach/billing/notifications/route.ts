@@ -1,4 +1,4 @@
-import { billingScope } from "@/lib/billing/server";
+import { teamScope } from "@/lib/billing/server";
 import { failure, reply } from "@/lib/coach/live/http";
 import { LiveError } from "@/lib/coach/live/store";
 import {
@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function GET(request: Request) {
   try {
-    const { session, team, user } = await billingScope(
+    const { session, team, user } = await teamScope(
       request,
       new URL(request.url).searchParams.get("team"),
       false,
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { session, team, user } = await billingScope(
+    const { session, team, user } = await teamScope(
       request,
       body.team,
       true,

@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         401,
       );
     const owners = await client()
-      .from("team_billing")
+      .from("org_billing")
       .select("id")
       .eq("org_id", session.orgId)
       .eq("owner_user_id", data.user.id)

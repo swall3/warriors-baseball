@@ -8,10 +8,10 @@ import { client, LiveError } from "@/lib/coach/live/store";
 import { sessionFor } from "@/lib/coach/live/http";
 import { billingMode, teamAccess, trialDays, validInterval } from "./policy";
 export const ACCOUNT_COOKIE = "iw_billing_identity";
+// One billing row per organization. Teams inherit their organization's subscription.
 export type BillingRow = {
   id: string;
   org_id: string;
-  team_id: string;
   owner_user_id: string | null;
   complimentary: boolean;
   stripe_customer_id: string | null;
@@ -62,36 +62,21 @@ export function checked(error: { message: string } | null) {
       503,
     );
 }
-export async function rowFor(orgId: string, teamId: string) {
+export async function rowFor(orgId: string) {
   const { data, error } = await client()
-    .from("team_billing")
+    .from("org_billing")
     .select("*")
     .eq("org_id", orgId)
-    .eq("team_id", teamId)
     .maybeSingle();
   checked(error);
   return data as BillingRow | null;
 }
 export async function billingScope(
   request: Request,
-  teamId: unknown,
   mutation = false,
   owner = false,
 ) {
   const session = await sessionFor(request, mutation);
-  if (typeof teamId !== "string" || !teamId || teamId.length > 150)
-    throw new LiveError("Choose a team.", 400);
-  if (!canReadTeam(session, teamId))
-    throw new LiveError("Team access unavailable.", 403);
-  const { data, error } = await client()
-    .from("teams")
-    .select("id,name")
-    .eq("org_id", session.orgId)
-    .eq("id", teamId)
-    .eq("kind", "own")
-    .maybeSingle();
-  checked(error);
-  if (!data) throw new LiveError("Team not found.", 404);
   const org = await client()
     .from("organizations")
     .select("active")
@@ -99,21 +84,53 @@ export async function billingScope(
     .single();
   checked(org.error);
   if (!org.data?.active) throw new LiveError("Organization unavailable.", 403);
-  const row = await rowFor(session.orgId, teamId);
+  const row = await rowFor(session.orgId);
   const user = await billingUser();
   if (owner && (!row || !user || row.owner_user_id !== user.id))
     throw new LiveError(
-      "Only this team’s verified billing owner can manage payments.",
+      "Only this organization’s verified billing owner can manage payments.",
       403,
     );
-  return { session, team: data, row, user };
+  return { session, row, user };
+}
+// Notification preferences stay per team, so that surface still resolves a team
+// inside the session's organization before the organization-wide owner check.
+export async function teamScope(
+  request: Request,
+  teamId: unknown,
+  mutation = false,
+  owner = false,
+) {
+  const scope = await billingScope(request, mutation, false);
+  if (typeof teamId !== "string" || !teamId || teamId.length > 150)
+    throw new LiveError("Choose a team.", 400);
+  if (!canReadTeam(scope.session, teamId))
+    throw new LiveError("Team access unavailable.", 403);
+  const { data, error } = await client()
+    .from("teams")
+    .select("id,name")
+    .eq("org_id", scope.session.orgId)
+    .eq("id", teamId)
+    .eq("kind", "own")
+    .maybeSingle();
+  checked(error);
+  if (!data) throw new LiveError("Team not found.", 404);
+  if (
+    owner &&
+    (!scope.row || !scope.user || scope.row.owner_user_id !== scope.user.id)
+  )
+    throw new LiveError(
+      "Only this organization’s verified billing owner can manage payments.",
+      403,
+    );
+  return { ...scope, team: data };
 }
 export async function lease<T>(
   id: string,
   work: (row: BillingRow, token: string) => Promise<T>,
 ): Promise<T> {
   const token = randomUUID();
-  const acquired = await client().rpc("acquire_billing_lease", {
+  const acquired = await client().rpc("acquire_org_billing_lease", {
     p_id: id,
     p_token: token,
   });
@@ -125,7 +142,7 @@ export async function lease<T>(
     );
   try {
     const result = await client()
-      .from("team_billing")
+      .from("org_billing")
       .select("*")
       .eq("id", id)
       .single();
@@ -133,7 +150,7 @@ export async function lease<T>(
     return await work(result.data as BillingRow, token);
   } finally {
     await client()
-      .from("team_billing")
+      .from("org_billing")
       .update({ lock_token: null, lock_until: null })
       .eq("id", id)
       .eq("lock_token", token);
@@ -145,7 +162,7 @@ export async function save(
   patch: Partial<BillingRow>,
 ) {
   const result = await client()
-    .from("team_billing")
+    .from("org_billing")
     .update({ ...patch, updated_at: new Date().toISOString() })
     .eq("id", row.id)
     .eq("lock_token", token)
@@ -208,12 +225,8 @@ export async function reconcile(
     trial_used: row.trial_used || !!sub.trial_start,
   });
 }
-export async function checkout(
-  request: Request,
-  teamId: unknown,
-  interval: unknown,
-) {
-  const scope = await billingScope(request, teamId, true, true);
+export async function checkout(request: Request, interval: unknown) {
+  const scope = await billingScope(request, true, true);
   if (!validInterval(interval))
     throw new LiveError("Choose monthly or annual billing.", 400);
   return checkoutForOwner(scope.row!, scope.user!, interval, stripeClient());
@@ -230,7 +243,10 @@ export async function checkoutForOwner(
     if (row.owner_user_id !== user.id)
       throw new LiveError("Billing ownership changed.", 403);
     if (row.complimentary)
-      throw new LiveError("This team already has complimentary access.", 409);
+      throw new LiveError(
+        "This organization already has complimentary access.",
+        409,
+      );
     if (!row.stripe_customer_id) {
       const customer = await stripe.customers.create(
         { email: user.email, metadata: { inningwise_billing_id: row.id } },
@@ -245,7 +261,7 @@ export async function checkoutForOwner(
       )
     )
       throw new LiveError(
-        "This team already has a subscription. Use Manage billing.",
+        "This organization already has a subscription. Use Manage billing.",
         409,
       );
     if (row.checkout_session_id) {
@@ -322,8 +338,8 @@ export async function checkoutForOwner(
           metadata: { inningwise_billing_id: row.id },
           ...(!row.trial_used && days ? { trial_period_days: days } : {}),
         },
-        success_url: `${returnUrl()}?team=${encodeURIComponent(row.team_id)}&checkout=returned`,
-        cancel_url: `${returnUrl()}?team=${encodeURIComponent(row.team_id)}&checkout=cancelled`,
+        success_url: `${returnUrl()}?checkout=returned`,
+        cancel_url: `${returnUrl()}?checkout=cancelled`,
       },
       { idempotencyKey: `iw-checkout-${row.checkout_attempt}` },
     );
@@ -331,8 +347,8 @@ export async function checkoutForOwner(
     return session.url;
   });
 }
-export async function portal(request: Request, teamId: unknown) {
-  const scope = await billingScope(request, teamId, true, true);
+export async function portal(request: Request) {
+  const scope = await billingScope(request, true, true);
   const stripe = stripeClient();
   return lease(scope.row!.id, async (row) => {
     if (row.owner_user_id !== scope.user!.id)
@@ -347,13 +363,15 @@ export async function portal(request: Request, teamId: unknown) {
     ).url;
   });
 }
-export async function assertCanStartGame(orgId: string, teamId: string) {
+// teamId is retained for the call sites and for the per-team seat checks PR 6 adds;
+// subscription state itself is now organization-wide.
+export async function assertCanStartGame(orgId: string, _teamId: string) {
   // Enforcement stays off in this release. A future launch must explicitly enable it.
   if (process.env.BILLING_ENFORCE !== "true") return;
-  const row = await rowFor(orgId, teamId);
+  const row = await rowFor(orgId);
   if (!teamAccess(row, true).canStartGame)
     throw new LiveError(
-      "Your team needs an active subscription to prepare a new game. Existing games and history remain available.",
+      "Your organization needs an active subscription to prepare a new game. Existing games and history remain available.",
       402,
     );
 }

@@ -3,13 +3,9 @@ import { billingMode, teamAccess } from "@/lib/billing/policy";
 import { failure, reply } from "@/lib/coach/live/http";
 export async function GET(request: Request) {
   try {
-    const { row, user, team } = await billingScope(
-      request,
-      new URL(request.url).searchParams.get("team"),
-    );
+    const { row, user } = await billingScope(request);
     const owner = !!row && !!user && row.owner_user_id === user.id;
     return reply({
-      team: { id: team.id, name: team.name },
       mode: billingMode(),
       ownerConfigured: !!row?.owner_user_id,
       isBillingOwner: owner,

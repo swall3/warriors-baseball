@@ -61,7 +61,7 @@ const row = () =>
   );
 function reset() {
   sql(
-    `delete from notification_outbox where event_key='service-email-test';insert into team_billing(org_id,team_id,owner_user_id) values('${org}','${team}','${user}') on conflict(org_id,team_id) do update set owner_user_id=excluded.owner_user_id;insert into notification_preferences(org_id,team_id,user_id,games) values('${org}','${team}','${user}',true) on conflict(org_id,team_id,user_id) do update set games=true;select queue_team_notification('${org}','${team}','service-email-test','games','game_prepared','{"gameId":"test","teamName":"Test"}');`,
+    `delete from notification_outbox where event_key='service-email-test';insert into org_members(org_id,user_id,role) values('${org}','${user}','owner') on conflict(org_id,user_id) do update set role='owner';insert into org_billing(org_id,owner_user_id) values('${org}','${user}') on conflict(org_id) do update set owner_user_id=excluded.owner_user_id;insert into notification_preferences(org_id,team_id,user_id,games) values('${org}','${team}','${user}',true) on conflict(org_id,team_id,user_id) do update set games=true;select queue_team_notification('${org}','${team}','service-email-test','games','game_prepared','{"gameId":"test","teamName":"Test"}');`,
   );
 }
 function provider(status = 200) {
@@ -131,8 +131,9 @@ test("opt-out cancels queued events without sending", async () => {
 });
 test("ownership change prevents delivery to former owner", async () => {
   reset();
+  // Organization ownership moves to another account: the queued event must not be sent.
   sql(
-    `update team_billing set owner_user_id='22222222-2222-4222-8222-222222222222' where org_id='${org}' and team_id='${team}'`,
+    `update org_members set role='member' where org_id='${org}' and user_id='${user}';insert into org_members(org_id,user_id,role) values('${org}','22222222-2222-4222-8222-222222222222','owner') on conflict(org_id,user_id) do update set role='owner';update org_billing set owner_user_id='22222222-2222-4222-8222-222222222222' where org_id='${org}'`,
   );
   const calls = provider();
   try {
@@ -142,7 +143,7 @@ test("ownership change prevents delivery to former owner", async () => {
   } finally {
     globalThis.fetch = original;
     sql(
-      `delete from notification_outbox where event_key='service-email-test';update team_billing set owner_user_id='${user}' where org_id='${org}' and team_id='${team}';update notification_preferences set games=false,training=false,billing=false where org_id='${org}' and team_id='${team}' and user_id='${user}'`,
+      `delete from notification_outbox where event_key='service-email-test';delete from org_members where org_id='${org}' and user_id='22222222-2222-4222-8222-222222222222';update org_members set role='owner' where org_id='${org}' and user_id='${user}';update org_billing set owner_user_id='${user}' where org_id='${org}';update notification_preferences set games=false,training=false,billing=false where org_id='${org}' and team_id='${team}' and user_id='${user}'`,
     );
   }
 });
