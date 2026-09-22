@@ -304,7 +304,8 @@
   .nf-training-link {
     flex-direction: column;
   }
-  .nf-top > span {
+  .nf-top > span,
+  .nf-top-right > span {
     display: none;
   }
   .nf-card {
@@ -1259,4 +1260,37 @@
 .nf-account-form button:disabled {
   opacity: 0.55;
   cursor: default;
+}
+/* Account entry point in the coach top bar. Billing / People & access / My
+   account moved here out of the footer (which had become a 9-link catch-all
+   mixing workflow with settings). "Account" links to /account, which lists
+   orgs and the Manage links. */
+.nf-top-right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.nf-top-right > span {
+  font-size: 12px;
+  color: #5a6961;
+}
+.nf-account-link {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  color: #101720;
+  border: 1.5px solid #cdd5cd;
+  border-radius: 10px;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+.nf-account-link:hover {
+  border-color: #101720;
+  color: var(--nf-green);
+}
+.nf-account-manage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin: 8px 0 20px;
 }
