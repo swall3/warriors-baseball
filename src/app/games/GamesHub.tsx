@@ -7,7 +7,10 @@ import {
   type MasteryMap,
   hasPlayedToday,
   getDailyState,
+  getSessionProgress,
+  type SessionProgress,
 } from "@/lib/gameStorage";
+import { QUIZ_SESSION_SIZE } from "@/lib/practice/sessions";
 const positions = Object.keys(FIELD_POS) as PositionKey[];
 
 // backupCount comes from the server (see page.tsx) rather than a direct
@@ -21,7 +24,7 @@ function activitiesFor(backupCount: number) {
       number: "01",
       title: "Know the rules",
       detail: "Make the call. Build your baseball IQ one question at a time.",
-      meta: "15 questions",
+      meta: `${QUIZ_SESSION_SIZE} questions per session`,
       icon: "⚾",
     },
     {
@@ -29,7 +32,7 @@ function activitiesFor(backupCount: number) {
       number: "02",
       title: "Back up your team",
       detail: "Read the play and tap the teammate who needs to move.",
-      meta: `${backupCount} situations`,
+      meta: `${backupCount} situations · ${QUIZ_SESSION_SIZE} per session`,
       icon: "↗",
     },
     {
@@ -46,18 +49,24 @@ function activitiesFor(backupCount: number) {
 export default function GamesHub({
   backupCount,
   locked,
+  skillLabels,
 }: {
   backupCount: number;
   locked: boolean;
+  // Passed from the server page rather than imported here: this is a client
+  // component and must not pull anything out of gameData.ts (PR #16).
+  skillLabels: Record<string, string>;
 }) {
   const activities = activitiesFor(backupCount);
   const [mastery, setMastery] = useState<MasteryMap>({});
   const [dailyDone, setDailyDone] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [session, setSession] = useState<SessionProgress | null>(null);
   useEffect(() => {
     setMastery(getMastery());
     setDailyDone(hasPlayedToday());
     setStreak(getDailyState().streak);
+    setSession(getSessionProgress());
   }, []);
   const attempted = positions.filter(
     (p) => (mastery[p]?.total ?? 0) > 0,
@@ -167,6 +176,43 @@ export default function GamesHub({
             stays on this device.
           </p>
         </section>
+        {session && session.sessionsCompleted > 0 && (
+          <section className="training-mastery" aria-label="Skill progress">
+            <div className="training-section-title">
+              <h2>Your skills</h2>
+              <span>
+                {session.sessionsCompleted} session
+                {session.sessionsCompleted === 1 ? "" : "s"} finished
+                {session.bestAnswerStreak >= 2
+                  ? ` · best run ${session.bestAnswerStreak} 🔥`
+                  : ""}
+              </span>
+            </div>
+            <div className="training-positions">
+              {Object.entries(skillLabels).map(([key, label]) => {
+                const rec = session.skills[key];
+                const pct = rec?.total
+                  ? Math.round((rec.correct / rec.total) * 100)
+                  : null;
+                return (
+                  <div
+                    key={key}
+                    className={
+                      pct === null ? "" : pct >= 80 ? "mastered" : "practicing"
+                    }
+                  >
+                    <strong>{label}</strong>
+                    <span>{pct === null ? "New" : `${pct}%`}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p>
+              Every quiz session mixes these four skills. Your progress stays on
+              this device.
+            </p>
+          </section>
+        )}
         <footer className="training-footer">
           <span>Every teammate has a job. Learn yours.</span>
           <Link href="/">Back to InningWise →</Link>

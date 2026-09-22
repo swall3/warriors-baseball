@@ -2,6 +2,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import {
+  QUIZ_SESSION_SIZE,
+  chunkIntoSessions,
+} from "@/lib/practice/sessions";
 export type PracticeRow = {
   id: string;
   player_id: string;
@@ -20,6 +24,9 @@ type Run = {
   endsAt: number | null;
   remaining: number;
   minutes: number;
+  /** Which session of the assigned work this run is (Decision 4). Optional so
+   *  a run saved before this change still restores; it reads as session 1. */
+  session?: number;
 };
 export default function PracticeSession({
   orgId,
@@ -55,6 +62,8 @@ export default function PracticeSession({
         saved.remaining >= 0 &&
         Number.isFinite(saved.minutes) &&
         saved.minutes > 0 &&
+        (saved.session === undefined ||
+          (Number.isInteger(saved.session) && saved.session >= 0)) &&
         (saved.endsAt === null || Number.isFinite(saved.endsAt))
       )
         setRun(saved);
@@ -106,6 +115,19 @@ export default function PracticeSession({
       return (a.r.bundle_position ?? 0) - (b.r.bundle_position ?? 0);
     })
     .map(({ r }) => r);
+  // Session cap (Decision 4): a position-practice bundle can be 30+ reps, and
+  // nobody — kid or coach — runs 30 timed blocks in a sitting. The assigned
+  // work is split into sessions of at most QUIZ_SESSION_SIZE, run one at a
+  // time, with the rest waiting. Order is the coach's assigned order, so the
+  // split is contiguous: session 1 is reps 1-12, session 2 picks up at 13.
+  //
+  // Deliberately NOT sharing a counter with the free-play position game: an
+  // assigned bundle always starts at its own session 1, so a kid who has been
+  // free-playing shortstop doesn't open the coach's assignment on session 3.
+  const sessions = chunkIntoSessions(available);
+  const sessionIndex = run?.session ?? 0;
+  const sessionCountTotal = sessions.length;
+  const upNext = sessions[0] ?? [];
   const current = rows.find((r) => r.id === run?.ids[run.index]);
   const scenario = BACKUP_SCENARIOS.find((s) => s.id === current?.scenario_id);
   const seconds = run
@@ -121,7 +143,11 @@ export default function PracticeSession({
       <p className="nf-eyebrow">COACH PRACTICE SESSION</p>
       <h3>
         {run
-          ? `Block ${run.index + 1} of ${run.ids.length}`
+          ? `Block ${run.index + 1} of ${run.ids.length}${
+              sessionCountTotal > 1
+                ? ` · Session ${sessionIndex + 1} of ${sessionCountTotal}`
+                : ""
+            }`
           : "Turn assigned reps into a practice."}
       </h3>
       <p>
@@ -138,8 +164,18 @@ export default function PracticeSession({
         <>
           <p>
             {available.length} assigned activities ·{" "}
-            {available.length * minutes} minutes planned
+            {sessionCountTotal > 1
+              ? `${upNext.length} in this session · ${upNext.length * minutes} minutes planned`
+              : `${available.length * minutes} minutes planned`}
           </p>
+          {sessionCountTotal > 1 && (
+            <p className="nf-muted">
+              Split into {sessionCountTotal} sessions of at most{" "}
+              {QUIZ_SESSION_SIZE} reps. Finish this one and start the next when
+              the player is fresh — the assignment and its answers are saved
+              either way.
+            </p>
+          )}
           <label className="nf-label">
             Minutes per activity
             <input
@@ -157,15 +193,16 @@ export default function PracticeSession({
           <button
             disabled={
               !loaded ||
-              !available.length ||
+              !upNext.length ||
               !Number.isInteger(minutes) ||
               minutes < 1 ||
               minutes > 30
             }
             onClick={() =>
               save({
-                ids: available.map((r) => r.id),
+                ids: upNext.map((r) => r.id),
                 index: 0,
+                session: 0,
                 endsAt: Date.now() + minutes * 60000,
                 remaining: minutes * 60000,
                 minutes,
@@ -245,6 +282,24 @@ export default function PracticeSession({
                 Next activity
               </button>
             )}
+            {run.index + 1 >= run.ids.length &&
+              sessionIndex + 1 < sessionCountTotal && (
+                <button
+                  onClick={() => {
+                    const next = sessions[sessionIndex + 1] ?? [];
+                    save({
+                      ids: next.map((r) => r.id),
+                      index: 0,
+                      session: sessionIndex + 1,
+                      remaining: run.minutes * 60000,
+                      endsAt: Date.now() + run.minutes * 60000,
+                      minutes: run.minutes,
+                    });
+                  }}
+                >
+                  Start session {sessionIndex + 2} of {sessionCountTotal}
+                </button>
+              )}
             <button
               className="nf-secondary"
               onClick={() => setReviewStop(true)}

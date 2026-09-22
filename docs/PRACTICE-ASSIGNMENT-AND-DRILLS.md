@@ -52,6 +52,9 @@ custom team practices**.
 
 ## Decision 3 — Scenario content expansion (Stuart, 2026-09-22 evening)
 
+**Implemented 2026-09-22** (catalog now 128 scenarios with a `category` field;
+`src/lib/gameData.ts`, `src/lib/practice/bundles.ts`).
+
 The current catalog (~41 backup situations) is too narrow. Expand to cover, for
 every position and common game situation:
 
@@ -69,6 +72,11 @@ the *why*. Scenario types get a `category` so bundles/quizzes can mix or filter
 by skill (cover / backup / relay / miss-recovery).
 
 ## Decision 4 — Quiz session size + kid streaks (Stuart, 2026-09-22 evening)
+
+**Implemented 2026-09-22** (`QUIZ_SESSION_SIZE = 12` in
+`src/lib/practice/sessions.ts`; applied to the rules/backup/position games and
+the position-bundle flow, with session counts, per-skill progress and
+correct-answer streaks on the device).
 
 - A quiz/practice session presented to a kid is **capped at 10–15 questions**
   (pick one number and make it config). A larger bundle spans multiple

@@ -3,7 +3,7 @@
 // the client game when playerDevGamesAccess() allows it.
 import { requireCoach } from "@/lib/coach/auth";
 import { playerDevGamesAccess } from "@/lib/access/games";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import { BACKUP_SCENARIOS, CATEGORY_LABELS } from "@/lib/gameData";
 import PositionGame from "./PositionGame";
 import LockedGameTeaser from "@/components/games/LockedGameTeaser";
 
@@ -22,5 +22,5 @@ export default async function PositionPage() {
     );
   }
 
-  return <PositionGame scenarios={BACKUP_SCENARIOS} />;
+  return <PositionGame scenarios={BACKUP_SCENARIOS} skillLabels={CATEGORY_LABELS} />;
 }

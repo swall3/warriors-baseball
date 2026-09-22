@@ -1,11 +1,27 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { BackupScenario } from "@/lib/gameData";
 import { Diamond, FIELD_POS, PositionKey, TapState } from "@/components/Diamond";
-import { recordAttempt } from "@/lib/gameStorage";
+import {
+  recordAttempt,
+  recordSkillAttempt,
+  recordSessionComplete,
+  getCompletedSessions,
+  getSessionProgress,
+  type SessionProgress,
+} from "@/lib/gameStorage";
+import {
+  interleaveByGroup,
+  planSession,
+  sessionSlice,
+  type SessionPlan,
+} from "@/lib/practice/sessions";
+import SessionProgressPanel from "@/components/games/SessionProgressPanel";
+
+const POOL_KEY = "backup";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -29,8 +45,16 @@ const getMultiplier = (streak: number) => streak >= 5 ? 3 : streak >= 3 ? 2 : st
 
 export default function BackupGame({
   scenarios: pool,
+  skillLabels,
 }: {
   scenarios: BackupScenario[];
+  // Display text only, passed from the server page. Importing CATEGORY_LABELS
+  // here would be a value import of gameData.ts from a "use client" module,
+  // which drags BACKUP_SCENARIOS — every answer — into a static chunk. The
+  // `type BackupScenario` import above is erased at compile time and is safe;
+  // a value import is not. This is the PR #16 property, and it is easy to
+  // break by accident (it was, during this change).
+  skillLabels: Record<string, string>;
 }) {
   const [scenarios, setScenarios] = useState<BackupScenario[]>([]);
   const [current, setCurrent]     = useState(0);
@@ -49,6 +73,8 @@ export default function BackupGame({
   const [shakeKey, setShakeKey] = useState(0);
   const [missed, setMissed] = useState<BackupScenario[]>([]);
   const [roundType, setRoundType] = useState<"full" | "rewind">("full");
+  const [plan, setPlan] = useState<SessionPlan | null>(null);
+  const [progress, setProgress] = useState<SessionProgress | null>(null);
 
   const scoreRef  = useRef(0);
   const pointsRef = useRef(0);
@@ -56,8 +82,21 @@ export default function BackupGame({
   const missedRef = useRef<BackupScenario[]>([]);
   const praiseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Session cap (Decision 4): the kid gets QUIZ_SESSION_SIZE questions, not
+  // the whole catalog. The pool is ordered deterministically — interleaved by
+  // skill category so every session mixes cover/backup/relay/miss — and then
+  // sliced by how many sessions this device has already finished, so session 2
+  // is genuinely new material rather than a reshuffle of session 1. Only the
+  // chosen session is shuffled, for variety within the sitting.
+  const orderedPool = useMemo(
+    () => interleaveByGroup(pool, (s) => s.category),
+    [pool],
+  );
+
   const init = useCallback(() => {
-    setScenarios(shuffle(pool));
+    const done = getCompletedSessions(POOL_KEY);
+    setPlan(planSession(orderedPool.length, done));
+    setScenarios(shuffle(sessionSlice(orderedPool, done)));
     setCurrent(0);
     setTappedZone(null);
     setTapState(null);
@@ -73,7 +112,7 @@ export default function BackupGame({
     pointsRef.current = 0;
     streakRef.current = 0;
     missedRef.current = [];
-  }, [pool]);
+  }, [orderedPool]);
 
   const startRewind = () => {
     setScenarios(shuffle(missedRef.current));
@@ -106,6 +145,7 @@ export default function BackupGame({
     setTappedZone(zone);
     setTapState(correct ? "correct" : "wrong");
     recordAttempt(s.targetZone as PositionKey, correct);
+    recordSkillAttempt(s.category, correct);
 
     if (correct) {
       scoreRef.current += 1;
@@ -144,6 +184,13 @@ export default function BackupGame({
         setHighScore(finalPts);
         setNewHS(true);
       }
+      // Only a full round advances the session counter — a rewind replays
+      // questions the kid already saw, so it must not skip fresh material.
+      setProgress(
+        roundType === "rewind"
+          ? getSessionProgress()
+          : recordSessionComplete(POOL_KEY),
+      );
       setGameState("done");
     } else {
       setCurrent(c => c + 1);
@@ -190,6 +237,15 @@ export default function BackupGame({
             <p className="text-gray-400 text-xs mt-2">💡 Ask your coach about specific plays!</p>
           </div>
 
+          {progress && plan && (
+            <SessionProgressPanel
+              plan={plan}
+              progress={progress}
+              skillLabels={skillLabels}
+              countedThisRound={!isRewind}
+            />
+          )}
+
           <div className="flex flex-col gap-3">
             {canRewind && (
               <button
@@ -203,7 +259,11 @@ export default function BackupGame({
               onClick={init}
               className="bg-[#1a4a72] hover:bg-[#1f5a8a] active:scale-95 text-white font-bold text-sm uppercase tracking-wider py-4 rounded-2xl transition-all shadow-lg"
             >
-              Play {isRewind ? "a Full Round" : "Again"}
+              {isRewind
+                ? "Play a Full Session"
+                : plan && plan.count > 1
+                  ? "Next Session →"
+                  : "Play Again"}
             </button>
             <Link
               href="/games"
@@ -249,7 +309,14 @@ export default function BackupGame({
               </span>
             )}
           </div>
-          <div className="text-white/40 text-[13px] font-bold shrink-0">{current + 1}/{total}</div>
+          <div className="text-white/40 text-[13px] font-bold shrink-0 text-right leading-tight">
+            {current + 1}/{total}
+            {plan && plan.count > 1 && (
+              <span className="block text-white/25 text-[10px] font-bold uppercase tracking-wider">
+                Session {plan.number}/{plan.count}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Progress bar — a single continuous fill reads better than 36 tiny dots */}
