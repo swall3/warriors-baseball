@@ -47,13 +47,15 @@ export function useCatalog() {
 }
 export function Workspace({
   catalog,
-  active,
   children,
   compact = false,
   gameStatus,
 }: {
   catalog: Catalog | null;
-  active: string;
+  // Accepted for backward-compat with all callers, but no longer rendered:
+  // the top `nf-nav` tabs were removed (they duplicated the game-day steps).
+  // Active state now lives entirely in <GameDaySteps>, derived from pathname.
+  active?: string;
   children: ReactNode;
   compact?: boolean;
   gameStatus?: string;
@@ -100,30 +102,6 @@ export function Workspace({
                 : (catalog?.role ?? "Loading")}
           </span>
         </div>
-        <nav className="nf-nav" aria-label="Coach navigation">
-          {[
-            ["Today", "/coach/today"],
-            ["Team", "/coach/team"],
-            ["Review", "/coach/insights"],
-            ["Practice", "/coach/training"],
-          ].map(([name, href]) => (
-            <Link
-              key={name}
-              href={href}
-              aria-current={
-                (active === "Insights"
-                  ? "Review"
-                  : active === "Play & Learn"
-                    ? "Practice"
-                    : active) === name
-                  ? "page"
-                  : undefined
-              }
-            >
-              {name}
-            </Link>
-          ))}
-        </nav>
         {!compact && (
           <GameDaySteps
             canPrepare={catalog?.role !== "viewer"}
@@ -134,7 +112,7 @@ export function Workspace({
         <footer className="nf-footer">
           <Link href="/coach/team">Manage team</Link>
           <Link href="/coach/live/new">Prepare game</Link>
-          <Link href="/coach/practice">Practice library</Link>
+          <Link href="/coach/practice">Drill library</Link>
           {(!catalog?.personalAccount || catalog?.canManageOrganization) && (
             <Link href="/coach/import">Import games</Link>
           )}
