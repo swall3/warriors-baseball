@@ -13,7 +13,7 @@ const env = Object.fromEntries(
     }),
 );
 assert.equal(env.SUPABASE_URL, "http://127.0.0.1:54390");
-const base = "http://localhost:4183";
+const base = process.env.BILLING_API_BASE ?? "http://localhost:4183";
 const cookie = async (org, role) =>
   `ec_coach_session=${await signSession({ orgId: org, role }, env.SESSION_SECRET, 3600)}`;
 const owner = await cookie("org-outlaws", "owner");
@@ -32,7 +32,7 @@ async function call(
 }
 test("every billing endpoint requires a valid team session", async () => {
   for (const [path, method] of [
-    ["?team=team-review-warriors", "GET"],
+    ["", "GET"],
     ["/checkout", "POST"],
     ["/portal", "POST"],
     ["/account", "POST"],
@@ -46,27 +46,23 @@ test("every billing endpoint requires a valid team session", async () => {
     assert.equal(r.status, 401);
   }
 });
-test("billing status is team-scoped and omits provider IDs and account tokens", async () => {
-  const r = await call("/api/coach/billing?team=team-review-warriors");
+test("billing status is organization-scoped and omits provider IDs and account tokens", async () => {
+  const r = await call("/api/coach/billing");
   assert.equal(r.status, 200);
   assert.equal(r.data.isBillingOwner, false);
   assert.equal(r.data.mode, "test");
   assert.equal("stripe_customer_id" in r.data, false);
   assert.equal("owner_user_id" in r.data, false);
+  assert.equal("team" in r.data, false);
+  // Another organization reads its own billing, never this one's. That
+  // organization is deliberately never given a billing row by any fixture.
+  const other = await call("/api/coach/billing", { auth: foreign });
+  assert.equal(other.status, 200);
+  assert.equal(other.data.ownerConfigured, false);
+  assert.equal(other.data.isBillingOwner, false);
+  assert.equal(other.data.status, "none");
   assert.equal(
-    (
-      await call("/api/coach/billing?team=team-review-warriors", {
-        auth: foreign,
-      })
-    ).status,
-    404,
-  );
-  assert.equal(
-    (
-      await call("/api/coach/billing?team=team-review-warriors", {
-        auth: viewer,
-      })
-    ).status,
+    (await call("/api/coach/billing", { auth: viewer })).status,
     200,
   );
 });
@@ -76,7 +72,7 @@ test("shared owner passcodes cannot manage payments, and mutations reject foreig
       (
         await call("/api/coach/billing/" + route, {
           method: "POST",
-          body: { team: "team-review-warriors", interval: "month" },
+          body: { interval: "month" },
         })
       ).status,
       403,
@@ -86,7 +82,7 @@ test("shared owner passcodes cannot manage payments, and mutations reject foreig
         await call("/api/coach/billing/" + route, {
           method: "POST",
           auth: viewer,
-          body: { team: "team-review-warriors", interval: "month" },
+          body: { interval: "month" },
         })
       ).status,
       403,
@@ -96,7 +92,7 @@ test("shared owner passcodes cannot manage payments, and mutations reject foreig
         await call("/api/coach/billing/" + route, {
           method: "POST",
           origin: "https://evil.example",
-          body: { team: "team-review-warriors", interval: "month" },
+          body: { interval: "month" },
         })
       ).status,
       403,

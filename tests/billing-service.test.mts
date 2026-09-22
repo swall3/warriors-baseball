@@ -38,7 +38,7 @@ const owner = {
 const id = "33333333-3333-4333-8333-333333333333";
 const reset = () =>
   sql(
-    `delete from team_billing where id='${id}';insert into team_billing(id,org_id,team_id,owner_user_id) values('${id}','org-outlaws','team-review-warriors','${owner.id}');`,
+    `delete from org_billing where id='${id}' or org_id='org-outlaws';insert into org_billing(id,org_id,owner_user_id) values('${id}','org-outlaws','${owner.id}');`,
   );
 process.env.STRIPE_TEAM_MONTHLY_PRICE_ID = "price_month";
 process.env.STRIPE_TEAM_ANNUAL_PRICE_ID = "price_year";
@@ -102,7 +102,7 @@ function fakeStripe() {
 test("checkout serializes concurrent attempts and reuses the existing session", async () => {
   reset();
   const fake = fakeStripe();
-  const row = (await rowFor("org-outlaws", "team-review-warriors"))!;
+  const row = (await rowFor("org-outlaws"))!;
   const results = await Promise.allSettled([
     checkoutForOwner(row, owner, "month", fake.stripe),
     checkoutForOwner(row, owner, "month", fake.stripe),
@@ -121,13 +121,13 @@ test("checkout serializes concurrent attempts and reuses the existing session", 
 test("unconfirmed checkout persistence retries with the same Stripe idempotency key", async () => {
   reset();
   const fake = fakeStripe();
-  const row = (await rowFor("org-outlaws", "team-review-warriors"))!;
+  const row = (await rowFor("org-outlaws"))!;
   await checkoutForOwner(row, owner, "month", fake.stripe);
-  sql(`update team_billing set checkout_session_id=null where id='${id}'`);
+  sql(`update org_billing set checkout_session_id=null where id='${id}'`);
   await checkoutForOwner(row, owner, "month", fake.stripe);
   assert.equal(fake.count, 1);
   sql(
-    `update team_billing set checkout_session_id=null,checkout_started_at=now()-interval '25 hours' where id='${id}'`,
+    `update org_billing set checkout_session_id=null,checkout_started_at=now()-interval '25 hours' where id='${id}'`,
   );
   await assert.rejects(
     checkoutForOwner(row, owner, "month", fake.stripe),
@@ -138,7 +138,7 @@ test("unconfirmed checkout persistence retries with the same Stripe idempotency 
 test("wrong billing identity and complimentary access cannot start checkout", async () => {
   reset();
   const fake = fakeStripe();
-  const row = (await rowFor("org-outlaws", "team-review-warriors"))!;
+  const row = (await rowFor("org-outlaws"))!;
   await assert.rejects(
     checkoutForOwner(
       row,
@@ -148,7 +148,7 @@ test("wrong billing identity and complimentary access cannot start checkout", as
     ),
     /ownership changed/,
   );
-  sql(`update team_billing set complimentary=true where id='${id}'`);
+  sql(`update org_billing set complimentary=true where id='${id}'`);
   await assert.rejects(
     checkoutForOwner(row, owner, "month", fake.stripe),
     /complimentary/,
@@ -158,7 +158,7 @@ test("wrong billing identity and complimentary access cannot start checkout", as
 test("canonical subscription state prevents stale events and duplicate subscriptions", async () => {
   reset();
   const fake = fakeStripe();
-  const row = (await rowFor("org-outlaws", "team-review-warriors"))!;
+  const row = (await rowFor("org-outlaws"))!;
   await checkoutForOwner(row, owner, "month", fake.stripe);
   const sub = {
     id: "sub_test",
@@ -172,7 +172,7 @@ test("canonical subscription state prevents stale events and duplicate subscript
   fake.setSubs([sub]);
   await lease(id, (fresh, token) => reconcile(fresh, token, fake.stripe));
   assert.equal(
-    (await rowFor("org-outlaws", "team-review-warriors"))?.subscription_status,
+    (await rowFor("org-outlaws"))?.subscription_status,
     "active",
   );
   await assert.rejects(
@@ -184,7 +184,7 @@ test("canonical subscription state prevents stale events and duplicate subscript
   // Simulate an old event arriving: reconciliation re-reads the canceled canonical state.
   await lease(id, (fresh, token) => reconcile(fresh, token, fake.stripe));
   assert.equal(
-    (await rowFor("org-outlaws", "team-review-warriors"))?.subscription_status,
+    (await rowFor("org-outlaws"))?.subscription_status,
     "canceled",
   );
   assert.equal(fake.count, 1);
@@ -199,14 +199,14 @@ test("failed work releases its lease, but an active lease cannot be stolen", asy
   );
   await lease(id, async () => {});
   sql(
-    `update team_billing set lock_token=gen_random_uuid(),lock_until=now()+interval '1 minute' where id='${id}'`,
+    `update org_billing set lock_token=gen_random_uuid(),lock_until=now()+interval '1 minute' where id='${id}'`,
   );
   await assert.rejects(
     lease(id, async () => {}),
     /in progress/,
   );
   sql(
-    `update team_billing set lock_until=now()-interval '1 second' where id='${id}'`,
+    `update org_billing set lock_until=now()-interval '1 second' where id='${id}'`,
   );
   await lease(id, async () => {});
 });
@@ -214,7 +214,7 @@ test("billing tables and lease RPC are inaccessible to public browser roles", ()
   for (const role of ["anon", "authenticated"]) {
     assert.equal(
       sql(
-        `select has_table_privilege('${role}','team_billing','select') or has_table_privilege('${role}','team_billing','update');`,
+        `select has_table_privilege('${role}','org_billing','select') or has_table_privilege('${role}','org_billing','update');`,
       ),
       "f",
     );
@@ -226,24 +226,24 @@ test("billing tables and lease RPC are inaccessible to public browser roles", ()
     );
     assert.equal(
       sql(
-        `select has_function_privilege('${role}','acquire_billing_lease(uuid,uuid)','execute');`,
+        `select has_function_privilege('${role}','acquire_org_billing_lease(uuid,uuid)','execute');`,
       ),
       "f",
     );
   }
   assert.equal(
     sql(
-      "select relrowsecurity from pg_class where oid='team_billing'::regclass;",
+      "select relrowsecurity from pg_class where oid='org_billing'::regclass;",
     ),
     "t",
   );
 });
 
-test("canceled teams can resubscribe without receiving a second trial", async () => {
+test("canceled organizations can resubscribe without receiving a second trial", async () => {
   reset();
   process.env.BILLING_TRIAL_DAYS = "14";
   const fake = fakeStripe();
-  const row = (await rowFor("org-outlaws", "team-review-warriors"))!;
+  const row = (await rowFor("org-outlaws"))!;
   await checkoutForOwner(row, owner, "month", fake.stripe);
   assert.equal(
     fake.sessions.get("cs_1").params.subscription_data.trial_period_days,

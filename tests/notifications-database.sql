@@ -1,5 +1,6 @@
 begin;
-insert into public.team_billing(org_id,team_id,owner_user_id) values('org-outlaws','team-review-warriors','11111111-1111-4111-8111-111111111111') on conflict(org_id,team_id) do update set owner_user_id=excluded.owner_user_id;
+insert into public.org_members(org_id,user_id,role) values('org-outlaws','11111111-1111-4111-8111-111111111111','owner') on conflict(org_id,user_id) do update set role='owner';
+insert into public.org_billing(org_id,owner_user_id) values('org-outlaws','11111111-1111-4111-8111-111111111111') on conflict(org_id) do update set owner_user_id=excluded.owner_user_id;
 insert into public.live_games(org_id,id,team_id,state) values('org-outlaws','email-disabled-test','team-review-warriors','{"status":"ready","config":{"teamName":"Warriors","date":"2026-09-23","opponent":"Test"}}');
 do $$begin if exists(select 1 from notification_outbox where event_key='game:email-disabled-test:0')then raise exception 'default opted in';end if;end$$;
 insert into notification_preferences(org_id,team_id,user_id,games,training,billing) values('org-outlaws','team-review-warriors','11111111-1111-4111-8111-111111111111',true,true,true) on conflict(org_id,team_id,user_id) do update set games=true,training=true,billing=true;
@@ -28,7 +29,7 @@ do $$begin if (select status from notification_outbox where event_key='game:emai
 -- Training and billing use actual table writes, and roll back with their event.
 insert into training_assignments(org_id,id,player_id,scenario_id,note)
  select 'org-outlaws','email-training-test',id,'test-scenario','Private note must not be emailed' from players where org_id='org-outlaws' and team_id='team-review-warriors' limit 1;
-update team_billing set subscription_status='past_due' where org_id='org-outlaws' and team_id='team-review-warriors';
+update org_billing set subscription_status='past_due' where org_id='org-outlaws';
 do $$begin
  if not exists(select 1 from notification_outbox where event_key='training:email-training-test' and details='{}')then raise exception 'training event';end if;
  if not exists(select 1 from notification_outbox where kind='billing_changed' and details->>'status'='past_due')then raise exception 'billing event';end if;

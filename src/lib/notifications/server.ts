@@ -127,11 +127,13 @@ export async function deliverPending(org: string, team: string | null = null) {
       checked(r.error);
     };
     try {
+      // The recipient is the organization owner; billing rows no longer carry a team.
       const owner = await db
-        .from("team_billing")
-        .select("owner_user_id")
+        .from("org_members")
+        .select("user_id")
         .eq("org_id", org)
-        .eq("team_id", row.team_id)
+        .eq("user_id", row.user_id)
+        .eq("role", "owner")
         .maybeSingle();
       checked(owner.error);
       const organization = await db
@@ -168,7 +170,7 @@ export async function deliverPending(org: string, team: string | null = null) {
       if (
         !organization.data?.active ||
         !membershipValid ||
-        owner.data?.owner_user_id !== row.user_id ||
+        !owner.data ||
         (row.category !== "test" && !prefs[row.category as keyof Preferences])
       ) {
         await finish({

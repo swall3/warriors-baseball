@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { EmailPreferences } from "@/components/coach/EmailPreferences";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
 type Billing = {
-  team: { id: string; name: string };
   mode: "test" | "disabled";
   ownerConfigured: boolean;
   isBillingOwner: boolean;
@@ -40,11 +39,10 @@ export default function BillingPage() {
     );
   }, [catalog]);
   useEffect(() => {
-    if (!team) return;
     const controller = new AbortController();
     setBilling(null);
     setError("");
-    fetch(`/api/coach/billing?team=${encodeURIComponent(team)}`, {
+    fetch("/api/coach/billing", {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -57,7 +55,7 @@ export default function BillingPage() {
         if (!controller.signal.aborted) setError(e.message);
       });
     return () => controller.abort();
-  }, [team, version]);
+  }, [version]);
   useEffect(() => {
     const result = new URLSearchParams(window.location.search).get("checkout");
     if (result === "returned")
@@ -119,7 +117,7 @@ export default function BillingPage() {
         </p>
         {catalogError && <LoadError error={catalogError} retry={retry} />}
         <label className="nf-label">
-          Team
+          Email notifications for
           <select
             value={team}
             onChange={(e) => {
@@ -136,7 +134,7 @@ export default function BillingPage() {
           </select>
         </label>
         {catalog && !catalog.teams.length && (
-          <p>Add a team before setting up billing.</p>
+          <p>Add a team to manage its email notifications.</p>
         )}
         {error && (
           <div role="alert" className="nf-notice">
@@ -149,9 +147,7 @@ export default function BillingPage() {
             {notice}
           </p>
         )}
-        {!billing && team && !error && (
-          <p role="status">Loading subscription…</p>
-        )}
+        {!billing && !error && <p role="status">Loading subscription…</p>}
         {billing && (
           <>
             <div className="nf-notice">
@@ -188,7 +184,7 @@ export default function BillingPage() {
             </p>
             {!billing.ownerConfigured ? (
               <p>
-                A billing owner needs to be assigned to this team before
+                A billing owner needs to be assigned to this organization before
                 payments can be managed. Your shared team passcode does not
                 grant billing access.
               </p>
@@ -205,7 +201,9 @@ export default function BillingPage() {
                 className="space-y-4 mt-6"
               >
                 <h3>Verify your billing account</h3>
-                <p>Use the email assigned to this team’s billing owner.</p>
+                <p>
+                  Use the email assigned to this organization’s billing owner.
+                </p>
                 <label className="nf-label">
                   Email
                   <input
@@ -270,7 +268,7 @@ export default function BillingPage() {
                           !billing.monthlyAvailable
                         }
                         onClick={() =>
-                          void action("checkout", { team, interval: "month" })
+                          void action("checkout", { interval: "month" })
                         }
                       >
                         View monthly checkout
@@ -283,7 +281,7 @@ export default function BillingPage() {
                           !billing.annualAvailable
                         }
                         onClick={() =>
-                          void action("checkout", { team, interval: "year" })
+                          void action("checkout", { interval: "year" })
                         }
                       >
                         View annual checkout
@@ -298,7 +296,7 @@ export default function BillingPage() {
                   <button
                     className="nf-button"
                     disabled={busy || billing.mode !== "test"}
-                    onClick={() => void action("portal", { team })}
+                    onClick={() => void action("portal", {})}
                   >
                     Manage billing
                   </button>
@@ -312,7 +310,7 @@ export default function BillingPage() {
                 </button>
               </div>
             )}
-            {billing.isBillingOwner && (
+            {billing.isBillingOwner && team && (
               <EmailPreferences key={team} team={team} />
             )}
             <button
