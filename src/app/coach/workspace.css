@@ -1055,3 +1055,27 @@
 .nf-sync > span {
   white-space: nowrap;
 }
+
+/* Historical reports share the same workspace and visual language as live review. */
+.nf-report-nav { display:flex; flex-wrap:wrap; gap:8px; margin:24px 0 14px; }
+.nf-report-nav a { padding:12px 18px; border:1px solid #d6ddd5; border-radius:9px; background:white; color:#40564a; font-size:14px; font-weight:700; }
+.nf-report-nav a[aria-current="page"] { background:var(--nf-green); color:white; border-color:var(--nf-green); }
+.nf-report-source { color:#5a6961; font-size:13px; margin-bottom:24px; }
+.nf-report-source a { color:var(--nf-green); font-weight:700; }
+.nf-analytics { --d-bg:#f5f6f3; --d-surface:#fff; --d-sunken:#edf1eb; --d-line:#dce2dc; --d-sel:#1b4d3e; --d-ink:#182a25; --d-ink-2:#40564a; --d-ink-3:#59695f; }
+.nf-report-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin:0 0 20px; }
+.nf-analytics button { background:white; color:var(--nf-green); border:1px solid #cdd8ce; padding:10px 14px; font-size:13px; text-transform:none; letter-spacing:normal; }
+.nf-analytics button.bg-d-sel, .nf-analytics button.bg-d-pos { background:var(--nf-green); color:white; border-color:var(--nf-green); }
+.nf-analytics button.bg-d-neg { background:#a4162b; color:white; border-color:#a4162b; }
+.nf-analytics button[class*="bg-d-pos/"], .nf-analytics button[class*="bg-d-sel/"] { background:#e3eee4; color:#1b4d3e; }
+.nf-analytics button[class*="bg-d-neg/"] { background:#fcebed; color:#a4162b; }
+.nf-analytics button:hover:not(:disabled) { filter:brightness(.96); }
+.nf-analytics h2 { font-size:16px; font-weight:800; letter-spacing:0; text-transform:none; }
+.nf-analytics h3 { letter-spacing:0; text-transform:none; }
+.nf-analytics table { width:100%; font-size:13px; border-collapse:collapse; }
+.nf-analytics th, .nf-analytics td { padding:10px 12px; border-bottom:1px solid #e3e8e1; text-align:left; white-space:nowrap; }
+.nf-analytics input:not([type="range"]):not([type="checkbox"]), .nf-analytics select, .nf-analytics textarea { border:1px solid #cdd8ce; border-radius:8px; min-height:44px; background:white; color:#182a25; }
+.nf-opponent-report { max-width:960px; }
+@media(max-width:640px) { .nf-report-nav { display:grid; grid-template-columns:1fr 1fr; } .nf-report-nav a { padding:12px; text-align:center; } .nf-report-actions { justify-content:flex-start; } .nf-analytics .nf-card { padding:18px; } }
+
+.nf-analytics input[type="checkbox"] { width:18px; height:18px; min-height:18px; flex-shrink:0; padding:0; accent-color:var(--nf-green); }

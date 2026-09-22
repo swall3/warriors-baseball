@@ -1,6 +1,6 @@
 'use client';
+import AnalyticsWorkspace from '@/components/coach/AnalyticsWorkspace';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import HeatmapCanvas from '@/components/coach/heatmap-canvas';
 import type { PlayEvent } from '@/lib/coach/types';
@@ -511,42 +511,11 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen app-shell text-d-ink">
-      <header className="border-b border-d-sel/40 bg-d-surface p-4 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight text-d-sel">{brandTeam.name} Historical Analytics</h1>
-            <p className="mt-1 text-sm text-d-ink-2">Imported and older device-only games. Review shared games from the main Review page.</p>
-          </div>
-          <nav className="flex flex-wrap gap-2">
-            <Link href="/coach/today" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Game day
-            </Link>
-<Link href="/coach/import" className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-neg touch-manipulation active:scale-95">
-              Import Game
-            </Link>
-            <Link href="/coach/live/new" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
-              Prepare game
-            </Link>
-            <Link href="/coach/intel" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Intel
-            </Link>
-            <Link href="/coach/stats" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Spray
-            </Link>
-            <button onClick={onExportMarkdown} className="rounded-lg border border-d-sel/40 bg-d-sunken px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Export MD
-            </button>
-            <button onClick={onExportCsv} className="rounded-lg border border-d-sel/40 bg-d-sunken px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Export CSV
-            </button>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl space-y-4 p-4">
+    <AnalyticsWorkspace title="See the story behind each play." description="Explore contact patterns, player reports, and defensive playing time.">
+      <div className="nf-report-actions"><button onClick={onExportMarkdown}>Export Markdown</button><button onClick={onExportCsv}>Export CSV</button></div>
+      <div className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="rounded-xl border border-d-line bg-d-surface p-4">
+          <div className="nf-card">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Team View</h2>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -564,7 +533,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-d-line bg-d-surface p-4 md:col-span-2">
+          <div className="nf-card md:col-span-2">
             <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Game Scope</h2>
             <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {(['current', 'multiple', 'all'] as Scope[]).map((value) => (
@@ -592,7 +561,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-d-line bg-d-surface p-4">
+        <div className="nf-card">
           <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Player Focus</h2>
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-sm text-d-ink-2" htmlFor="player-filter">
@@ -615,13 +584,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-d-line bg-d-surface p-4">
+        <div className="nf-card">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Field Heat Map</h2>
           <HeatmapCanvas events={heatmapEvents} visualStyle="classic" />
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <section className="rounded-xl border border-d-line bg-d-surface p-4">
+          <section className="nf-card">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Team Contact Report</h2>
             <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
               <Metric label="PA" value={String(selectedSummary.pa)} />
@@ -636,7 +605,7 @@ export default function Dashboard() {
             </p>
           </section>
 
-          <section className="rounded-xl border border-d-line bg-d-surface p-4 lg:col-span-2">
+          <section className="nf-card lg:col-span-2">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Where Balls Are Finding Grass</h2>
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <ZoneList title={selectedTeam === 'us' ? `${brandTeam.name} Contact` : `${opponentTeamLabel} Contact`} rows={selectedZoneReport} />
@@ -645,9 +614,9 @@ export default function Dashboard() {
           </section>
         </div>
 
-        <section className="rounded-xl border border-d-line bg-d-surface p-4">
+        <section className="nf-card">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-d-ink-2">Defensive Plan &amp; Playing Time</h2>
-          <p className="mt-1 text-xs text-d-ink-3">Current game&apos;s inning-by-inning defense and bench fairness (from Game Setup).</p>
+          <p className="mt-1 text-xs text-d-ink-3">Saved device-only game’s defensive plan. Shared game lineups and playing time are in Review.</p>
           <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div className="overflow-x-auto">
               <table className="min-w-full text-left text-xs text-d-ink">
@@ -694,7 +663,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-d-line bg-d-surface p-4">
+        <section className="nf-card">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-d-ink-2">Player Hitting Report</h2>
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-xs text-d-ink">
@@ -741,8 +710,8 @@ export default function Dashboard() {
             </table>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </AnalyticsWorkspace>
   );
 }
 

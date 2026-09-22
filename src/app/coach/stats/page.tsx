@@ -1,6 +1,6 @@
 "use client";
+import AnalyticsWorkspace from "@/components/coach/AnalyticsWorkspace";
 
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import SprayChart from '@/components/coach/spray-chart';
 import { canonicalPlayerName } from '@/lib/coach/player-name';
@@ -233,27 +233,20 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-xl font-bold">Loading stats...</p>
-      </div>
+      <AnalyticsWorkspace title="Where the ball goes." description="Explore contact locations and results."><p role="status">Loading stats…</p></AnalyticsWorkspace>
     );
   }
 
   return (
-    <div className="mx-auto grid min-h-screen w-full max-w-7xl gap-5 px-3 py-4 sm:px-6 lg:grid-cols-3">
-      <section className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl lg:col-span-2">
+    <AnalyticsWorkspace title="Where the ball goes." description="Explore contact locations, outcomes, and the recorded game score.">
+    <div className="grid gap-5 lg:grid-cols-3">
+      <section className="overflow-hidden nf-card  lg:col-span-2">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Spray Chart</p>
-            <h1 className="text-2xl font-black tracking-tight">Play Statistics</h1>
+            <h3 className="text-2xl font-black tracking-tight">Play Statistics</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/coach/today" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel min-h-[40px] flex items-center touch-manipulation">
-              Scoring
-            </Link>
-            <Link href="/coach/dashboard" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos min-h-[40px] flex items-center touch-manipulation">
-              Dashboard
-            </Link>
             <button
               type="button"
               onClick={handleExport}
@@ -331,10 +324,10 @@ export default function StatsPage() {
         </div>
       </section>
 
-      <section className="overflow-hidden rounded-2xl border border-d-sel/40 bg-d-surface p-4 shadow-2xl">
+      <section className="overflow-hidden nf-card ">
         <header>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-d-sel">Score</p>
-          <h1 className="text-xl font-black tracking-tight">Game Score</h1>
+          <h3 className="text-xl font-black tracking-tight">Game Score</h3>
         </header>
 
         <div className="mt-4 flex items-center justify-center gap-6">
@@ -349,5 +342,6 @@ export default function StatsPage() {
         </div>
       </section>
     </div>
+    </AnalyticsWorkspace>
   );
 }
