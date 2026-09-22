@@ -1,5 +1,8 @@
 "use client";
 import Link from "next/link";
+import { PitchWorkload } from "./PitchWorkload";
+import { GameCorrections } from "./GameCorrections";
+import { RecorderGuide, laneNames } from "./RecorderGuide";
 import { useCoachOrg } from "@/lib/coach/org-client";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -59,6 +62,8 @@ function actionDescription(command: Command, game: LiveGame | null): string {
       return "Finish game";
     case "undo":
       return "Undo the previous action";
+    case "correct":
+      return `Coach correction: ${command.reason}`;
   }
 }
 const coordinates: Record<Position, [number, number]> = {
@@ -284,6 +289,7 @@ function Crew({ gameId }: { gameId: string }) {
   const [lane, setLane] = useState<Lane>("pitch");
   const [label, setLabel] = useState("");
   const [link, setLink] = useState("");
+  const [issuedLane, setIssuedLane] = useState<Lane>("pitch");
   const [error, setError] = useState("");
   const [version, setVersion] = useState(0);
   const [grants, setGrants] = useState<
@@ -320,6 +326,7 @@ function Crew({ gameId }: { gameId: string }) {
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
+      setIssuedLane(lane);
       setLink(
         `${location.origin}/coach/live/${gameId}${lane === "display" ? "?view=board" : ""}#record=${data.grant.token}`,
       );
@@ -366,6 +373,23 @@ function Crew({ gameId }: { gameId: string }) {
         </label>
       </div>
       <button onClick={issue}>Create recording link</button>
+      {link && (
+        <button
+          className="nf-secondary"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(
+                `You are the ${laneNames[issuedLane].toLowerCase()} for our game. Open this link, sign in with the team's viewer passcode, and follow Your job. Keep the tab open until everything says Saved to shared game.\n${link}`,
+              );
+              setError("Recorder instructions copied.");
+            } catch {
+              setError("Select the link below to copy it manually.");
+            }
+          }}
+        >
+          Copy parent instructions & link
+        </button>
+      )}
       {link && (
         <label className="nf-label nf-share">
           Share this link with the assigned recorder
@@ -496,10 +520,12 @@ function CoachControls({
           Change opposing pitcher
         </button>
         <p className="nf-muted">
-          Totals follow each pitcher. Apply your league’s pitch and rest rules;
-          no league-specific limit is configured here.
+          Totals follow each pitcher. Review today’s combined workload and rest
+          reminders below before making a change.
         </p>
       </section>
+      <PitchWorkload config={game.config} game={game} />
+      <GameCorrections game={game} onCommand={onCommand} />
       <section className="nf-card">
         <h3>Defensive changes</h3>
         <div className="nf-position-inputs">
@@ -606,9 +632,13 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
   const params = useSearchParams();
   const board = params.get("view") === "board";
   const live = useLiveGame(orgId, gameId, board);
-  const [tab, setTab] = useState(params.get("setup") === "crew" ? "crew" : "all");
+  const [tab, setTab] = useState(
+    params.get("setup") === "crew" ? "crew" : "all",
+  );
   const [actionError, setActionError] = useState("");
   const [wake, setWake] = useState(false);
+  const [discardReview, setDiscardReview] = useState(false);
+  const [undoReview, setUndoReview] = useState<string | null>(null);
   const game = board || live.conflict ? live.confirmed : live.game;
   const coach = live.lane === "coach";
   const perform = async (command: Command) => {
@@ -624,6 +654,16 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
       {(live.error || actionError) && (
         <p className="nf-notice" role="alert">
           {actionError || live.error}
+        </p>
+      )}
+      {live.authRequired && (
+        <p className="nf-notice">
+          <Link
+            href={`/coach/login?from=${encodeURIComponent(`/coach/live/${gameId}${board ? "?view=board" : ""}`)}`}
+          >
+            Sign in again to reconnect
+          </Link>
+          . Your queued actions remain on this device.
         </p>
       )}
       {live.queue.length > 0 && (
@@ -653,12 +693,35 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
           <button
             className="nf-secondary"
             disabled={!live.recordingAllowed}
-            onClick={() =>
-              void live.discardQueue().catch((e) => setActionError(e.message))
-            }
+            onClick={() => setDiscardReview(true)}
           >
-            Discard unconfirmed actions & reload
+            Review discarding unconfirmed actions
           </button>
+          {discardReview && (
+            <div>
+              <p>
+                Discarding removes {live.queue.length} unsent actions from this
+                device. Review the list first and tell the coach which plays
+                need re-entry.
+              </p>
+              <button
+                onClick={() =>
+                  void live
+                    .discardQueue()
+                    .then(() => setDiscardReview(false))
+                    .catch((e) => setActionError(e.message))
+                }
+              >
+                Confirm discard & load shared game
+              </button>
+              <button
+                className="nf-secondary"
+                onClick={() => setDiscardReview(false)}
+              >
+                Keep saved actions
+              </button>
+            </div>
+          )}
         </section>
       )}
     </>
@@ -678,6 +741,12 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
           <Link href={`/coach/live/${gameId}`}>Coach view</Link>
         </header>
         <Score game={game} />
+        {game.lastCorrection && (
+          <p className="nf-notice" role="status">
+            Coach corrected the game: {game.lastCorrection.reason} ·{" "}
+            {new Date(game.lastCorrection.at).toLocaleTimeString()}
+          </p>
+        )}
         {live.stale && (
           <div className="nf-board-stale" role="status">
             Updates paused. Confirm positions with the coach.
@@ -782,6 +851,12 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
       {game && (
         <>
           <Score game={game} />
+          {game.lastCorrection && (
+            <p className="nf-notice" role="status">
+              Coach corrected the game: {game.lastCorrection.reason} ·{" "}
+              {new Date(game.lastCorrection.at).toLocaleTimeString()}
+            </p>
+          )}
           <div className="nf-sync" role="status">
             {live.conflict
               ? "Action needs review"
@@ -789,9 +864,29 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
                 ? "Offline / stale"
                 : live.queue.length
                   ? "Confirming changes…"
-                  : "Up to date"}{" "}
-            · {live.lane === "coach" ? "Coach" : `${live.lane} role`}
+                  : "Saved to shared game"}{" "}
+            · {laneNames[live.lane]}
+            {live.lastSeen > 0 && (
+              <small>
+                {" "}
+                · Last confirmed {new Date(live.lastSeen).toLocaleTimeString()}
+              </small>
+            )}
+            <button className="nf-secondary" onClick={() => void live.retry()}>
+              Reconnect / check now
+            </button>
           </div>
+          <RecorderGuide
+            lane={live.lane}
+            label={live.assignment?.label}
+            expiresAt={live.assignment?.expiresAt}
+          />
+          {game.config.pitchRules &&
+            (live.lane === "pitch" ||
+              live.lane === "all" ||
+              (coach && tab !== "coach")) && (
+              <PitchWorkload config={game.config} game={game} compact />
+            )}
           {game.status === "ready" ? (
             <>
               <div className="nf-steps">
@@ -987,12 +1082,42 @@ export default function LiveGameScreen({ gameId }: { gameId: string }) {
             <button
               className="nf-secondary nf-section"
               disabled={live.conflict || !live.recordingAllowed}
-              onClick={() =>
-                void perform({ type: "undo", targetId: game.undo!.id })
-              }
+              onClick={() => setUndoReview(game.undo!.id)}
             >
-              Undo last action: {game.undo.label}
+              Review undo: {game.undo.label}
             </button>
+          )}
+          {coach && game.undo && undoReview === game.undo.id && (
+            <section className="nf-notice">
+              <h3>Undo {game.undo.label} for every device?</h3>
+              <p>
+                Count {game.balls}–{game.strikes} → {game.undo.before.balls}–
+                {game.undo.before.strikes}; outs {game.outs} →{" "}
+                {game.undo.before.outs}; score {game.score.us}–{game.score.them}{" "}
+                → {game.undo.before.score.us}–{game.undo.before.score.them}.
+                Tell the recording crew to pause, then re-enter the corrected
+                action.
+              </p>
+              <button
+                disabled={
+                  live.queue.length > 0 ||
+                  live.conflict ||
+                  !live.recordingAllowed
+                }
+                onClick={() => {
+                  void perform({ type: "undo", targetId: game.undo!.id });
+                  setUndoReview(null);
+                }}
+              >
+                Confirm undo for all devices
+              </button>
+              <button
+                className="nf-secondary"
+                onClick={() => setUndoReview(null)}
+              >
+                Cancel undo
+              </button>
+            </section>
           )}
         </>
       )}

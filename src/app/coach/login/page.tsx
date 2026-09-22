@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -23,7 +22,21 @@ function LoginForm() {
         body: JSON.stringify({ passcode }),
       });
       if (res.ok) {
-        router.replace(from.startsWith("/") && !from.startsWith("//") ? from : "/coach/today");
+        const safe =
+          /^\/coach(?:\/|\?|$)/.test(from) && !from.includes("\\")
+            ? from
+            : "/coach/today";
+        const record = new URLSearchParams(location.hash.slice(1)).get(
+          "record",
+        );
+        router.replace(
+          safe +
+            (record &&
+            /^[A-Za-z0-9_-]{40,100}$/.test(record) &&
+            /^\/coach\/live\//.test(safe)
+              ? `#record=${record}`
+              : ""),
+        );
         router.refresh();
       } else {
         const data = await res.json().catch(() => ({}));
@@ -40,7 +53,9 @@ function LoginForm() {
     <main className="min-h-screen flex flex-col items-center justify-center bg-d-bg text-d-ink px-6">
       <div className="w-full max-w-xs text-center">
         <h1 className="text-2xl font-bold tracking-tight">Team sign-in</h1>
-        <p className="mt-1 text-sm text-d-ink-3">Enter your team’s passcode to continue.</p>
+        <p className="mt-1 text-sm text-d-ink-3">
+          Enter your team’s passcode to continue.
+        </p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
           <input
@@ -64,7 +79,9 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="mt-6 text-xs text-d-ink-3">Stays signed in on this device for 30 days.</p>
+        <p className="mt-6 text-xs text-d-ink-3">
+          Stays signed in on this device for 30 days.
+        </p>
       </div>
     </main>
   );

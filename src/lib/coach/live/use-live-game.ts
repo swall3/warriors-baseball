@@ -29,6 +29,12 @@ export function useLiveGame(
   const generation = useRef(0);
   const conflictRef = useRef(false);
   const initialized = useRef(false);
+  const refreshNow = useRef<() => Promise<void>>(async () => {});
+  const [authRequired, setAuthRequired] = useState(false);
+  const [assignment, setAssignment] = useState<{
+    label?: string;
+    expiresAt?: string;
+  } | null>(null);
   const writer = useRef(false);
   const [recordingAllowed, setRecordingAllowed] = useState(false);
   function publish(value: Cache) {
@@ -95,7 +101,9 @@ export function useLiveGame(
         if (stopped.current || generation.current !== currentGeneration) break;
         if (!response.ok) {
           setError(data.error ?? "Unable to confirm this action.");
+          if (response.status === 401) setAuthRequired(true);
           if (
+            response.status === 401 ||
             response.status === 409 ||
             response.status === 400 ||
             response.status === 403
@@ -145,6 +153,8 @@ export function useLiveGame(
     setGame(null);
     setConfirmed(null);
     setQueue([]);
+    setAuthRequired(false);
+    setAssignment(null);
     setError("");
     writer.current = false;
     setRecordingAllowed(false);
@@ -189,6 +199,7 @@ export function useLiveGame(
         if (!active) return;
         if (!response.ok) {
           setError(data.error ?? "Unable to open this game.");
+          if (response.status === 401) setAuthRequired(true);
           if (
             response.status === 403 ||
             response.status === 401 ||
@@ -203,10 +214,14 @@ export function useLiveGame(
           return;
         }
         initialized.current = true;
+        setAuthRequired(false);
+        setAssignment(data.assignment ?? null);
         setOnline(true);
         setLastSeen(Date.now());
         setLane(data.lane);
         if (!cache.current?.queue.length) {
+          conflictRef.current = false;
+          setConflict(false);
           if (
             !cache.current ||
             data.game.revision >= cache.current.confirmed.revision
@@ -269,6 +284,26 @@ export function useLiveGame(
             );
         });
     }
+    refreshNow.current = refresh;
+    const resume = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    const offline = () => {
+      setOnline(false);
+      setError(
+        "Connection lost. New actions stay on this device until confirmed.",
+      );
+    };
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      if (cache.current?.queue.length) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("offline", offline);
+    window.addEventListener("focus", resume);
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("beforeunload", beforeUnload);
     void refresh();
     const interval = setInterval(() => {
       setClock(Date.now());
@@ -284,6 +319,10 @@ export function useLiveGame(
       releaseLock?.();
       clearInterval(interval);
       window.removeEventListener("online", refresh);
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("focus", resume);
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("beforeunload", beforeUnload);
     };
   }, [orgId, gameId, headers, drain, readOnly]);
   async function send(command: Command) {
@@ -359,7 +398,12 @@ export function useLiveGame(
     stale: !online || clock - lastSeen > 12000,
     lastSeen,
     send,
-    retry: drain,
+    retry: async () => {
+      await refreshNow.current();
+      await drain();
+    },
+    authRequired,
+    assignment,
     discardQueue,
     headers,
   };

@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { signSession } from "../src/lib/coach/session.ts";
-const base = "http://127.0.0.1:4180";
+const base = "http://127.0.0.1:4181";
 const env = Object.fromEntries(
   (await readFile(new URL("../.env.local", import.meta.url), "utf8"))
     .trim()
@@ -415,4 +415,86 @@ test("six-inning game preserves split-recorder pitch totals and display state", 
   );
   const insights = await request(url + "/insights");
   assert.deepEqual(insights.insights.zones, [["LF", 1]]);
+});
+
+test("pitch workload is tenant scoped and coach correction persists with an audit note", async () => {
+  const catalog = await request(prefix + "/catalog");
+  const roster = catalog.players
+    .filter((p) => p.team_id === "team-review-warriors")
+    .map((p) => ({ id: p.id, name: p.display_name }));
+  const config = {
+    teamId: "team-review-warriors",
+    teamName: "Warriors",
+    opponent: "Reliability Test",
+    date: "2026-09-21",
+    usAreHome: true,
+    format: "kid_pitch",
+    innings: 6,
+    roster,
+    order: roster.map((p) => p.id),
+    opponentOrder: [{ id: "op1", name: "Opponent 1" }],
+    positions: Object.fromEntries(
+      ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].map((p, i) => [
+        p,
+        roster[i].id,
+      ]),
+    ),
+    crewMode: "split",
+    pitchRules: {
+      name: "Test only",
+      dailyLimit: 10,
+      warnAt: 8,
+      rest: [{ above: 5, days: 1 }],
+    },
+  };
+  const created = await request(prefix + "/live", {
+    method: "POST",
+    body: { config },
+  });
+  assert.equal(created.status, 201);
+  let game = created.game;
+  const url = prefix + "/live/" + game.id;
+  const send = async (command, auth = coach, revision = game.revision) =>
+    request(url, {
+      method: "POST",
+      auth,
+      body: { id: randomUUID(), expectedRevision: revision, command },
+    });
+  game = (await send({ type: "start" })).game;
+  const correction = {
+    type: "correct",
+    reason: "Verified missed pitches with the recorder",
+    balls: 1,
+    strikes: 1,
+    outs: 0,
+    score: { us: 0, them: 0 },
+    bases: { 1: null, 2: null, 3: null },
+    pitchCounts: { ["us:" + roster[0].id]: 9 },
+  };
+  assert.equal((await send(correction, viewer)).status, 403);
+  const staleRevision = game.revision;
+  game = (await send(correction)).game;
+  assert.equal(game.pitchCounts["us:" + roster[0].id], 9);
+  assert.equal((await send(correction, coach, staleRevision)).status, 409);
+  const insights = await request(url + "/insights");
+  assert.equal(insights.insights.correctionNotes[0].reason, correction.reason);
+  const workload = await request(prefix + "/workload?date=2026-09-21");
+  assert.equal(workload.status, 200);
+  assert.ok(workload.outings.some((o) => o.counts[roster[0].id] === 9));
+  const foreign = await request(prefix + "/workload?date=2026-09-21", {
+    auth: other,
+  });
+  assert.equal(foreign.status, 200);
+  assert.ok(!foreign.outings.some((o) => roster[0].id in o.counts));
+  const excluded = await request(
+    prefix + "/workload?date=2026-09-21&exclude=" + game.id,
+  );
+  assert.equal(excluded.outings.length, workload.outings.length - 1);
+  const grant = await request(url + "/crew", {
+    method: "POST",
+    body: { lane: "pitch", label: "Parent pitch lane" },
+  });
+  const lane = await request(url, { auth: viewer, token: grant.grant.token });
+  assert.equal(lane.assignment.label, "Parent pitch lane");
+  assert.equal(lane.lane, "pitch");
 });

@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
+import PracticeSession from "@/components/coach/PracticeSession";
+import Link from "next/link";
 import PracticeAssignment from "@/components/coach/PracticeAssignment";
 import { Diamond, FIELD_POS } from "@/components/Diamond";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
@@ -230,6 +232,42 @@ export default function Training() {
         Team sign-in is shared. An adult should confirm the selected player;
         these are not individual child accounts.
       </p>
+      {catalog && (
+        <section className="nf-card nf-section" aria-label="Player progress">
+          <p className="nf-eyebrow">{name.toUpperCase()} · PRACTICE PROGRESS</p>
+          <h3>Build on the last rep.</h3>
+          <p>
+            {
+              rows.filter((a) => a.player_id === playerId && a.correct > 0)
+                .length
+            }{" "}
+            of {rows.filter((a) => a.player_id === playerId).length} assigned
+            activities have a successful answer.
+          </p>
+          <p className="nf-muted">
+            Based on recorded answers to assigned field-position questions. This
+            measures practice here, not game performance or a full skill
+            evaluation.
+          </p>
+        </section>
+      )}
+      {catalog && catalog.role !== "viewer" && (
+        <PracticeSession
+          key={catalog.organization.id}
+          orgId={catalog.organization.id}
+          rows={rows}
+          playerId={playerId}
+          players={catalog.players}
+          onPractice={(a) => {
+            setPlayer(a.player_id);
+            setActive(a);
+            setAnswer(null);
+            setFeedback(null);
+            setPending(null);
+            setError("");
+          }}
+        />
+      )}
       <div className="nf-roster">
         {rows
           .filter((a) => a.player_id === playerId)
@@ -243,6 +281,16 @@ export default function Training() {
                   "Practice unavailable"}
               </h3>
               {a.note && <p>{a.note}</p>}
+              <p className="nf-muted">
+                Assigned {new Date(a.created_at).toLocaleDateString()}
+              </p>
+              {a.game_id && (
+                <p>
+                  <Link href={`/coach/live/${a.game_id}/insights`}>
+                    View source game →
+                  </Link>
+                </p>
+              )}
               <p>
                 {a.correct} successful reps · {a.attempts} answers
               </p>
