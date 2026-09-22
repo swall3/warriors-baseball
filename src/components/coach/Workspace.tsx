@@ -73,7 +73,12 @@ export function Workspace({
         <Link href="/coach/today" className="nf-wordmark">
           InningWise <span>/</span>
         </Link>
-        <span>Game day & player development</span>
+        <div className="nf-top-right">
+          <span>Game day &amp; player development</span>
+          <Link href="/account" className="nf-account-link">
+            Account
+          </Link>
+        </div>
       </header>
       <main className="nf-main">
         <div className="nf-identity">
@@ -117,12 +122,9 @@ export function Workspace({
             <Link href="/coach/import">Import games</Link>
           )}
           <Link href="/games">Public training games</Link>
-          <Link href="/coach/billing">Team billing</Link>
-          <Link href="/coach/access">People & access</Link>
           {catalog?.familyAccess && (
             <Link href="/coach/family">Family view</Link>
           )}
-          <Link href="/account">My account</Link>
         </footer>
       </main>
     </div>

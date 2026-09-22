@@ -177,6 +177,11 @@ export default function Account() {
                     address.
                   </p>
                 )}
+                <h2>Manage</h2>
+                <nav className="nf-account-manage">
+                  <Link href="/coach/billing">Team billing</Link>
+                  <Link href="/coach/access">People &amp; access</Link>
+                </nav>
                 <button disabled={busy} onClick={() => act("signout")}>
                   Sign out
                 </button>
