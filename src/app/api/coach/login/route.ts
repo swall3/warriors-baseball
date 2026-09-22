@@ -15,8 +15,18 @@
 //   * SESSION_SECRET unset -> no signed cookie can be minted at all; see the
 //     narrow, owner-only fallback below.
 import { NextRequest, NextResponse } from "next/server";
-import { AUTH_COOKIE, COOKIE_MAX_AGE, getPasscode, hashPasscode } from "@/lib/coach/auth";
-import { SESSION_COOKIE, getSessionSecret, signSession, type OrgRole } from "@/lib/coach/session";
+import {
+  AUTH_COOKIE,
+  COOKIE_MAX_AGE,
+  getPasscode,
+  hashPasscode,
+} from "@/lib/coach/auth";
+import {
+  SESSION_COOKIE,
+  getSessionSecret,
+  signSession,
+  type OrgRole,
+} from "@/lib/coach/session";
 import { OWNER_ORG_ID } from "@/lib/tenant/context";
 import { getSupabaseClient, isSupabaseEnabled } from "@/lib/supabase";
 
@@ -43,16 +53,22 @@ type PasscodeRow = { org_id: string; role: OrgRole };
 // APP_PASSCODE path rather than 500. A login failing because Supabase is
 // unreachable is exactly the regression MT-3's gate forbids, and it would
 // arrive during a game.
-async function lookupPasscode(passcodeSha: string): Promise<PasscodeRow | null> {
+async function lookupPasscode(
+  passcodeSha: string,
+): Promise<PasscodeRow | null> {
   if (!isSupabaseEnabled()) return null;
   try {
     const { data, error } = await getSupabaseClient()
       .from("org_passcodes")
       .select("org_id,role")
       .eq("passcode_sha", passcodeSha)
-      .eq("active", true);
+      .eq("active", true)
+      .abortSignal(AbortSignal.timeout(5_000));
     if (error) {
-      console.error("[coach/login] org_passcodes lookup failed:", error.message);
+      console.error(
+        "[coach/login] org_passcodes lookup failed:",
+        error.message,
+      );
       return null;
     }
     // The partial unique index idx_org_passcodes_sha makes >1 row impossible
@@ -61,13 +77,18 @@ async function lookupPasscode(passcodeSha: string): Promise<PasscodeRow | null> 
     // tenancy answer must never be resolved by row order.
     if (!data || data.length !== 1) {
       if (data && data.length > 1) {
-        console.error("[coach/login] passcode resolves to multiple orgs — refusing");
+        console.error(
+          "[coach/login] passcode resolves to multiple orgs — refusing",
+        );
       }
       return null;
     }
     return data[0] as PasscodeRow;
   } catch (e) {
-    console.error("[coach/login] org_passcodes lookup threw:", (e as Error).message);
+    console.error(
+      "[coach/login] org_passcodes lookup threw:",
+      (e as Error).message,
+    );
     return null;
   }
 }
@@ -78,12 +99,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     passcode = typeof body?.passcode === "string" ? body.passcode : "";
   } catch {
-    return NextResponse.json({ ok: false, error: "Bad request" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Bad request" },
+      { status: 400 },
+    );
   }
 
   const submitted = passcode.trim();
-  if (!submitted) {
-    return NextResponse.json({ ok: false, error: "Wrong passcode" }, { status: 401 });
+  if (!submitted || submitted.length > 256) {
+    return NextResponse.json(
+      { ok: false, error: "Wrong passcode" },
+      { status: 401 },
+    );
   }
 
   const passcodeSha = await hashPasscode(submitted);
@@ -114,7 +141,10 @@ export async function POST(req: NextRequest) {
   }
 
   if (!resolved) {
-    return NextResponse.json({ ok: false, error: "Wrong passcode" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Wrong passcode" },
+      { status: 401 },
+    );
   }
 
   const secret = getSessionSecret();
@@ -135,7 +165,9 @@ export async function POST(req: NextRequest) {
   // missing secret should be a hard failure.
   if (!secret) {
     if (resolved.org_id !== OWNER_ORG_ID) {
-      console.error("[coach/login] SESSION_SECRET unset — refusing a non-owner org login");
+      console.error(
+        "[coach/login] SESSION_SECRET unset — refusing a non-owner org login",
+      );
       return NextResponse.json(
         { ok: false, error: "Sessions are not configured on this server" },
         { status: 503 },

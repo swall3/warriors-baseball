@@ -62,9 +62,14 @@ export async function middleware(req: NextRequest) {
   // tenancy; instead each handler re-resolves the session itself
   // (requireCoach() -> getOrgContext()), so the org a query is scoped to comes
   // from the cookie that request actually carried.
-  const session = await resolveCoachSession((name) => req.cookies.get(name)?.value);
+  const session = await resolveCoachSession(
+    (name) => req.cookies.get(name)?.value,
+  );
   if (session) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    if (pathname.startsWith("/api/"))
+      response.headers.set("Cache-Control", "no-store, private");
+    return response;
   }
 
   if (pathname.startsWith("/api/")) {

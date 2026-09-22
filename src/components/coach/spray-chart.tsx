@@ -1,5 +1,6 @@
 "use client";
 
+import { isContact } from "@/lib/coach/contact-density";
 import { FIELD_ART } from "@/lib/field-art";
 
 import { useEffect, useState } from "react";
@@ -20,19 +21,31 @@ function markerClass(result: string) {
   return "bg-d-sel";
 }
 
-export default function SprayChart({ gameId, events: presetEvents }: SprayChartProps) {
+export default function SprayChart({
+  gameId,
+  events: presetEvents,
+}: SprayChartProps) {
   const [fetchedEvents, setFetchedEvents] = useState<PlayEvent[]>([]);
-  const events = presetEvents ?? fetchedEvents;
+  const events = (presetEvents ?? fetchedEvents).filter(isContact);
 
   useEffect(() => {
     if (presetEvents) return;
     if (!gameId) return;
 
-    fetch(`/api/coach/baseball/play-events?id=${gameId}&team=all`)
+    const controller = new AbortController();
+    fetch(`/api/coach/play-events?id=${encodeURIComponent(gameId)}&team=all`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
       .then((res) => res.json())
       .then((data) => {
-        if (data.ok && Array.isArray(data.events)) setFetchedEvents(data.events);
+        if (data.ok && Array.isArray(data.events))
+          setFetchedEvents(data.events);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setFetchedEvents([]);
       });
+    return () => controller.abort();
   }, [gameId, presetEvents]);
 
   return (

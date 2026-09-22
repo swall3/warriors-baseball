@@ -1,5 +1,5 @@
-import type { Command, LiveGame, Snapshot, Side } from "./model";
-import { battingSide } from "./model";
+import type { Command, LiveGame, Snapshot, Side } from "./model.ts";
+import { battingSide } from "./model.ts";
 export type Receipt = {
   id: string;
   revision: number;

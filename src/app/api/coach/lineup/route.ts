@@ -1,3 +1,5 @@
+import { sessionFor, failure } from "@/lib/coach/live/http";
+import { LiveError } from "@/lib/coach/live/store";
 // GET/POST /api/coach/lineup — server-side persistence for the defense
 // rotation plan (MERGE-PLAN.md Phase 3). Requires migration
 // supabase/migrations/004_lineup_plans.sql to have been applied.
@@ -7,7 +9,12 @@
 // shim for all queries, and never a 5xx for a condition the client can handle.
 import { NextResponse } from "next/server";
 import { requireCoach } from "@/lib/coach/auth";
-import { isSupabaseEnabled, sbSelectAll, sbUpsert, type OrgScope } from "@/lib/supabase";
+import {
+  isSupabaseEnabled,
+  sbSelectAll,
+  sbUpsert,
+  type OrgScope,
+} from "@/lib/supabase";
 import {
   normalizeFormat,
   normalizeGroups,
@@ -33,7 +40,10 @@ type LineupPlanRow = {
 // `games.client_game_id`. Resolve one to the other, returning null when the
 // game hasn't been synced yet — a plan built before the game exists is a
 // normal case, which is why lineup_plans.game_id is nullable.
-async function resolveGameRowId(scope: OrgScope, clientGameId: string | null): Promise<string | null> {
+async function resolveGameRowId(
+  scope: OrgScope,
+  clientGameId: string | null,
+): Promise<string | null> {
   if (!clientGameId) return null;
   const rows = await sbSelectAll<{ id: string }>(
     scope,
@@ -43,7 +53,10 @@ async function resolveGameRowId(scope: OrgScope, clientGameId: string | null): P
   return rows[0]?.id ?? null;
 }
 
-async function clientGameIdFor(scope: OrgScope, rowId: string | null): Promise<string | null> {
+async function clientGameIdFor(
+  scope: OrgScope,
+  rowId: string | null,
+): Promise<string | null> {
   if (!rowId) return null;
   const rows = await sbSelectAll<{ client_game_id: string }>(
     scope,
@@ -53,7 +66,10 @@ async function clientGameIdFor(scope: OrgScope, rowId: string | null): Promise<s
   return rows[0]?.client_game_id ?? null;
 }
 
-async function rowToPlan(scope: OrgScope, row: LineupPlanRow): Promise<LineupPlan> {
+async function rowToPlan(
+  scope: OrgScope,
+  row: LineupPlanRow,
+): Promise<LineupPlan> {
   return {
     id: row.id,
     gameId: await clientGameIdFor(scope, row.game_id),
@@ -61,7 +77,9 @@ async function rowToPlan(scope: OrgScope, row: LineupPlanRow): Promise<LineupPla
     label: row.label,
     format: normalizeFormat(row.format),
     battingOrder: Array.isArray(row.batting_order)
-      ? (row.batting_order as unknown[]).filter((v): v is string => typeof v === "string")
+      ? (row.batting_order as unknown[]).filter(
+          (v): v is string => typeof v === "string",
+        )
       : [],
     groups: normalizeGroups(row.groups),
     inningMap: normalizeInningMap(row.inning_map),
@@ -75,13 +93,21 @@ async function rowToPlan(scope: OrgScope, row: LineupPlanRow): Promise<LineupPla
 export async function GET(request: Request) {
   const session = await requireCoach();
   if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized" },
+      { status: 401 },
+    );
   }
 
   // Not an error: local-only operation is the supported degraded mode. The
   // client keeps its localStorage plan and simply shows "local only".
   if (!isSupabaseEnabled()) {
-    return NextResponse.json({ ok: true, plan: null, plans: [], persisted: false });
+    return NextResponse.json({
+      ok: true,
+      plan: null,
+      plans: [],
+      persisted: false,
+    });
   }
 
   try {
@@ -104,7 +130,8 @@ export async function GET(request: Request) {
     if (gameId) {
       const gameRowId = await resolveGameRowId(scope, gameId);
       // The game isn't in the DB yet, so no plan can be attached to it.
-      if (!gameRowId) return NextResponse.json({ ok: true, plan: null, persisted: true });
+      if (!gameRowId)
+        return NextResponse.json({ ok: true, plan: null, persisted: true });
       const rows = await sbSelectAll<LineupPlanRow>(
         scope,
         TABLE,
@@ -136,9 +163,15 @@ export async function GET(request: Request) {
       `team_id=eq.${encodeURIComponent(teamId)}&select=*&order=updated_at.desc`,
     );
     const plans = await Promise.all(rows.map((row) => rowToPlan(scope, row)));
-    return NextResponse.json({ ok: true, plans, plan: plans[0] ?? null, persisted: true });
+    return NextResponse.json({
+      ok: true,
+      plans,
+      plan: plans[0] ?? null,
+      persisted: true,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load lineup plan";
+    console.error("[lineup] read failed", error);
+    const message = "Unable to load lineups. Please retry.";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -149,16 +182,22 @@ export async function GET(request: Request) {
 // server round-trip first, and so an offline edit can be replayed later without
 // creating a duplicate row.
 export async function POST(request: Request) {
-  const session = await requireCoach();
-  if (!session) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  let session;
+  try {
+    session = await sessionFor(request, true);
+    if (session.role === "viewer")
+      throw new LiveError("Only coaches can save game data.", 403);
+  } catch (e) {
+    return failure(e);
   }
-
   try {
     const body = (await request.json()) as { plan?: Partial<LineupPlan> };
     const plan = body?.plan;
     if (!plan || typeof plan.id !== "string" || !plan.id) {
-      return NextResponse.json({ ok: false, error: "Invalid payload: plan.id required" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Invalid payload: plan.id required" },
+        { status: 400 },
+      );
     }
 
     if (!isSupabaseEnabled()) {
@@ -185,6 +224,16 @@ export async function POST(request: Request) {
     }
 
     const scope: OrgScope = { orgId: session.orgId };
+    const ownTeam = await sbSelectAll<{ id: string }>(
+      scope,
+      "teams",
+      `id=eq.${encodeURIComponent(plan.teamId)}&select=id`,
+    );
+    if (!ownTeam.length)
+      return NextResponse.json(
+        { ok: false, error: "Team not found" },
+        { status: 404 },
+      );
     const now = new Date().toISOString();
     const gameRowId = await resolveGameRowId(scope, plan.gameId ?? null);
 
@@ -198,7 +247,9 @@ export async function POST(request: Request) {
           team_id: plan.teamId,
           label: plan.label || "Game plan",
           format: normalizeFormat(plan.format),
-          batting_order: Array.isArray(plan.battingOrder) ? plan.battingOrder : [],
+          batting_order: Array.isArray(plan.battingOrder)
+            ? plan.battingOrder
+            : [],
           groups: normalizeGroups(plan.groups),
           inning_map: normalizeInningMap(plan.inningMap),
           // Explicit: the column default only fires on INSERT, so an update
@@ -224,9 +275,20 @@ export async function POST(request: Request) {
       "org_id,id",
     );
 
-    return NextResponse.json({ ok: true, id: plan.id, updatedAt: now, persisted: true });
+    return NextResponse.json({
+      ok: true,
+      id: plan.id,
+      updatedAt: now,
+      persisted: true,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to save lineup plan";
+    if (error instanceof SyntaxError)
+      return NextResponse.json(
+        { ok: false, error: "Invalid JSON" },
+        { status: 400 },
+      );
+    console.error("[lineup] save failed", error);
+    const message = "Unable to save the lineup. Please retry.";
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }

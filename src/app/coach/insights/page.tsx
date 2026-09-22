@@ -2,15 +2,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
-import type { LiveGame } from "@/lib/coach/live/model";
+import type { ReportGame } from "@/lib/coach/reports";
 export default function Insights() {
   const { catalog, error: catalogError, retry } = useCatalog();
-  const [games, setGames] = useState<LiveGame[]>([]);
+  const [games, setGames] = useState<ReportGame[]>([]);
   const [error, setError] = useState("");
+  const [loading,setLoading]=useState(true);
   const [version, setVersion] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/coach/live", { cache: "no-store", signal: controller.signal })
+    setLoading(true);
+    fetch("/api/coach/reports", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
       .then(async (r) => {
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
@@ -19,7 +24,7 @@ export default function Insights() {
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
-      });
+      }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return () => controller.abort();
   }, [version]);
   return (
@@ -28,8 +33,8 @@ export default function Insights() {
         <p className="nf-eyebrow">FROM GAME DAY TO THE NEXT PRACTICE</p>
         <h2>Review. Learn. Play again.</h2>
         <p>
-          Open a shared game to review recorded contact, pitcher workloads and
-          practice assignments.
+          Shared games and historical imports are together here. Open a game for
+          its details, or compare contact patterns across games.
         </p>
       </section>
       {catalogError && <LoadError error={catalogError} retry={retry} />}{" "}
@@ -38,36 +43,33 @@ export default function Insights() {
       )}
       <div className="nf-game-list">
         {games.map((g) => (
-          <Link
-            className="nf-game-row"
-            key={g.id}
-            href={`/coach/live/${g.id}/insights`}
-          >
-            <span className={`nf-status nf-${g.status}`}>{g.status}</span>
+          <Link className="nf-game-row" key={g.id} href={g.href}>
+            <span className={`nf-status nf-${g.status}`}>
+              {g.source === "shared" ? g.status : "imported"}
+            </span>
             <span>
-              <strong>
-                {g.config.teamName} vs {g.config.opponent}
-              </strong>
-              <small>{g.config.date}</small>
+              <strong>{g.label}</strong>
+              <small>{g.date.slice(0, 10)}{g.missingContext ? ` · ${g.missingContext} older plays lack contact context` : ""}</small>
             </span>
             <b>
-              {g.score.us} – {g.score.them}
+              {g.score.us} – {g.score.opponents}
             </b>
             <span>→</span>
           </Link>
         ))}
       </div>
-      {!error && !games.length && (
-        <p className="nf-card">No shared games available yet.</p>
+      {loading && <p role="status">Loading game reviews…</p>}
+      {!loading && !error && !games.length && (
+        <p className="nf-card">No saved games available yet.</p>
       )}
       <section className="nf-card nf-section">
-        <h3>Historical team analytics</h3>
+        <h3>Team analytics</h3>
         <p>
-          Previously imported games, spray charts and team statistics remain in
-          the existing analytics workspace.
+          Compare shared and imported contact patterns, spray charts and
+          opponent tendencies in the same workspace.
         </p>
         <Link className="nf-button" href="/coach/dashboard">
-          Open historical analytics →
+          Open team analytics →
         </Link>
         <details className="nf-section">
           <summary>Recover an older device-only game</summary>
