@@ -1099,3 +1099,65 @@
 /* Keep checkboxes compact despite the shared full-width text-input rules. */
 .nf-workspace .nf-email-choice { display:flex; align-items:center; gap:12px; min-height:48px; cursor:pointer; }
 .nf-workspace .nf-email-choice input[type="checkbox"] { width:22px; height:22px; min-height:22px; flex:0 0 22px; padding:0; margin:0; accent-color:var(--nf-team, #1b4d3e); }
+
+.iw-role-guide {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.iw-role-guide > div {
+  padding: 18px;
+  border: 1px solid #dce4df;
+  border-radius: 12px;
+}
+.iw-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #dce4df;
+  overflow-wrap: anywhere;
+}
+.iw-member-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.iw-access-form {
+  margin: 28px 0;
+  padding: 20px;
+  border: 1px solid #dce4df;
+  border-radius: 12px;
+}
+.iw-access-form label {
+  display: block;
+  margin: 12px 0;
+}
+.iw-confirm::backdrop {
+  background: #102b29a8;
+}
+.iw-confirm {
+  margin: auto;
+  border: 0;
+  color: inherit;
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+}
+.iw-position-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.iw-position-answers button {
+  flex: 0 0 64px;
+}
+@media (max-width: 600px) {
+  .iw-member {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

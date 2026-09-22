@@ -139,7 +139,7 @@ export async function actorFor(
   }
   return session.role === "viewer"
     ? { lane: "display", id: "viewer-session" }
-    : { lane: "coach", id: `${session.role}-session` };
+    : { lane: "coach", id: session.userId ?? `${session.role}-session` };
 }
 export async function issueGrant(
   session: CoachSession,

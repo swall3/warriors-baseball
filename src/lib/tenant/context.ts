@@ -72,7 +72,7 @@ export async function getOrgContext(): Promise<OrgContext> {
   if (!session) {
     throw new NoOrgSessionError();
   }
-  return { orgId: session.orgId, role: session.role };
+  return { orgId: session.orgId, role: session.role, userId: session.userId };
 }
 
 // A NAMED error class, not a bare `new Error(...)`, because exactly one caller

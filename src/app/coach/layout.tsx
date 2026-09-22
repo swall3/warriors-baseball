@@ -14,7 +14,11 @@ import { getCoachBrand } from "@/lib/coach/org-brand";
 import type { Metadata } from "next";
 import WorkspaceEntry from "@/components/coach/WorkspaceEntry";
 import { CoachOrgProvider } from "@/lib/coach/org-client";
-import { NoOrgSessionError, OWNER_ORG_ID, getOrgContext } from "@/lib/tenant/context";
+import {
+  NoOrgSessionError,
+  OWNER_ORG_ID,
+  getOrgContext,
+} from "@/lib/tenant/context";
 import "./coach.css";
 import "./workspace.css";
 
@@ -29,10 +33,16 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   let orgId: string | null = null;
-  try { orgId = (await getOrgContext()).orgId; }
-  catch (error) { if (!(error instanceof NoOrgSessionError)) throw error; }
+  try {
+    orgId = (await getOrgContext()).orgId;
+  } catch (error) {
+    if (!(error instanceof NoOrgSessionError)) throw error;
+  }
   const brand = await getCoachBrand(orgId);
-  return { title: orgId ? `${brand.name} · InningWise` : "Team sign-in · InningWise", robots: { index: false, follow: false } };
+  return {
+    title: orgId ? `${brand.name} · InningWise` : "Team sign-in · InningWise",
+    robots: { index: false, follow: false },
+  };
 }
 
 // MT-3: this is also where the client learns which tenant it is rendering for.
@@ -54,10 +64,17 @@ export async function generateMetadata(): Promise<Metadata> {
 // cookies() to bail out of static rendering, which silently prerendered these
 // pages with no org in them; the build failed on it. Narrow catches around
 // framework calls, always.
-export default async function CoachLayout({ children }: { children: React.ReactNode }) {
+export default async function CoachLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   let orgId: string | null = null;
+  let userId: string | undefined;
   try {
-    orgId = (await getOrgContext()).orgId;
+    const context = await getOrgContext();
+    orgId = context.orgId;
+    userId = context.userId;
   } catch (e) {
     if (!(e instanceof NoOrgSessionError)) throw e;
     orgId = null;
@@ -65,8 +82,13 @@ export default async function CoachLayout({ children }: { children: React.ReactN
 
   const brand = await getCoachBrand(orgId);
   return (
-    <CoachOrgProvider value={{ orgId, isOwnerOrg: orgId === OWNER_ORG_ID, brand }}>
-      <div className="dugout-theme min-h-screen"><WorkspaceEntry/>{children}</div>
+    <CoachOrgProvider
+      value={{ orgId, userId, isOwnerOrg: orgId === OWNER_ORG_ID, brand }}
+    >
+      <div className="dugout-theme min-h-screen">
+        <WorkspaceEntry />
+        {children}
+      </div>
     </CoachOrgProvider>
   );
 }

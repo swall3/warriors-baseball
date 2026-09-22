@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { canReadTeam } from "@/lib/access/policy";
+import { IDENTITY_COOKIE } from "@/lib/access/identity";
 import { cookies } from "next/headers";
 import { client, LiveError } from "@/lib/coach/live/store";
 import { sessionFor } from "@/lib/coach/live/http";
@@ -44,7 +46,9 @@ export function authClient() {
   });
 }
 export async function billingUser() {
-  const token = (await cookies()).get(ACCOUNT_COOKIE)?.value;
+  const jar = await cookies();
+  const token =
+    jar.get(IDENTITY_COOKIE)?.value ?? jar.get(ACCOUNT_COOKIE)?.value;
   if (!token) return null;
   const { data, error } = await authClient().auth.getUser(token);
   if (error || !data.user?.email_confirmed_at || data.user.is_anonymous)
@@ -77,6 +81,8 @@ export async function billingScope(
   const session = await sessionFor(request, mutation);
   if (typeof teamId !== "string" || !teamId || teamId.length > 150)
     throw new LiveError("Choose a team.", 400);
+  if (!canReadTeam(session, teamId))
+    throw new LiveError("Team access unavailable.", 403);
   const { data, error } = await client()
     .from("teams")
     .select("id,name")

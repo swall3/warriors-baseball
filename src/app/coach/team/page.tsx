@@ -34,6 +34,11 @@ export default function Team() {
           Edit names and jerseys here. Set each game’s batting order and defense
           in Prepare.
         </p>
+        <p>
+          <Link href="/coach/access">
+            Manage coaches, parents & team access →
+          </Link>
+        </p>
       </section>
       {error && <LoadError error={error} retry={retry} />}
       <label className="nf-label">

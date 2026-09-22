@@ -1,3 +1,4 @@
+import { canCoachTeam } from "@/lib/access/policy";
 import { client, LiveError } from "@/lib/coach/live/store";
 import { failure, reply, sessionFor } from "@/lib/coach/live/http";
 import { outingFromGame } from "@/lib/coach/live/pitch-rules";
@@ -29,6 +30,7 @@ export async function GET(request: Request) {
         );
       for (const row of data ?? [])
         if (
+          canCoachTeam(session, row.state.config.teamId) &&
           row.id !== q.get("exclude") &&
           row.state.config.format === "kid_pitch"
         )

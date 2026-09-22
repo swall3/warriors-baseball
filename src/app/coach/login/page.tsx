@@ -53,12 +53,30 @@ function LoginForm() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-d-bg text-d-ink px-6">
       <div className="w-full max-w-xs text-center">
-        <Link href="/" className="mb-6 inline-block text-xl font-black tracking-tight text-d-us">InningWise</Link>
+        <Link
+          href="/"
+          className="mb-6 inline-block text-xl font-black tracking-tight text-d-us"
+        >
+          InningWise
+        </Link>
         <h1 className="text-2xl font-bold tracking-tight">Team sign-in</h1>
         <p className="mt-1 text-sm text-d-ink-3">
-          Enter your team’s passcode to continue.
+          Sign in with your own email, or use your organization’s existing
+          passcode during migration.
         </p>
 
+        <Link
+          href={`/account?from=${encodeURIComponent(from)}`}
+          onClick={() => {
+            const record = new URLSearchParams(location.hash.slice(1)).get(
+              "record",
+            );
+            if (record) sessionStorage.setItem("iw_return_record", record);
+          }}
+          className="mt-6 block rounded-xl bg-d-sel p-4 text-white font-semibold"
+        >
+          Sign in with email →
+        </Link>
         <form onSubmit={submit} className="mt-8 space-y-4">
           <input
             type="password"

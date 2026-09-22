@@ -1,11 +1,16 @@
+import type { CoachSession } from "@/lib/coach/session";
+import { canCoachTeam, orgAdmin } from "@/lib/access/policy";
 import { readDb } from "./local-db";
 import { client, LiveError } from "./live/store";
 import type { LiveGame } from "./live/model";
 import type { Receipt } from "./live/insights";
 import { historicalReports, sharedReport } from "./reports";
-export async function readReports(orgId: string) {
+export async function readReports(orgId: string, session?: CoachSession) {
   const db = client();
-  const historical = await readDb({ orgId });
+  const historical =
+    session?.userId && !orgAdmin(session)
+      ? { teams: [], games: [], playEvents: [] }
+      : await readDb({ orgId });
   const games: LiveGame[] = [];
   for (let offset = 0; ; offset += 100) {
     const { data, error } = await db
@@ -17,7 +22,11 @@ export async function readReports(orgId: string) {
       .abortSignal(AbortSignal.timeout(10_000));
     if (error)
       throw new LiveError("Game reports are unavailable. Please retry.", 503);
-    games.push(...(data ?? []).map((r) => r.state as LiveGame));
+    games.push(
+      ...(data ?? [])
+        .map((r) => r.state as LiveGame)
+        .filter((g) => !session || canCoachTeam(session, g.config.teamId)),
+    );
     if ((data ?? []).length < 100) break;
   }
   const receipts = new Map<string, Receipt[]>();

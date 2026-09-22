@@ -40,6 +40,12 @@
 // ever has to guess which format the value in front of it is.
 import { OWNER_ORG_ID } from "@/lib/tenant/context";
 import {
+  IDENTITY_COOKIE,
+  ORG_COOKIE,
+  accountSession,
+  legacyAllowed,
+} from "@/lib/access/identity";
+import {
   SESSION_COOKIE,
   getSessionSecret,
   verifySession,
@@ -97,8 +103,17 @@ export async function expectedToken(): Promise<string | null> {
 export async function resolveCoachSession(
   getCookie: (name: string) => string | undefined,
 ): Promise<CoachSession | null> {
-  const signed = await verifySession(getCookie(SESSION_COOKIE), getSessionSecret());
-  if (signed) return { orgId: signed.orgId, role: signed.role };
+  const account = getCookie(IDENTITY_COOKIE);
+  // Never fall back to a shared passcode when an individual session has expired.
+  if (account) return accountSession(account, getCookie(ORG_COOKIE));
+  const signed = await verifySession(
+    getCookie(SESSION_COOKIE),
+    getSessionSecret(),
+  );
+  if (signed)
+    return (await legacyAllowed(signed.orgId))
+      ? { orgId: signed.orgId, role: signed.role }
+      : null;
 
   // The MT-2 bridge. Fails closed through expectedToken() (null APP_PASSCODE
   // can never equal a cookie value), and hardcodes the owner org because that
@@ -107,7 +122,9 @@ export async function resolveCoachSession(
   const expected = await expectedToken();
   const legacy = getCookie(AUTH_COOKIE);
   if (expected && legacy && legacy === expected) {
-    return { orgId: OWNER_ORG_ID, role: "owner" };
+    return (await legacyAllowed(OWNER_ORG_ID))
+      ? { orgId: OWNER_ORG_ID, role: "owner" }
+      : null;
   }
 
   return null;
