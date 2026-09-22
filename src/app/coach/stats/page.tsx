@@ -248,7 +248,7 @@ export default function StatsPage() {
             <h1 className="text-2xl font-black tracking-tight">Play Statistics</h1>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/coach" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel min-h-[40px] flex items-center touch-manipulation">
+            <Link href="/coach/today" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel min-h-[40px] flex items-center touch-manipulation">
               Scoring
             </Link>
             <Link href="/coach/dashboard" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos min-h-[40px] flex items-center touch-manipulation">

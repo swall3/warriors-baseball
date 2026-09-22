@@ -88,7 +88,7 @@ export default function IntelligencePage() {
               <p className="text-sm text-d-ink-3">Opponent tendencies & zone analytics</p>
             </div>
             <nav className="flex flex-wrap gap-2 text-sm">
-              <Link href="/coach" className="text-d-sel">Scoring</Link>
+              <Link href="/coach/today" className="text-d-sel">Game day</Link>
               <Link href="/coach/dashboard" className="text-d-pos">Dashboard</Link>
               <Link href="/coach/stats" className="text-d-sel">Spray</Link>
             </nav>

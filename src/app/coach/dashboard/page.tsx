@@ -519,14 +519,14 @@ export default function Dashboard() {
             <p className="mt-1 text-sm text-d-ink-2">Scope by current game, selected games, or all recorded games.</p>
           </div>
           <nav className="flex flex-wrap gap-2">
-            <Link href="/coach" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
-              Back To Scoring
+            <Link href="/coach/today" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
+              Game day
             </Link>
 <Link href="/coach/import" className="rounded-lg border border-d-neg/40 bg-d-neg/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-neg touch-manipulation active:scale-95">
               Import Game
             </Link>
-            <Link href="/coach/lineup" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
-              Lineup
+            <Link href="/coach/live/new" className="rounded-lg border border-d-pos/40 bg-d-pos/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-pos touch-manipulation active:scale-95">
+              Prepare game
             </Link>
             <Link href="/coach/intel" className="rounded-lg border border-d-sel/40 bg-d-sel/10 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-d-sel touch-manipulation active:scale-95">
               Intel
