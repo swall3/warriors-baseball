@@ -2,7 +2,7 @@
 
 ## Scope
 
-One Stripe subscription per team, with all coaches, parents and players included. Monthly and annual Stripe price IDs are configured server-side; no amount or seat count is accepted from the browser. Trial length is configurable and defaults to zero until decided. Public training remains free.
+One Stripe subscription per team, with all coaches, parents and players included. Monthly and annual Stripe price IDs are configured server-side; no amount or seat count is accepted from the browser. Trial length is configurable and defaults to zero until decided. The player-development games library is a paid app feature gated behind a signed-in member in good standing (see SEATS-AND-GAME-ACCESS.md Decision 2); the public site keeps a limited free sample — the daily drill, capped to one server-selected scenario per day, playable without an account.
 
 This release is test-only. `BILLING_MODE=test` AND an `sk_test_` key are required. Live keys and live webhook events are rejected. With no Stripe configuration, the billing page explains pilot access and checkout remains disabled. Billing enforcement defaults off. Do not turn enforcement on for current pilot teams.
 
