@@ -20,3 +20,5 @@ Accepted means provider acceptance, not inbox delivery. Resend's dashboard is th
 - Production sign-in delivery confirmed in Resend on 2026-09-22. App notification delivery is verified separately with the owner's Send me a test email control after deployment.
 
 Production security advisors found no new warning-level issue from these objects. No-policy informational notices are intentional for server-only tables with browser grants revoked. Existing findings remain for [current_org_ids SECURITY DEFINER access](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable) and [password leak protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection); neither setting was changed by this feature.
+
+Production release verified: PR #12 merged as 90f7a80. The owner self-test produced one outbox row with one attempt and Resend message 01a0c959-8335-7039-8999-f2eb0287732e, confirmed delivered on 2026-09-22. Repeating the test did not send another message. Warriors owner game/practice preferences are enabled; billing notifications remain off.

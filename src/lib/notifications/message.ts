@@ -24,7 +24,7 @@ export function message(notice: Notice, origin: string) {
   )
     throw new Error("Invalid email origin");
   const team = clean(notice.details.teamName) || "Your team";
-  let subject = "InningWise email delivery test",
+  let subject = "Email delivery test",
     text = "Your InningWise notification email connection is working.",
     path = "/coach/billing";
   if (notice.kind === "game_prepared" || notice.kind === "game_changed") {

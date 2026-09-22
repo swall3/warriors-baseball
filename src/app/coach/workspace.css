@@ -1095,3 +1095,7 @@
 .nf-heat-caption { font-size:12px; color:#526258; line-height:1.6; }
 .nf-heat-detail { border-left:3px solid #1b4d3e; padding:10px 16px; background:#edf3ed; font-size:13px; }
 .nf-heatmap summary { cursor:pointer; font-size:13px; color:#1b4d3e; font-weight:700; }
+
+/* Keep checkboxes compact despite the shared full-width text-input rules. */
+.nf-workspace .nf-email-choice { display:flex; align-items:center; gap:12px; min-height:48px; cursor:pointer; }
+.nf-workspace .nf-email-choice input[type="checkbox"] { width:22px; height:22px; min-height:22px; flex:0 0 22px; padding:0; margin:0; accent-color:var(--nf-team, #1b4d3e); }
