@@ -35,17 +35,17 @@ Direction (implementer may refine mechanics, not the model):
 Per-seat price discounts as the org adds teams — a standard rec park runs 20+
 teams, so the tiers are shaped for that market:
 
-**Base price decided (Stuart, 2026-09-22): $99/year per team seat.**
+**Pricing FINAL (Stuart, 2026-09-22) — fixed per-seat prices are canonical; the
+discount percentages are marketing approximations, not the source of truth:**
 
-| Seats (teams) | Discount | Per-seat price/year |
+| Seats (teams) | Per-seat price/year | ≈ Discount |
 | --- | --- | --- |
-| 1–9 | none | $99 |
-| 10–19 | 20% | $79.20 (suggest rounding to $79) |
-| 20+ | 30% | $69.30 (Stuart quotes "~$70"; suggest $69) |
+| 1–9 | **$99** | — |
+| 10–19 | **$80** | ~20% |
+| 20+ | **$70** | ~30% |
 
-So a standard 20-team rec park pays roughly $1,386–1,400/year total. Rounding of
-the discounted tiers ($79/$69 vs exact percentages) is an implementer/Stuart
-detail — pick clean numbers and note the final amounts here.
+A standard 20-team rec park pays $1,400/year total. Configure Stripe tier unit
+amounts as exactly $99 / $80 / $70 (9900/8000/7000 cents).
 
 - Implement as **Stripe tiered volume pricing** on the org subscription's price
   (all seats billed at the tier rate the total quantity lands in) — not coupons or
