@@ -2,7 +2,7 @@
 
 ## Scope
 
-One Stripe subscription per organization, covering every team in that organization, with all coaches, parents and players included. Monthly and annual Stripe price IDs are configured server-side; no amount or seat count is accepted from the browser. Trial length is configurable and defaults to zero until decided. The player-development games library is a paid app feature gated behind a signed-in member in good standing (see SEATS-AND-GAME-ACCESS.md Decision 2); the public site keeps a limited free sample — the daily drill, capped to one server-selected scenario per day, playable without an account.
+One Stripe subscription per organization. The organization buys one seat per team it runs; every coach, parent and player on a team is included at no extra cost. Monthly and annual Stripe price IDs are configured server-side and no amount is ever accepted from the browser. The browser does propose a seat *quantity*, which the server validates (whole number, 1–500, never below the organization's active own-team count) and which Stripe prices from its own tier table. Trial length is configurable and defaults to zero until decided. The player-development games library is a paid app feature gated behind a signed-in member in good standing (see SEATS-AND-GAME-ACCESS.md Decision 2); the public site keeps a limited free sample — the daily drill, capped to one server-selected scenario per day, playable without an account.
 
 This release is test-only. `BILLING_MODE=test` AND an `sk_test_` key are required. Live keys and live webhook events are rejected. With no Stripe configuration, the billing page explains pilot access and checkout remains disabled. Billing enforcement defaults off. Do not turn enforcement on for current pilot teams.
 
@@ -10,7 +10,7 @@ Personal identity applies to billing only in this incremental rollout. Existing 
 
 ## Configuration when the owner creates Stripe
 
-1. Create the Stripe account and use its test environment. Create an InningWise Team product with monthly and annual recurring licensed prices after pricing is decided.
+1. Create the Stripe account and use its test environment. Provision the seat product and its two prices with `node --env-file=<server-env-file> scripts/configure-seat-prices.mjs`; it prints both price IDs. The script refuses to run outside `BILLING_MODE=test` with an `sk_test_` key.
 2. Set server-only `BILLING_MODE=test`, `STRIPE_SECRET_KEY`, `STRIPE_TEAM_MONTHLY_PRICE_ID`, `STRIPE_TEAM_ANNUAL_PRICE_ID`, `STRIPE_WEBHOOK_SECRET`, `BILLING_APP_URL` (the active HTTPS app origin), and optionally `BILLING_TRIAL_DAYS` (0–60). Keep `BILLING_ENFORCE` unset/false.
 3. Configure the Stripe customer portal in test mode. Permit payment-method updates and cancellation at the end of the billing period. Do not enable quantity changes. Seat decreases require deciding which teams become read-only, and the portal cannot ask that question; seat changes stay in the app.
 4. Register `/api/billing/webhook` for customer.subscription.created/updated/deleted, invoice.paid/payment_failed and checkout.session.completed/async_payment_succeeded/async_payment_failed. Save the endpoint signing secret server-side. Webhooks use the raw body and verify signatures.
@@ -42,10 +42,32 @@ The service suite requires the disposable `codex-ninety-feet-db-tests` database 
 
 The additive migration was applied to the existing production Supabase project. Read-only privilege checks confirm RLS on both tables and no browser-role access to tables or the lease RPC. Security advisors report intentional no-policy notices for these server-only tables; no broad read policies were added to silence them. The pre-existing authenticated current_org_ids SECURITY DEFINER warning remains from the tenancy layer ([advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)).
 
-15 billing tests passed (4 policy, 7 orchestration/database, 4 API), along with the existing live-game/pitch-rule model checks. TypeScript and production build passed; desktop and 390px billing layout reviewed. No production billing owner, Stripe customer, subscription or charge was created.
+22 billing tests passed (7 policy, 11 orchestration/database, 4 API), along with the existing live-game/pitch-rule model checks. TypeScript and production build passed; desktop and 390px billing layout reviewed. No production billing owner, Stripe customer, subscription or charge was created.
 
 ## Organization scope (2026-09-22)
 
-Billing moved from one row per team to one row per organization (`public.org_billing`), per `ORG-SEAT-BILLING-PLAN.md` §1.5, §2.7, §4. `acquire_org_billing_lease` replaces `acquire_billing_lease` for the new row; the three-minute lease, idempotency keys, 23-hour ambiguous-checkout rule, processed-event dedupe, test-mode-only guard, complimentary handling and `BILLING_ENFORCE`-off default are all unchanged. Checkout still creates a quantity-1 subscription; seat tiers, seat purchase and seat enforcement are later, separate changes.
+Billing moved from one row per team to one row per organization (`public.org_billing`), per `ORG-SEAT-BILLING-PLAN.md` §1.5, §2.7, §4. `acquire_org_billing_lease` replaces `acquire_billing_lease` for the new row; the three-minute lease, idempotency keys, 23-hour ambiguous-checkout rule, processed-event dedupe, test-mode-only guard, complimentary handling and `BILLING_ENFORCE`-off default are all unchanged. Seat enforcement remains a later, separate change.
 
 `queue_team_notification` keeps its signature but resolves the owner from `org_members` instead of `team_billing`, and the billing trigger moved to `org_billing` with a per-team fanout. `team_billing` and `acquire_billing_lease` still exist and are dropped in a later change once the organization scope has soaked.
+
+## Seat pricing (2026-09-22)
+
+Seats are priced with two Stripe **tiered / volume** prices on one product, provisioned by `scripts/configure-seat-prices.mjs`. Volume tiering means the total seat quantity selects one rate that applies to every seat, so crossing a boundary re-rates the whole subscription.
+
+| Seats | Per seat / year | Per seat / month |
+|---|---|---|
+| 1–9 | $99.00 | $10.00 |
+| 10–19 | $80.00 | $8.00 |
+| 20+ | $70.00 | $7.00 |
+
+Cap: 500 seats. The same table lives in `src/lib/billing/tiers.ts` and is used for exactly three things — provisioning the Stripe prices, rendering the checkout estimate, and asserting on every checkout that the configured Stripe price has not drifted from the reviewed amounts. It **never** computes a charge: Stripe is the sole authority on money, and the billing page labels its figure as an estimate.
+
+Because the tiers re-rate every seat, the totals are deliberately non-monotonic at each boundary: 9 seats/year is $891 while 10 is $800, and 19 is $1,520 while 20 is $1,400. That is the pricing decision of record and is asserted in `tests/billing-policy.test.mjs`.
+
+Checkout requests the seat quantity in `line_items[0].quantity`. `adjustable_quantity` is deliberately **not** enabled: a seat decrease has to decide which teams become read-only, which Stripe's selector cannot ask (and it caps at 99). The seat count is persisted as `org_billing.checkout_seats`, and the re-entrancy rule now covers both fields — a different interval *or* a different seat count expires the open session and creates a new one, while an identical request reuses the existing URL. Reconciliation writes `seats` and `billing_interval` back from the canonical subscription item, never for a complimentary organization, and retains the last known seat count when a subscription is canceled or expires.
+
+Stripe prices are immutable. A future tier change means a new price plus a subscription migration, not an edit to this table.
+
+The tier assertion is type-checked against `stripe@22.6.2` and covered by the fake provider, but `prices.retrieve(id, {expand:['tiers']})` has not been exercised against a real test-mode Stripe account yet (`ORG-SEAT-BILLING-PLAN.md` §7 lists it as verify-before-relying-on). It fails closed: if the expand returned no tiers, `tiersMatch` is false and checkout 503s rather than selling at an unverified rate. Confirm it when the Stripe test account is wired up.
+
+Self-serve seat changes are not in this release: an organization that needs a different seat count contacts support.

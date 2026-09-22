@@ -2,6 +2,13 @@
 import { useEffect, useState } from "react";
 import { EmailPreferences } from "@/components/coach/EmailPreferences";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
+import { seatTotal, seatUnitAmount, validSeats } from "@/lib/billing/tiers";
+const money = (cents: number) =>
+  (cents / 100).toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  });
 type Billing = {
   mode: "test" | "disabled";
   ownerConfigured: boolean;
@@ -9,6 +16,10 @@ type Billing = {
   email: string | null;
   status: string;
   complimentary: boolean;
+  seats: number;
+  billingInterval: "month" | "year" | null;
+  activeTeams: number;
+  maxSeats: number;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   hasCustomer: boolean;
@@ -27,6 +38,13 @@ export default function BillingPage() {
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
   const [version, setVersion] = useState(0);
+  // Annual is the default plan; the seat floor comes from the server, never
+  // from the catalog the browser happens to hold.
+  const [interval, setInterval] = useState<"month" | "year">("year");
+  const [seats, setSeats] = useState("");
+  useEffect(() => {
+    if (billing) setSeats(String(Math.max(1, billing.activeTeams)));
+  }, [billing]);
   useEffect(() => {
     if (!catalog) return;
     const requested = new URLSearchParams(window.location.search).get("team");
@@ -108,12 +126,14 @@ export default function BillingPage() {
   return (
     <Workspace catalog={catalog} active="Billing">
       <section className="nf-card">
-        <p className="nf-eyebrow">TEAM SUBSCRIPTION</p>
+        <p className="nf-eyebrow">ORGANIZATION SUBSCRIPTION</p>
         <h2 className="text-3xl font-extrabold tracking-tight mt-3">
-          One team. Everyone included.
+          One seat per team. Everyone on it included.
         </h2>
         <p>
-          Coaches, parents and players share one plan. No extra scoring seats.
+          Your organization buys a seat for each team it runs. Every coach,
+          parent and player on a team is included at no extra cost, and the
+          per-seat price drops as you add teams.
         </p>
         {catalogError && <LoadError error={catalogError} retry={retry} />}
         <label className="nf-label">
@@ -169,6 +189,15 @@ export default function BillingPage() {
                   {billing.cancelAtPeriodEnd
                     ? " · Cancels at the end of the billing period"
                     : ""}
+                </p>
+              )}
+              {billing.status !== "none" && !billing.complimentary && (
+                <p>
+                  {billing.seats} team {billing.seats === 1 ? "seat" : "seats"}
+                  {billing.billingInterval
+                    ? `, billed ${billing.billingInterval === "year" ? "annually" : "monthly"}`
+                    : ""}
+                  . Contact support to change your seat count.
                 </p>
               )}
               {billing.currentPeriodEnd && (
@@ -259,32 +288,67 @@ export default function BillingPage() {
                   ["none", "canceled", "incomplete_expired"].includes(
                     billing.status,
                   ) && (
-                    <div className="flex flex-wrap gap-3">
+                    <div className="space-y-4">
+                      <label className="nf-label">
+                        Team seats
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          step={1}
+                          min={Math.max(1, billing.activeTeams)}
+                          max={billing.maxSeats}
+                          value={seats}
+                          onChange={(e) => setSeats(e.target.value)}
+                          disabled={busy}
+                        />
+                      </label>
+                      <p>
+                        {billing.activeTeams} active{" "}
+                        {billing.activeTeams === 1 ? "team" : "teams"} today.
+                        Buy at least that many seats.
+                      </p>
+                      <label className="nf-label">
+                        Billing period
+                        <select
+                          value={interval}
+                          onChange={(e) =>
+                            setInterval(e.target.value as "month" | "year")
+                          }
+                          disabled={busy}
+                        >
+                          <option value="year">Annual</option>
+                          <option value="month">Monthly</option>
+                        </select>
+                      </label>
+                      {validSeats(Number(seats)) && (
+                        <p role="status">
+                          Estimated {money(seatTotal(Number(seats), interval))}{" "}
+                          per {interval === "year" ? "year" : "month"} —{" "}
+                          {money(seatUnitAmount(Number(seats), interval))} per
+                          seat at {seats} seats. This is an estimate only;
+                          Stripe shows the amount you will actually be charged
+                          in checkout.
+                        </p>
+                      )}
                       <button
                         className="nf-button"
                         disabled={
                           busy ||
                           billing.mode !== "test" ||
-                          !billing.monthlyAvailable
+                          !validSeats(Number(seats)) ||
+                          Number(seats) < billing.activeTeams ||
+                          (interval === "month"
+                            ? !billing.monthlyAvailable
+                            : !billing.annualAvailable)
                         }
                         onClick={() =>
-                          void action("checkout", { interval: "month" })
+                          void action("checkout", {
+                            interval,
+                            seats: Number(seats),
+                          })
                         }
                       >
-                        View monthly checkout
-                      </button>
-                      <button
-                        className="nf-button"
-                        disabled={
-                          busy ||
-                          billing.mode !== "test" ||
-                          !billing.annualAvailable
-                        }
-                        onClick={() =>
-                          void action("checkout", { interval: "year" })
-                        }
-                      >
-                        View annual checkout
+                        View checkout
                       </button>
                     </div>
                   )}

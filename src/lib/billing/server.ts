@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { client, LiveError } from "@/lib/coach/live/store";
 import { sessionFor } from "@/lib/coach/live/http";
 import { billingMode, teamAccess, trialDays, validInterval } from "./policy";
+import { MAX_SEATS, SEAT_TIERS, validSeats } from "./tiers";
 export const ACCOUNT_COOKIE = "iw_billing_identity";
 // One billing row per organization. Teams inherit their organization's subscription.
 export type BillingRow = {
@@ -14,6 +15,8 @@ export type BillingRow = {
   org_id: string;
   owner_user_id: string | null;
   complimentary: boolean;
+  seats: number;
+  billing_interval: "month" | "year" | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   subscription_status: string;
@@ -23,6 +26,7 @@ export type BillingRow = {
   checkout_attempt: string | null;
   checkout_started_at: string | null;
   checkout_interval: "month" | "year" | null;
+  checkout_seats: number | null;
   checkout_price_id: string | null;
   checkout_session_id: string | null;
 };
@@ -70,6 +74,37 @@ export async function rowFor(orgId: string) {
     .maybeSingle();
   checked(error);
   return data as BillingRow | null;
+}
+// Seats are counted against the organization's own teams only; opponent teams
+// are scouting records and never consume a seat.
+export async function activeOwnTeamCount(orgId: string) {
+  const { count, error } = await client()
+    .from("teams")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .eq("kind", "own")
+    .eq("seat_state", "active");
+  checked(error);
+  return count ?? 0;
+}
+// Defensive only. If the configured Stripe price has drifted from the reviewed
+// tier table we refuse checkout rather than sell at an unreviewed rate. The
+// amounts here never compute a charge — Stripe bills from its own price.
+function tiersMatch(
+  tiers: Stripe.Price.Tier[] | undefined,
+  interval: "month" | "year",
+) {
+  if (!tiers || tiers.length !== SEAT_TIERS.length) return false;
+  return SEAT_TIERS.every((expected, i) => {
+    const tier = tiers[i];
+    return (
+      !!tier &&
+      tier.up_to === expected.upTo &&
+      tier.unit_amount === expected[interval] &&
+      !tier.flat_amount &&
+      !tier.flat_amount_decimal
+    );
+  });
 }
 export async function billingScope(
   request: Request,
@@ -215,6 +250,13 @@ export async function reconcile(
   const ends = sub.items.data
     .map((item) => item.current_period_end)
     .filter(Number.isFinite);
+  // The seat item is the licensed one; any future metered add-on is not seats.
+  const item =
+    sub.items.data.find((i) => i.price?.recurring?.usage_type !== "metered") ??
+    sub.items.data[0];
+  // Cancellation retains the last known seat count: access is governed by
+  // subscription_status, not by zeroing seats out from under the teams.
+  const liveStatus = !["canceled", "incomplete_expired"].includes(sub.status);
   await save(row, token, {
     stripe_subscription_id: sub.id,
     subscription_status: sub.status,
@@ -223,19 +265,42 @@ export async function reconcile(
       : null,
     cancel_at_period_end: sub.cancel_at_period_end,
     trial_used: row.trial_used || !!sub.trial_start,
+    billing_interval: validInterval(item?.price?.recurring?.interval)
+      ? item.price!.recurring!.interval
+      : row.billing_interval,
+    // Stripe never overwrites an operator-granted complimentary seat count.
+    ...(row.complimentary
+      ? {}
+      : { seats: liveStatus ? (item?.quantity ?? row.seats) : row.seats }),
   });
 }
-export async function checkout(request: Request, interval: unknown) {
+export async function checkout(
+  request: Request,
+  interval: unknown,
+  seats: unknown,
+) {
   const scope = await billingScope(request, true, true);
   if (!validInterval(interval))
     throw new LiveError("Choose monthly or annual billing.", 400);
-  return checkoutForOwner(scope.row!, scope.user!, interval, stripeClient());
+  if (!validSeats(seats))
+    throw new LiveError(
+      `Choose a whole number of team seats between 1 and ${MAX_SEATS}.`,
+      400,
+    );
+  return checkoutForOwner(
+    scope.row!,
+    scope.user!,
+    interval,
+    seats,
+    stripeClient(),
+  );
 }
 // Injectable provider keeps payment orchestration testable without real charges.
 export async function checkoutForOwner(
   initial: BillingRow,
   user: { id: string; email?: string },
   interval: "month" | "year",
+  seats: number,
   stripe: Stripe,
 ) {
   return lease(initial.id, async (row, token) => {
@@ -246,6 +311,19 @@ export async function checkoutForOwner(
       throw new LiveError(
         "This organization already has complimentary access.",
         409,
+      );
+    // Seats are validated before any Stripe call so invalid input never burns
+    // an idempotency key or creates a customer.
+    if (!validSeats(seats))
+      throw new LiveError(
+        `Choose a whole number of team seats between 1 and ${MAX_SEATS}.`,
+        400,
+      );
+    const activeTeams = await activeOwnTeamCount(row.org_id);
+    if (seats < activeTeams)
+      throw new LiveError(
+        `This organization has ${activeTeams} active teams. Buy at least ${activeTeams} seats, or make a team read-only first.`,
+        400,
       );
     if (!row.stripe_customer_id) {
       const customer = await stripe.customers.create(
@@ -284,8 +362,10 @@ export async function checkoutForOwner(
           );
       }
       if (previous.status === "open") {
-        if (row.checkout_interval === interval) return previous.url;
-        // Expiring the old session first makes an interval change safe against double checkout.
+        if (row.checkout_interval === interval && row.checkout_seats === seats)
+          return previous.url;
+        // Expiring the old session first makes an interval or seat-count change
+        // safe against double checkout.
         await stripe.checkout.sessions.expire(previous.id);
       }
       await save(row, token, {
@@ -300,12 +380,18 @@ export async function checkoutForOwner(
           : process.env.STRIPE_TEAM_ANNUAL_PRICE_ID;
       if (!priceId)
         throw new LiveError("This billing option is not available yet.", 503);
-      const price = await stripe.prices.retrieve(priceId);
+      // Tiers are not returned by default; the expand is required.
+      const price = await stripe.prices.retrieve(priceId, {
+        expand: ["tiers"],
+      });
       if (
         price.livemode ||
         !price.active ||
         price.recurring?.interval !== interval ||
-        price.recurring.interval_count !== 1
+        price.recurring.interval_count !== 1 ||
+        price.billing_scheme !== "tiered" ||
+        price.tiers_mode !== "volume" ||
+        !tiersMatch(price.tiers, interval)
       )
         throw new LiveError(
           "The test subscription price needs configuration.",
@@ -315,11 +401,15 @@ export async function checkoutForOwner(
         checkout_attempt: randomUUID(),
         checkout_started_at: new Date().toISOString(),
         checkout_interval: interval,
+        checkout_seats: seats,
         checkout_price_id: priceId,
       });
     }
-    if (row.checkout_interval !== interval)
-      throw new LiveError("Retry the original billing interval.", 409);
+    if (row.checkout_interval !== interval || row.checkout_seats !== seats)
+      throw new LiveError(
+        "Retry the original billing interval and seat count.",
+        409,
+      );
     // Stripe idempotency keys last at least 24h. Never recreate an ambiguous older request.
     if (Date.now() - Date.parse(row.checkout_started_at!) > 23 * 3600_000)
       throw new LiveError(
@@ -332,7 +422,9 @@ export async function checkoutForOwner(
         mode: "subscription",
         customer: row.stripe_customer_id!,
         client_reference_id: row.id,
-        line_items: [{ price: row.checkout_price_id!, quantity: 1 }],
+        // No adjustable_quantity: a seat decrease has to decide which teams go
+        // read-only, and Stripe's selector cannot ask that (and caps at 99).
+        line_items: [{ price: row.checkout_price_id!, quantity: seats }],
         metadata: { inningwise_billing_id: row.id },
         subscription_data: {
           metadata: { inningwise_billing_id: row.id },
