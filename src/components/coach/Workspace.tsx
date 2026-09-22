@@ -126,6 +126,7 @@ export function Workspace({
           <Link href="/coach/live/new">Prepare game</Link>
           <Link href="/coach/import">Import games</Link>
           <Link href="/games">Public training games</Link>
+          <Link href="/coach/billing">Team billing</Link>
         </footer>
       </main>
     </div>

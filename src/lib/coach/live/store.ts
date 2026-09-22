@@ -62,6 +62,8 @@ export async function listGames(orgId: string) {
 export async function createGame(session: CoachSession, config: Config) {
   if (session.role === "viewer")
     throw new LiveError("Only a coach can prepare a game.", 403);
+  const { assertCanStartGame } = await import("@/lib/billing/server");
+  await assertCanStartGame(session.orgId, config.teamId);
   let state = makeGame(randomUUID(), config, new Date().toISOString());
   // Resolve team/player identity from the org's existing tables. Display names
   // submitted by a browser never rename or manufacture roster identities.
