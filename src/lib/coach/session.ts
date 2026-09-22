@@ -35,6 +35,13 @@ export type CoachSession = {
   orgRole?: "owner" | "manager" | "member";
   teamRoles?: Record<string, "head_coach" | "assistant_coach" | "parent">;
   playerIds?: string[];
+  // Additive alongside playerIds (kept exactly as-is for existing consumers —
+  // policy.ts, visibleTeamIds, etc.). Carries just enough per-player detail
+  // for a family-facing kid switcher (Decision 5,
+  // PRACTICE-ASSIGNMENT-AND-DRILLS.md): which team a linked player is on, so
+  // the family route can scope games/practice to one selected kid without an
+  // extra DB round trip.
+  players?: { id: string; teamId: string; displayName: string }[];
 };
 
 // What actually goes in the cookie. Seconds, not milliseconds — JWT convention,

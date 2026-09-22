@@ -1155,6 +1155,18 @@
 .iw-position-answers button {
   flex: 0 0 64px;
 }
+/* Family kid switcher (Decision 5, PRACTICE-ASSIGNMENT-AND-DRILLS.md) */
+.iw-kid-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.iw-kid-switcher button[aria-pressed="true"] {
+  background: #10352f;
+  color: #fff;
+  border-color: #10352f;
+}
 @media (max-width: 600px) {
   .iw-member {
     align-items: flex-start;
