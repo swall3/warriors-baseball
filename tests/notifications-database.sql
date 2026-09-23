@@ -14,7 +14,7 @@ select queue_team_notification('org-review-talking','team-review-warriors','wron
 do $$begin
  if (select count(*) from notification_outbox where event_key like 'game:email-game-test:%')<>3 then raise exception 'game events/duplicate count';end if;
  if exists(select 1 from notification_outbox where event_key='wrong-org') then raise exception 'cross tenant';end if;
- if has_table_privilege('anon','public.notification_outbox','select') or has_table_privilege('authenticated','public.notification_preferences','update') or has_function_privilege('anon','public.claim_notification(text,text,uuid)','execute') then raise exception 'public access';end if;
+ if has_table_privilege('anon','public.notification_outbox','select') or has_table_privilege('authenticated','public.notification_preferences','update') or has_function_privilege('anon','public.claim_notification(text,text,uuid)','execute') or has_function_privilege('anon','public.due_notification_orgs(integer)','execute') then raise exception 'public access';end if;
 end$$;
 -- Claims do not take leased rows, and exhausted/ambiguous sends never get retried.
 update notification_outbox set next_attempt_at=now()+interval '1 day';
@@ -29,9 +29,11 @@ do $$begin if (select status from notification_outbox where event_key='game:emai
 -- Training and billing use actual table writes, and roll back with their event.
 insert into training_assignments(org_id,id,player_id,scenario_id,note)
  select 'org-outlaws','email-training-test',id,'test-scenario','Private note must not be emailed' from players where org_id='org-outlaws' and team_id='team-review-warriors' limit 1;
+insert into training_assignments(org_id,id,player_id,scenario_id,note)
+ select 'org-outlaws','email-training-test-2',id,'test-scenario','Another private note' from players where org_id='org-outlaws' and team_id='team-review-warriors' limit 1;
 update org_billing set subscription_status='past_due' where org_id='org-outlaws';
 do $$begin
- if not exists(select 1 from notification_outbox where event_key='training:email-training-test' and details='{}')then raise exception 'training event';end if;
+ if (select count(*) from notification_outbox where event_key like 'training-batch:team-review-warriors:%' and details='{}')<>1 then raise exception 'training batch must send one notice';end if;
  if not exists(select 1 from notification_outbox where kind='billing_changed' and details->>'status'='past_due')then raise exception 'billing event';end if;
 end$$;
 rollback;

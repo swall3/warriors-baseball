@@ -34,7 +34,7 @@ const sql = (q: string) =>
     { input: q, encoding: "utf8" },
   ).trim();
 const { client } = await import("../src/lib/coach/live/store");
-const { deliverPending, savePreferences } = await import(
+const { deliverPending, deliverDueNotifications, savePreferences } = await import(
   "../src/lib/notifications/server"
 );
 const org = "org-outlaws",
@@ -127,6 +127,21 @@ test("opt-out cancels queued events without sending", async () => {
     assert.equal(calls.length, 0);
   } finally {
     globalThis.fetch = original;
+  }
+});
+test("scheduled delivery ignores held mail and sends a new due notice", async () => {
+  reset();
+  sql(`update notification_outbox set status='review' where event_key='service-email-test';select queue_team_notification('${org}','${team}','service-email-new','games','game_prepared','{"gameId":"new"}');`);
+  const calls = provider();
+  try {
+    const result = await deliverDueNotifications();
+    assert.equal(result.configured, true);
+    assert.equal(row().status, "review");
+    assert.equal(sql("select status from notification_outbox where event_key='service-email-new'"), "accepted");
+    assert.equal(calls.length, 1);
+  } finally {
+    globalThis.fetch = original;
+    sql("delete from notification_outbox where event_key in ('service-email-test','service-email-new')");
   }
 });
 test("ownership change prevents delivery to former owner", async () => {
