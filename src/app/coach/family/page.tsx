@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import InstallPrompt from "@/components/InstallPrompt";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
 import { setGameProgressPlayer } from "@/lib/gameStorage";
 type Game = { id: string; date: string; opponent: string; status: string };
@@ -169,11 +170,13 @@ export default function Family() {
           </Link>
           <div className="nf-top-right">
             <span>Family view</span>
+            <Link href="/install#parents" className="nf-account-link">Install</Link>
             <Link href="/account" className="nf-account-link">
               Account
             </Link>
           </div>
         </header>
+        <InstallPrompt />
 
         {error && (
           <p role="alert" className="nf-notice">

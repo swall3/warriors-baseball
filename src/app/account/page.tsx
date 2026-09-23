@@ -202,9 +202,10 @@ export default function Account() {
     <div className="dugout-theme">
       <div className="nf-workspace">
         <main className="nf-main" style={{ maxWidth: 560 }}>
-          <Link className="nf-wordmark" href="/">
-            InningWise
-          </Link>
+          <nav className="nf-account-top" aria-label="Account links">
+            <Link className="nf-wordmark" href="/">InningWise</Link>
+            <Link href="/install#parents" className="nf-account-link">Install help</Link>
+          </nav>
           <section className="nf-card">
             <p className="nf-eyebrow">YOUR ACCOUNT</p>
             <h1>{invite || join ? "Join your team" : creating ? "Create a coach account" : "Welcome back"}</h1>

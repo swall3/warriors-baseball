@@ -45,6 +45,7 @@ export default function Today() {
         <p>
           Prepare together. Record from the sidelines. Keep the dugout in sync.
         </p>
+        <Link href="/install#coaches">Put InningWise on your home screen →</Link>
       </section>
       {error && <LoadError error={error} retry={retry} />}
       {gameError && (

@@ -9,6 +9,7 @@ export default function AppHome() {
         </Link>
         <div className="nf-home-navright">
           <span>BASEBALL. TOGETHER.</span>
+          <Link href="/install">Install</Link>
           <Link href="/coach/login" className="nf-home-signin">
             Sign In
           </Link>

@@ -42,6 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: orgId ? `${brand.name} · InningWise` : "Team sign-in · InningWise",
     robots: { index: false, follow: false },
+    manifest: "/coach/manifest.webmanifest",
   };
 }
 

@@ -1,0 +1,29 @@
+.iw-install { min-height: 100vh; background: #f5f6f3; color: #182a25; font-family: var(--font-inter), Arial, sans-serif; }
+.iw-install a { color: #1b4d3e; font-weight: 750; }
+.iw-install a:hover { text-decoration: underline; }
+.iw-install-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px max(24px, calc((100vw - 1020px)/2)); background: white; border-bottom: 1px solid #dce2dc; }
+.iw-install-brand { font-size: 22px; font-weight: 900 !important; letter-spacing: 1px; text-decoration: none; white-space: nowrap; }
+.iw-install-brand span { color: #e8611a; }
+.iw-install-content { max-width: 1020px; margin: auto; padding: 52px 24px 64px; }
+.iw-install-kicker { color: #557063; font-weight: 850; letter-spacing: .13em; font-size: 11px; margin: 0 0 10px; }
+.iw-install h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.07; letter-spacing: -.04em; max-width: 720px; font-weight: 900; }
+.iw-install-lead { font-size: 19px; line-height: 1.55; max-width: 650px; margin: 18px 0 24px; }
+.iw-install-roles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 30px 0 34px; }
+.iw-install-roles a { background: #e4eee6; border: 1px solid #c8dccc; border-radius: 16px; padding: 20px; display: flex; justify-content: space-between; gap: 16px; text-decoration: none; }
+.iw-install-roles a:hover { background: #d8e9dc; text-decoration: none; }
+.iw-install-panel { scroll-margin-top: 20px; background: white; border: 1px solid #dce2dc; border-radius: 18px; padding: 28px; margin: 18px 0; }
+.iw-install-panel h2 { font-size: 27px; letter-spacing: -.02em; font-weight: 850; margin: 0 0 12px; }
+.iw-install-panel h3 { font-size: 17px; font-weight: 800; margin: 0 0 8px; }
+.iw-install-panel p, .iw-install-panel li { line-height: 1.6; }
+.iw-install-panel p { margin: 8px 0 16px; }
+.iw-install-note { color: #5d6a62; font-size: 13px; }
+.iw-install-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.iw-install-steps > div { background: #f5f8f4; border-radius: 12px; padding: 18px; min-width: 0; }
+.iw-install-steps ol { padding-left: 22px; margin: 0; }
+.iw-install-steps li + li { margin-top: 9px; }
+.iw-install details { border-top: 1px solid #dce2dc; padding: 16px 0; }
+.iw-install details:last-child { padding-bottom: 0; }
+.iw-install summary { cursor: pointer; font-weight: 750; }
+.iw-install details p { margin-bottom: 0; }
+.iw-install footer { display: flex; flex-wrap: wrap; gap: 20px; padding: 22px 0; font-size: 13px; }
+@media(max-width: 700px) { .iw-install-content { padding: 36px 16px; } .iw-install-roles, .iw-install-steps { grid-template-columns: 1fr; } .iw-install-panel { padding: 20px; } .iw-install-panel h2 { font-size: 23px; } }

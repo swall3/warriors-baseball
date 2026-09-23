@@ -1,0 +1,13 @@
+.button {
+  border: 1px solid #1b4d3e;
+  border-radius: 10px;
+  background: #1b4d3e;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 750;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+.button:hover { background: #133e31; }
+.button:focus-visible { outline: 3px solid #e8611a; outline-offset: 3px; }
