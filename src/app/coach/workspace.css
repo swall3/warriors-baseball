@@ -1467,3 +1467,31 @@
   filter: none;
   text-decoration: underline;
 }
+
+/* Family view — per-kid batting line (Phase 2). Compact stat tiles. */
+.nf-stat-line {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+.nf-stat-line > div {
+  background: #eef3ec;
+  border: 1px solid #dce4df;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+}
+.nf-stat-line dt {
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #54645b;
+}
+.nf-stat-line dd {
+  margin: 4px 0 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--nf-green);
+}

@@ -2,8 +2,20 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
+type Game = { id: string; date: string; opponent: string; status: string };
+type Stats = {
+  gamesPlayed: number;
+  atBats: number;
+  hits: number;
+  singles: number;
+  doubles: number;
+  triples: number;
+  average: string;
+} | null;
 type Data = {
-  games: { id: string; date: string; opponent: string; status: string }[];
+  games: Game[];
+  upcoming: Game[];
+  stats: Stats;
   practice: {
     id: string;
     player_id: string;
@@ -186,16 +198,61 @@ export default function Family() {
             </h1>
             <p>Game updates and coach-assigned practice, in one place.</p>
 
-            <h2>Games</h2>
-            {data?.games.map((g) => (
-              <article className="iw-member" key={g.id}>
-                <strong>vs {g.opponent}</strong>
-                <p>
-                  {g.date} · {g.status}
-                </p>
-              </article>
-            ))}
-            {data && !data.games.length && <p>No shared games yet.</p>}
+            {data?.stats && (
+              <>
+                <h2>Batting</h2>
+                {data.stats.atBats > 0 ? (
+                  <dl className="nf-stat-line">
+                    <div>
+                      <dt>AVG</dt>
+                      <dd>{data.stats.average}</dd>
+                    </div>
+                    <div>
+                      <dt>Games</dt>
+                      <dd>{data.stats.gamesPlayed}</dd>
+                    </div>
+                    <div>
+                      <dt>At-bats</dt>
+                      <dd>{data.stats.atBats}</dd>
+                    </div>
+                    <div>
+                      <dt>Hits</dt>
+                      <dd>{data.stats.hits}</dd>
+                    </div>
+                    <div>
+                      <dt>2B</dt>
+                      <dd>{data.stats.doubles}</dd>
+                    </div>
+                    <div>
+                      <dt>3B</dt>
+                      <dd>{data.stats.triples}</dd>
+                    </div>
+                  </dl>
+                ) : (
+                  <p>Stats will appear here after their first recorded game.</p>
+                )}
+              </>
+            )}
+
+            {(() => {
+              const upcoming = data?.upcoming ?? [];
+              const showUpcoming = upcoming.length > 0;
+              const list = showUpcoming ? upcoming : (data?.games ?? []);
+              return (
+                <>
+                  <h2>{showUpcoming ? "Upcoming games" : "Recent games"}</h2>
+                  {list.map((g) => (
+                    <article className="iw-member" key={g.id}>
+                      <strong>vs {g.opponent}</strong>
+                      <p>
+                        {g.date} · {g.status}
+                      </p>
+                    </article>
+                  ))}
+                  {data && !list.length && <p>No shared games yet.</p>}
+                </>
+              );
+            })()}
 
             <h2>Assigned practice</h2>
             {data?.practice.map((a) => {
