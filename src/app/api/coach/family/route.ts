@@ -20,9 +20,7 @@ export async function GET(request: Request) {
     const selected = requested
       ? linkedPlayers.find((p) => p.id === requested)
       : linkedPlayers.length === 1 ? linkedPlayers[0] : undefined;
-    const parentTeams = Object.entries(s.teamRoles ?? {})
-      .filter(([, r]) => r === "parent")
-      .map(([id]) => id);
+    const parentTeams = [...new Set(linkedPlayers.map((p) => p.teamId))];
     const teams = selected ? [selected.teamId] : parentTeams;
     const playerIds = selected ? [selected.id] : (s.playerIds ?? []);
     const db = accessDb();

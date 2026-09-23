@@ -8,7 +8,13 @@ type Row = {
   created_at: string;
   last_error: string | null;
 };
-type Data = { preferences: Preferences; recent: Row[]; configured: boolean };
+type Data = {
+  preferences: Preferences;
+  recent: Row[];
+  heldPracticeCount: number;
+  otherReviewCount: number;
+  configured: boolean;
+};
 const labels = {
   games: "Game preparation, schedule changes and final reports",
   training: "New practice assignments",
@@ -152,9 +158,19 @@ export function EmailPreferences({ team }: { team: string }) {
           <h4 className="font-bold mt-6">Recent emails</h4>
           <p className="text-sm">
             Accepted means the email provider received it, not that it reached
-            your inbox. Queued emails retry during team activity or with the
-            retry button.
+            your inbox. Queued emails retry during team activity, with the
+            retry button, and on the daily schedule.
           </p>
+          {data.heldPracticeCount > 0 && (
+            <p className="nf-notice mt-3" role="status">
+              {data.heldPracticeCount} older practice {data.heldPracticeCount === 1 ? "email is" : "emails are"} held for review. They will not be sent by Retry or the daily schedule. Practice assignments remain available in Training.
+            </p>
+          )}
+          {data.otherReviewCount > 0 && (
+            <p className="nf-notice mt-3" role="status">
+              {data.otherReviewCount} {data.otherReviewCount === 1 ? "email needs" : "emails need"} delivery review before any retry.
+            </p>
+          )}
           {data.recent.length ? (
             <ul className="divide-y">
               {data.recent.map((row) => (

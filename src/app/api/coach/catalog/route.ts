@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       ),
       orgRole: session.orgRole,
       personalAccount: !!session.userId,
-      familyAccess: Object.values(session.teamRoles ?? {}).includes("parent"),
+      familyAccess: !!session.playerIds?.length,
       canManageOrganization: orgAdmin(session),
     });
   } catch (e) {

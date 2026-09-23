@@ -40,12 +40,13 @@ export async function GET() {
       organizations: [],
       selected: null,
     });
-  const [orgs, teams] = await Promise.all([
+  const [orgs, teams, childLinks] = await Promise.all([
     db.from("organizations").select("id,name")
       .in("id", members.data.map((m) => m.org_id)).eq("active", true),
     db.from("team_members").select("org_id,role").eq("user_id", user.id),
+    db.from("parent_players").select("org_id").eq("user_id", user.id),
   ]);
-  if (orgs.error || teams.error)
+  if (orgs.error || teams.error || childLinks.error)
     return json({ error: "Unable to load organizations." }, 503);
   return json({
     user: { id: user.id, email: user.email },
@@ -54,8 +55,7 @@ export async function GET() {
       role: members.data.find((member) => member.org_id === org.id)?.role,
       canManageTeam: teams.data.some((team) => team.org_id === org.id &&
         ["head_coach", "assistant_coach"].includes(team.role)),
-      hasFamily: teams.data.some((team) => team.org_id === org.id &&
-        team.role === "parent"),
+      hasFamily: childLinks.data.some((link) => link.org_id === org.id),
     })),
     selected: jar.get(ORG_COOKIE)?.value,
   });

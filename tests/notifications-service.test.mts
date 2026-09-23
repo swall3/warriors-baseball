@@ -34,7 +34,7 @@ const sql = (q: string) =>
     { input: q, encoding: "utf8" },
   ).trim();
 const { client } = await import("../src/lib/coach/live/store");
-const { deliverPending, deliverDueNotifications, savePreferences } = await import(
+const { deliverPending, deliverDueNotifications, recentNotifications, savePreferences } = await import(
   "../src/lib/notifications/server"
 );
 const org = "org-outlaws",
@@ -141,6 +141,18 @@ test("scheduled delivery ignores held mail and sends a new due notice", async ()
     assert.equal(calls.length, 1);
   } finally {
     globalThis.fetch = original;
+    sql("delete from notification_outbox where event_key in ('service-email-test','service-email-new')");
+  }
+});
+test("held practice batch does not bury recent delivery history", async () => {
+  reset();
+  sql(`update notification_outbox set status='review',kind='training_assigned',attempts=0 where event_key='service-email-test';select queue_team_notification('${org}','${team}','service-email-new','games','game_prepared','{"gameId":"new"}');`);
+  try {
+    const history = await recentNotifications(org, team, user);
+    assert.equal(history.heldPracticeCount, 1);
+    assert.equal(history.otherReviewCount, 0);
+    assert.deepEqual(history.recent.map((entry) => entry.kind), ["game_prepared"]);
+  } finally {
     sql("delete from notification_outbox where event_key in ('service-email-test','service-email-new')");
   }
 });

@@ -71,16 +71,44 @@ export async function recentNotifications(
   team: string,
   user: string,
 ) {
-  const r = await client()
-    .from("notification_outbox")
-    .select("id,kind,status,created_at,provider_id,last_error")
-    .eq("org_id", org)
-    .eq("team_id", team)
-    .eq("user_id", user)
-    .order("created_at", { ascending: false })
-    .limit(12);
-  checked(r.error);
-  return r.data ?? [];
+  const scope = () =>
+    client()
+      .from("notification_outbox")
+      .select("id,kind,status,created_at,provider_id,last_error")
+      .eq("org_id", org)
+      .eq("team_id", team)
+      .eq("user_id", user);
+  const [recent, held, otherReview] = await Promise.all([
+    scope()
+      .neq("status", "review")
+      .order("created_at", { ascending: false })
+      .limit(12),
+    client()
+      .from("notification_outbox")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .eq("team_id", team)
+      .eq("user_id", user)
+      .eq("status", "review")
+      .eq("kind", "training_assigned")
+      .eq("attempts", 0),
+    client()
+      .from("notification_outbox")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org)
+      .eq("team_id", team)
+      .eq("user_id", user)
+      .eq("status", "review")
+      .or("kind.neq.training_assigned,attempts.neq.0"),
+  ]);
+  checked(recent.error);
+  checked(held.error);
+  checked(otherReview.error);
+  return {
+    recent: recent.data ?? [],
+    heldPracticeCount: held.count ?? 0,
+    otherReviewCount: otherReview.count ?? 0,
+  };
 }
 export async function queueTest(org: string, team: string, user: string) {
   if (!emailConfigured())
