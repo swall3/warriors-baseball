@@ -283,7 +283,7 @@ export default function TeamAccess() {
                               userId: m.user_id,
                               role: "assistant_coach",
                             },
-                            description: `Give ${people(m.user_id)} assistant-coach access to this team's roster, games, and practice?`,
+                            description: `Give ${people(m.user_id)} assistant-coach access to this team's roster, games, and practice? Their linked children will stay in their family view.`,
                           })
                         }
                       >

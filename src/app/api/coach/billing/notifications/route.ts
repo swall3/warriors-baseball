@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     );
     return reply({
       preferences: await preferences(session.orgId, team.id, user!.id),
-      recent: await recentNotifications(session.orgId, team.id, user!.id),
+      ...await recentNotifications(session.orgId, team.id, user!.id),
       configured: emailConfigured(),
     });
   } catch (e) {
@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     return reply({
       ok: true,
       preferences: await preferences(session.orgId, team.id, user!.id),
-      recent: await recentNotifications(session.orgId, team.id, user!.id),
+      ...await recentNotifications(session.orgId, team.id, user!.id),
       configured: emailConfigured(),
     });
   } catch (e) {
