@@ -104,10 +104,14 @@ export async function queueTest(org: string, team: string, user: string) {
   );
   checked(r.error);
 }
-export async function deliverPending(org: string, team: string | null = null) {
+export async function deliverPending(
+  org: string,
+  team: string | null = null,
+  limit = 3,
+) {
   if (!emailConfigured()) return;
   const db = client();
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < limit; i++) {
     const token = randomUUID();
     const claimed = await db.rpc("claim_notification", {
       p_org: org,
@@ -237,6 +241,17 @@ export async function deliverPending(org: string, team: string | null = null) {
       });
     }
   }
+}
+// Hobby cron runs daily; event handlers still attempt delivery immediately.
+// Bound each invocation so a slow provider cannot exhaust the function timeout.
+export async function deliverDueNotifications() {
+  if (!emailConfigured()) return { configured: false, organizations: 0 };
+  const due = await client().rpc("due_notification_orgs", { p_limit: 4 });
+  checked(due.error);
+  for (const org of (due.data ?? []) as string[]) {
+    await deliverPending(org, null, 1);
+  }
+  return { configured: true, organizations: due.data?.length ?? 0 };
 }
 // Failures sending mail must never turn a saved game action into an apparent failure.
 export async function safelyDeliver(org: string, team: string | null = null) {
