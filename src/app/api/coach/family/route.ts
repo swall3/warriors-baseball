@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const teams = selected ? [selected.teamId] : parentTeams;
     const playerIds = selected ? [selected.id] : (s.playerIds ?? []);
     const db = accessDb();
-    const [games, practice, players] = await Promise.all([
+    const [games, practice, players, events] = await Promise.all([
       db
         .from("live_games")
         .select("id,team_id,state")
@@ -46,16 +46,59 @@ export async function GET(request: Request) {
         .select("id,display_name")
         .eq("org_id", s.orgId)
         .in("id", s.playerIds ?? []),
+      // Batting stats only make sense for ONE kid at a time. Identify plate
+      // appearances by batter_player_id (the roster-identity FK) — for this
+      // org it is populated for every named roster player and null only for
+      // opponents, which is exactly the split a parent wants. When "all kids"
+      // is showing (no single selection), skip this query entirely.
+      selected
+        ? db
+            .from("play_events")
+            .select("game_id,result")
+            .eq("org_id", s.orgId)
+            .eq("batter_player_id", selected.id)
+            .limit(2000)
+        : Promise.resolve({ data: [], error: null }),
     ]);
-    if (games.error || practice.error || players.error)
+    if (games.error || practice.error || players.error || events.error)
       throw new LiveError("Family updates unavailable.", 503);
+
+    // Simple, honest 9U batting line — no invented sabermetrics. AB counts
+    // every recorded result (there are no walk/HBP results in this data);
+    // hits = single/double/triple. Games played = distinct games with a PA.
+    const HIT = new Set(["single", "double", "triple"]);
+    const ev = events.data ?? [];
+    const hits = ev.filter((e) => HIT.has(e.result)).length;
+    const atBats = ev.length;
+    const stats = selected
+      ? {
+          gamesPlayed: new Set(ev.map((e) => e.game_id)).size,
+          atBats,
+          hits,
+          singles: ev.filter((e) => e.result === "single").length,
+          doubles: ev.filter((e) => e.result === "double").length,
+          triples: ev.filter((e) => e.result === "triple").length,
+          average:
+            atBats > 0 ? (hits / atBats).toFixed(3).replace(/^0/, "") : "—",
+        }
+      : null;
+
+    const gameList = games.data.map((g) => ({
+      id: g.id,
+      date: g.state.config.date as string,
+      opponent: g.state.config.opponent as string,
+      status: g.state.status as string,
+    }));
+    // "Upcoming" = games dated today or later. This org's only games are
+    // imported past ones, so an empty upcoming section would read as broken:
+    // return both, and let the UI show upcoming when present, recent otherwise.
+    const today = new Date().toISOString().slice(0, 10);
+    const upcoming = gameList.filter((g) => (g.date ?? "") >= today);
+
     return reply({
-      games: games.data.map((g) => ({
-        id: g.id,
-        date: g.state.config.date,
-        opponent: g.state.config.opponent,
-        status: g.state.status,
-      })),
+      games: gameList,
+      upcoming,
+      stats,
       practice: practice.data,
       players: players.data,
       // Full roster of linked kids (with team) for the switcher, plus which
