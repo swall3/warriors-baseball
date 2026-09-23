@@ -75,15 +75,17 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players }: {
         </label>
         <JoinQr link={url(link.token)} label={kind} />
         <p>Expires {new Date(link.expires_at).toLocaleDateString()}.</p>
-        <div className="iw-member-actions">
+      </>}
+      <div className="iw-member-actions iw-join-link-actions">
+        {link && <>
           <button type="button" disabled={busy} onClick={() => void copy(link.token)}>Copy link</button>
           <button type="button" disabled={busy} onClick={() => void act({ action: "revoke_link", token: link.token })}>Turn off link</button>
-        </div>
-      </>}
-      <button type="button" disabled={busy} onClick={() => void act({ action: "create_link", kind,
-        teamId: kind === "parent" ? teamId : null })}>
-        {link ? "Replace link" : "Create link"}
-      </button>
+        </>}
+        <button type="button" disabled={busy} onClick={() => void act({ action: "create_link", kind,
+          teamId: kind === "parent" ? teamId : null })}>
+          {link ? "Replace link" : "Create link"}
+        </button>
+      </div>
     </div>
   );
   return <section className="iw-join-management">
