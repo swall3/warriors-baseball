@@ -99,6 +99,9 @@ export default function Today() {
             organization.
           </p>
           <Link href="/coach/team">Review your team →</Link>
+          {catalog?.role !== "viewer" && (
+            <p><Link href="/coach/team#parents">Invite parents to your team →</Link></p>
+          )}
         </section>
       </div>
       <Link className="nf-training-link" href="/coach/training">
