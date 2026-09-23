@@ -1402,3 +1402,68 @@
   padding: 9px 16px;
   font-size: 14px;
 }
+
+/* Family view — kid selection landing (Phase 1). Parent picks a player, then
+   sees that player's games / practice / progress. */
+.nf-kid-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 18px 0 4px;
+}
+/* Scoped under .nf-workspace to override the global `.nf-workspace button`
+   rule (green bg / white text / centered) — these cards are white list rows,
+   not primary buttons. */
+.nf-workspace button.nf-kid-card {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  width: 100%;
+  min-height: 0;
+  padding: 16px 18px;
+  background: white;
+  color: #182a25;
+  border: 1px solid #d3dfd4;
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 700;
+}
+.nf-workspace button.nf-kid-card:hover:not(:disabled) {
+  border-color: var(--nf-green);
+  filter: none;
+}
+.nf-kid-badge {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  background: var(--nf-team, #0f2044);
+  color: white;
+  font-weight: 900;
+  font-size: 18px;
+  border-radius: 10px;
+}
+.nf-kid-name {
+  flex: 1;
+  font-size: 17px;
+  font-weight: 800;
+  color: #182a25;
+}
+.nf-workspace button.nf-back-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0 0 12px;
+  min-height: 0;
+  color: var(--nf-green);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.nf-workspace button.nf-back-link:hover:not(:disabled) {
+  filter: none;
+  text-decoration: underline;
+}

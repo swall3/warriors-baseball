@@ -89,6 +89,7 @@ export default function Family() {
   }, [load, session]);
   function switchKid(playerId: string | null) {
     setError("");
+    setResult({});
     if (session)
       try {
         const key = switcherKey(session.userId, session.orgId);
@@ -116,90 +117,127 @@ export default function Family() {
       setBusy(false);
     }
   }
+
+  const linked = data?.linkedPlayers ?? [];
+  const selectedPlayer = selected
+    ? linked.find((p) => p.id === selected)
+    : null;
+  // Landing view: more than one kid and none chosen yet → let the parent pick.
+  const showPicker = !!data && linked.length > 1 && !selected;
+
   return (
     <div className="nf-workspace">
       <main className="nf-main">
         <header className="nf-top">
-          <Link href="/">InningWise</Link>
-          <Link href="/account">My account</Link>
+          <Link href="/" className="nf-wordmark">
+            InningWise
+          </Link>
+          <div className="nf-top-right">
+            <span>Family view</span>
+            <Link href="/account" className="nf-account-link">
+              Account
+            </Link>
+          </div>
         </header>
-        <section className="nf-card">
-          <p className="nf-eyebrow">FAMILY VIEW</p>
-          <h1>Your team & your players</h1>
-          <p>Game updates and coach-assigned practice, in one place.</p>
-          {error && (
-            <p role="alert" className="nf-notice">
-              {error}
-            </p>
-          )}
-          {data && data.linkedPlayers.length > 1 && (
-            <nav aria-label="Choose a player" className="iw-kid-switcher">
-              <button
-                disabled={busy || !selected}
-                aria-pressed={!selected}
-                onClick={() => switchKid(null)}
-              >
-                All players
-              </button>
-              {data.linkedPlayers.map((p) => (
+
+        {error && (
+          <p role="alert" className="nf-notice">
+            {error}
+          </p>
+        )}
+
+        {showPicker ? (
+          <section className="nf-card">
+            <p className="nf-eyebrow">FAMILY VIEW</p>
+            <h1>Your players</h1>
+            <p>Choose a player to see their games, practice, and progress.</p>
+            <nav aria-label="Choose a player" className="nf-kid-cards">
+              {linked.map((p) => (
                 <button
                   key={p.id}
+                  className="nf-kid-card"
                   disabled={busy}
-                  aria-pressed={selected === p.id}
                   onClick={() => switchKid(p.id)}
                 >
-                  {p.displayName}
+                  <span className="nf-kid-badge">
+                    {p.displayName.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="nf-kid-name">{p.displayName}</span>
+                  <span aria-hidden="true">→</span>
                 </button>
               ))}
             </nav>
-          )}
-          <h2>Games</h2>
-          {data?.games.map((g) => (
-            <article className="iw-member" key={g.id}>
-              <strong>vs {g.opponent}</strong>
-              <p>
-                {g.date} · {g.status}
-              </p>
-            </article>
-          ))}
-          {data && !data.games.length && <p>No shared games yet.</p>}
-          <h2>Assigned practice</h2>
-          {data?.practice.map((a) => {
-            const scenario = BACKUP_SCENARIOS.find(
-              (s) => s.id === a.scenario_id,
-            );
-            return (
-              <article className="nf-card nf-section" key={a.id}>
-                <h3>
-                  {data.players.find((p) => p.id === a.player_id)?.display_name}
-                </h3>
-                <p>{a.note}</p>
-                <p>{scenario?.label}</p>
-                <p>{scenario?.question}</p>
-                <div className="iw-position-answers">
-                  {["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].map(
-                    (p) => (
-                      <button
-                        key={p}
-                        disabled={busy}
-                        onClick={() => answer(a.id, p)}
-                      >
-                        {p}
-                      </button>
-                    ),
-                  )}
-                </div>
-                {result[a.id] && <p role="status">{result[a.id]}</p>}
+          </section>
+        ) : (
+          <section className="nf-card">
+            {linked.length > 1 && (
+              <button
+                className="nf-back-link"
+                onClick={() => switchKid(null)}
+                disabled={busy}
+              >
+                ← All my players
+              </button>
+            )}
+            <p className="nf-eyebrow">FAMILY VIEW</p>
+            <h1>
+              {selectedPlayer?.displayName ??
+                (linked.length === 1 ? linked[0]?.displayName : "Your players")}
+            </h1>
+            <p>Game updates and coach-assigned practice, in one place.</p>
+
+            <h2>Games</h2>
+            {data?.games.map((g) => (
+              <article className="iw-member" key={g.id}>
+                <strong>vs {g.opponent}</strong>
+                <p>
+                  {g.date} · {g.status}
+                </p>
               </article>
-            );
-          })}
-          {data && !data.practice.length && (
-            <p>
-              Your coach’s assignments will appear here once your player is
-              linked.
-            </p>
-          )}
-        </section>
+            ))}
+            {data && !data.games.length && <p>No shared games yet.</p>}
+
+            <h2>Assigned practice</h2>
+            {data?.practice.map((a) => {
+              const scenario = BACKUP_SCENARIOS.find(
+                (s) => s.id === a.scenario_id,
+              );
+              return (
+                <article className="nf-card nf-section" key={a.id}>
+                  <h3>
+                    {
+                      data.players.find((p) => p.id === a.player_id)
+                        ?.display_name
+                    }
+                  </h3>
+                  <p>{a.note}</p>
+                  <p>{scenario?.label}</p>
+                  <p>{scenario?.question}</p>
+                  <div className="iw-position-answers">
+                    {["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].map(
+                      (p) => (
+                        <button
+                          key={p}
+                          disabled={busy}
+                          onClick={() => answer(a.id, p)}
+                        >
+                          {p}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                  {result[a.id] && <p role="status">{result[a.id]}</p>}
+                </article>
+              );
+            })}
+            {data && !data.practice.length && (
+              <p>
+                Your coach’s assignments will appear here once your player is
+                linked.
+              </p>
+            )}
+          </section>
+        )}
       </main>
     </div>
   );
