@@ -1,0 +1,22 @@
+name: iOS simulator build
+
+on:
+  pull_request:
+    paths:
+      - 'mobile/ios-app/**'
+      - '.github/workflows/ios-simulator.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        working-directory: mobile/ios-app
+        run: xcodegen generate
+      - name: Build for iOS simulator
+        working-directory: mobile/ios-app
+        run: xcodebuild -project InningWise.xcodeproj -scheme InningWise -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
