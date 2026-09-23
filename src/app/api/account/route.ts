@@ -10,6 +10,7 @@ import {
 import { authClient } from "@/lib/billing/server";
 import { AUTH_COOKIE } from "@/lib/coach/auth";
 import { SESSION_COOKIE } from "@/lib/coach/session";
+import { activeJoinLink } from "@/lib/access/join";
 
 const options = {
   httpOnly: true,
@@ -139,9 +140,11 @@ export async function POST(request: Request) {
             .maybeSingle();
           invited = !i.error && !!i.data;
         }
+        const joining = typeof b.join === "string" && !!await activeJoinLink(b.join);
+        const creating = b.intent === "create";
         const { error } = await auth.auth.signInWithOtp({
           email,
-          options: { shouldCreateUser: invited },
+          options: { shouldCreateUser: invited || joining || creating },
         });
         if (error?.status === 429)
           return json(
@@ -155,8 +158,9 @@ export async function POST(request: Request) {
           );
         return json({
           ok: true,
-          message:
-            "If your email has an account or a valid invitation, a code is on its way.",
+          message: creating || joining
+            ? "Check your email for a sign-in code."
+            : "If your email has an account or a valid invitation, a code is on its way.",
         });
       }
       if (typeof b.token !== "string" || !/^\d{6,10}$/.test(b.token))
@@ -190,6 +194,20 @@ export async function POST(request: Request) {
     }
     const user = await verifiedIdentity(jar.get(IDENTITY_COOKIE)?.value);
     if (!user) return json({ error: "Sign in with your email first." }, 401);
+    if (b.action === "create_org") {
+      if (typeof b.name !== "string" || typeof b.teamName !== "string" ||
+        b.name.length > 80 || b.teamName.length > 80)
+        return json({ error: "Enter your organization and team names." }, 400);
+      const created = await db.rpc("bootstrap_organization", {
+        p_actor: user.id, p_name: b.name, p_team_name: b.teamName,
+      });
+      if (created.error) return json({
+        error: created.error.code === "P0001" ? created.error.message : "Unable to create organization.",
+      }, 409);
+      const response = json({ ok: true, orgId: created.data });
+      response.cookies.set(ORG_COOKIE, created.data, { ...options, maxAge: 30 * 86400 });
+      return response;
+    }
     let orgId = b.orgId;
     if (b.action === "accept") {
       if (typeof b.invite !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(b.invite))

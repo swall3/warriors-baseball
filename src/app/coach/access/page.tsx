@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
+import { JoinManagement } from "@/components/coach/JoinManagement";
 type Member = { user_id: string; role: string; team_id?: string };
 type Access = {
   organization: { name: string; account_access_enabled: boolean };
@@ -312,6 +313,9 @@ export default function TeamAccess() {
                 </article>
               ))}
             </div>
+            <JoinManagement teamId={team} admin={!!admin}
+              canCoach={!!admin || !!head || data.teamRoles[team] === "assistant_coach"}
+              teams={data.teams} players={catalog?.players ?? []} />
             <form
               className="iw-access-form"
               onSubmit={(e) => {
