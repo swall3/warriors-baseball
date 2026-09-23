@@ -2,6 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Workspace, useCatalog, LoadError } from "@/components/coach/Workspace";
+import { JoinManagement } from "@/components/coach/JoinManagement";
 type Player = {
   id: string;
   display_name: string;
@@ -31,14 +32,14 @@ export default function Team() {
         <p className="nf-eyebrow">TEAM & ROSTER</p>
         <h2>Your team, ready to play.</h2>
         <p>
-          Edit names and jerseys here. Set each game’s batting order and defense
-          in Prepare.
+          Add players, invite their parents, then set each game’s batting order
+          and defense in Prepare.
         </p>
         <p>
-          <Link href="/coach/access">
-            Manage coaches, parents & team access →
-          </Link>
+          <Link href="#roster">Add players →</Link>{" · "}
+          <Link href="#parents">Invite parents →</Link>
         </p>
+        <p><Link href="/coach/access">Manage coaches and team access →</Link></p>
       </section>
       {error && <LoadError error={error} retry={retry} />}
       <label className="nf-label">
@@ -59,6 +60,10 @@ export default function Team() {
           key={team.id}
           team={team}
           editable={catalog.role !== "viewer"}
+          personalAccount={!!catalog.personalAccount}
+          admin={!!catalog.canManageOrganization}
+          teams={catalog.teams}
+          rosterPlayers={catalog.players}
           refreshed={retry}
         />
       )}
@@ -73,10 +78,18 @@ export default function Team() {
 function TeamEditor({
   team,
   editable,
+  personalAccount,
+  admin,
+  teams,
+  rosterPlayers,
   refreshed,
 }: {
   team: { id: string; name: string };
   editable: boolean;
+  personalAccount: boolean;
+  admin: boolean;
+  teams: { id: string; name: string }[];
+  rosterPlayers: { id: string; team_id: string; display_name: string }[];
   refreshed: () => void;
 }) {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -85,6 +98,11 @@ function TeamEditor({
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (location.hash === "#parents" || location.hash === "#roster") {
+      document.getElementById(location.hash.slice(1))?.scrollIntoView();
+    }
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     fetch(`/api/coach/roster?teamId=${encodeURIComponent(team.id)}`, {
@@ -170,16 +188,50 @@ function TeamEditor({
           <button disabled={busy}>Save team name</button>
         </form>
       )}
-      <div className="nf-section">
+      <div id="roster" className="nf-section">
         <h3>Players</h3>
         <p>
           Inactive players keep their history and can be restored. They won’t
           appear in new game lineups.
         </p>
       </div>
+      {editable && (
+        <form
+          className="nf-card nf-section"
+          onSubmit={(e) => void save(e, "POST", { kind: "player" })}
+        >
+          <h3>Add player</h3>
+          <div className="nf-form-grid">
+            <label className="nf-label">
+              New player name
+              <input name="name" required maxLength={80} />
+            </label>
+            <label className="nf-label">
+              New player jersey
+              <input name="jersey" maxLength={8} />
+            </label>
+          </div>
+          <button disabled={busy}>Add player</button>
+        </form>
+      )}
+      {editable && <div id="parents">
+        {!rosterPlayers.some((player) => player.team_id === team.id) && (
+          <p className="nf-notice">Add your players above so you can match each parent request to the right child.</p>
+        )}
+        {personalAccount ? (
+          <JoinManagement teamId={team.id} admin={admin} canCoach
+            teams={teams} players={rosterPlayers} mode="parents" />
+        ) : (
+          <section className="iw-join-management">
+            <h2>Invite parents</h2>
+            <p>Sign in with your own email to create a team join link and approve parent requests.</p>
+            <Link href="/account">Sign in with email →</Link>
+          </section>
+        )}
+      </div>}
       {!loaded && !error && <p>Loading roster…</p>}
       {loaded && !players.length && (
-        <p>No players yet. Add the first player below.</p>
+        <p>No players yet. Use Add player above to start the roster.</p>
       )}
       <div className="nf-roster">
         {players.map((player) => (
@@ -242,25 +294,6 @@ function TeamEditor({
           </article>
         ))}
       </div>
-      {editable && (
-        <form
-          className="nf-card nf-section"
-          onSubmit={(e) => void save(e, "POST", { kind: "player" })}
-        >
-          <h3>Add player</h3>
-          <div className="nf-form-grid">
-            <label className="nf-label">
-              New player name
-              <input name="name" required maxLength={80} />
-            </label>
-            <label className="nf-label">
-              New player jersey
-              <input name="jersey" maxLength={8} />
-            </label>
-          </div>
-          <button disabled={busy}>Add player</button>
-        </form>
-      )}
       {editable && (
         <p className="nf-section">
           <Link className="nf-button" href="/coach/live/new">

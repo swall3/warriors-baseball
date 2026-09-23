@@ -313,9 +313,10 @@ export default function TeamAccess() {
                 </article>
               ))}
             </div>
-            <JoinManagement teamId={team} admin={!!admin}
-              canCoach={!!admin || !!head || data.teamRoles[team] === "assistant_coach"}
-              teams={data.teams} players={catalog?.players ?? []} />
+            {(admin || head || data.teamRoles[team] === "assistant_coach") && (
+              <JoinManagement teamId={team} admin={!!admin} canCoach
+                teams={data.teams} players={catalog?.players ?? []} />
+            )}
             <form
               className="iw-access-form"
               onSubmit={(e) => {

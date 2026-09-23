@@ -27,8 +27,9 @@ function JoinQr({ link, label }: { link: string; label: string }) {
   </div>;
 }
 
-export function JoinManagement({ teamId, admin, canCoach, teams, players }: {
+export function JoinManagement({ teamId, admin, canCoach, teams, players, mode = "all" }: {
   teamId: string; admin: boolean; canCoach: boolean; teams: Team[]; players: Player[];
+  mode?: "all" | "parents";
 }) {
   const [data, setData] = useState<Data | null>(null);
   const [busy, setBusy] = useState(false);
@@ -63,7 +64,9 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players }: {
   }
   const parentLink = data?.links.find((l) => l.kind === "parent" && l.team_id === teamId);
   const coachLink = data?.links.find((l) => l.kind === "coach");
-  const pending = (data?.requests ?? []).filter((r) => r.kind === "coach" ? admin : r.team_id === teamId);
+  const pending = (data?.requests ?? []).filter((r) =>
+    mode === "parents" ? r.kind === "parent" && r.team_id === teamId
+      : r.kind === "coach" ? admin : r.team_id === teamId);
   const linkCard = (kind: "parent" | "coach", link?: LinkRow) => (
     <div className="iw-member" style={{ display: "block" }}>
       <strong>{kind === "parent" ? "Parent join link" : "Organization coach join link"}</strong>
@@ -89,14 +92,17 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players }: {
     </div>
   );
   return <section className="iw-join-management">
-    <h2>Self-service joining</h2>
-    <p>Parents and coaches enter their own email. No access is granted until you review the request.</p>
+    <h2>{mode === "parents" ? "Invite parents" : "Self-service joining"}</h2>
+    <p>{mode === "parents"
+      ? "Share one link or QR code with your families. Parents enter their own email and request their children; you match each request to the roster before access opens."
+      : "Parents and coaches enter their own email. No access is granted until you review the request."}</p>
     {error && <p className="nf-notice" role="alert">{error}</p>}
     {message && <p className="nf-notice" role="status">{message}</p>}
-    {canCoach && teamId && linkCard("parent", parentLink)}
-    {admin && linkCard("coach", coachLink)}
-    <h3>Pending join requests</h3>
-    {!pending.length && <p>No requests waiting for approval.</p>}
+    {!data && !error && <p>Loading join links…</p>}
+    {data && canCoach && teamId && linkCard("parent", parentLink)}
+    {data && mode === "all" && admin && linkCard("coach", coachLink)}
+    {data && <h3>{mode === "parents" ? "Parent requests" : "Pending join requests"}</h3>}
+    {data && !pending.length && <p>{mode === "parents" ? "No parent requests waiting for approval." : "No requests waiting for approval."}</p>}
     {pending.map((r) => {
       const person = data?.users.find((u) => u.id === r.user_id)?.email ?? "Verified account";
       const pickedTeam = choices[`${r.id}:team`] ?? "";
