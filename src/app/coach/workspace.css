@@ -1382,8 +1382,10 @@
   border-color: #101720;
   color: var(--nf-green);
 }
+.nf-account-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 22px; }
 @media (max-width: 480px) {
   .nf-top { padding: 0 12px; gap: 8px; }
+  .nf-install-header { display: none; }
   .nf-wordmark { font-size: 18px; letter-spacing: 1px; white-space: nowrap; }
   .nf-wordmark span { font-size: 28px; margin-left: 4px; }
   .nf-top-right { gap: 8px; }

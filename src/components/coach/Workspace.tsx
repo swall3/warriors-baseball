@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import GameDaySteps from "./GameDaySteps";
+import InstallPrompt from "@/components/InstallPrompt";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 export type Catalog = {
   orgRole?: "owner" | "manager" | "member";
@@ -116,6 +117,7 @@ export function Workspace({
         </Link>
         <div className="nf-top-right">
           <span>Game day &amp; player development</span>
+          <Link href="/install#coaches" className="nf-account-link nf-install-header">Install</Link>
           {canReview && <Link href="/coach/access#join-requests"
             className={`nf-review-alert${reviewCount !== null && reviewCount > 0 ? " is-pending" : ""}`}
             aria-label={reviewCount !== null && reviewCount > 0
@@ -168,6 +170,7 @@ export function Workspace({
             gameStatus={gameStatus}
           />
         )}
+        {!compact && pathname === "/coach/today" && <InstallPrompt />}
         {!compact && pathname === "/coach/today" && reviewCount !== null && reviewCount > 0 && (
           <Link href="/coach/access#join-requests" className="nf-review-banner">
             <strong>{reviewCount} {reviewCount === 1 ? "request needs" : "requests need"} your review</strong>
@@ -176,6 +179,7 @@ export function Workspace({
         )}
         {children}
         <footer className="nf-footer">
+          <Link href="/install#coaches">Install InningWise</Link>
           <Link href="/coach/team">Manage team</Link>
           <Link href="/coach/live/new">Prepare game</Link>
           <Link href="/coach/practice">Drill library</Link>
