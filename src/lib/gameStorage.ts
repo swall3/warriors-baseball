@@ -3,6 +3,65 @@ import type { PositionKey } from "@/components/Diamond";
 const MASTERY_KEY = "warriors-backup-mastery";
 const DAILY_KEY = "warriors-daily-state";
 
+// ── Optional per-kid DB sync (parent view Phase 3) ──────────────────────────
+//
+// When a parent opens /games with a kid selected (?player=<id>), progress is
+// ALSO persisted server-side under that kid, so it shows in the family view on
+// any device. Without a selected player — coaches, or a kid playing with no
+// parent context — this is a no-op and localStorage stays the only store, so
+// the existing behaviour is completely unchanged.
+//
+// The player id is validated server-side against the session's linked kids by
+// /api/coach/games/progress; this module only forwards it. Writes are
+// fire-and-forget: a failed/absent sync must never break the game or block the
+// (authoritative-for-this-device) localStorage write that already happened.
+// Persisted in sessionStorage (not a module variable): the sub-games are
+// separate routes, so the selection must survive navigation between
+// /games/rules, /games/backup, etc. within the tab. Cleared on tab close and
+// never crosses to a coach/no-parent context, which never sets it.
+const PLAYER_KEY = "iw_games_player";
+
+export function setGameProgressPlayer(playerId: string | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (playerId) sessionStorage.setItem(PLAYER_KEY, playerId);
+    else sessionStorage.removeItem(PLAYER_KEY);
+  } catch {
+    /* storage disabled: sync just won't happen, gameplay unaffected */
+  }
+}
+
+function currentPlayer(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return sessionStorage.getItem(PLAYER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function syncProgress(
+  gameKey: string,
+  correct: boolean,
+  daily?: { streak: number; best: number },
+) {
+  const playerId = currentPlayer();
+  if (typeof window === "undefined" || !playerId) return;
+  try {
+    void fetch(
+      `/api/coach/games/progress?player=${encodeURIComponent(playerId)}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameKey, correct, daily }),
+        keepalive: true,
+      },
+    ).catch(() => {});
+  } catch {
+    /* never let progress sync break gameplay */
+  }
+}
+
 export type MasteryRecord = { correct: number; total: number };
 export type MasteryMap = Partial<Record<PositionKey, MasteryRecord>>;
 
@@ -23,6 +82,10 @@ export function recordAttempt(zone: PositionKey, correct: boolean) {
   if (correct) rec.correct += 1;
   mastery[zone] = rec;
   localStorage.setItem(MASTERY_KEY, JSON.stringify(mastery));
+  // NB: no DB sync here. recordAttempt is the per-zone mastery recorder and is
+  // called alongside recordSkillAttempt on the same answer (backup/position) —
+  // syncing here too would double-count. The single per-answer DB write lives
+  // in recordSkillAttempt (and recordDailyPlay for the daily streak).
 }
 
 // ── Play of the Day ──
@@ -68,6 +131,7 @@ export function recordDailyPlay(): { streak: number; best: number; alreadyPlayed
   const streak = isYesterday(state.lastDate, today) ? state.streak + 1 : 1;
   const best = Math.max(streak, state.best);
   localStorage.setItem(DAILY_KEY, JSON.stringify({ lastDate: today, streak, best }));
+  syncProgress("daily", true, { streak, best });
   return { streak, best, alreadyPlayedToday: false };
 }
 
@@ -143,10 +207,18 @@ export function getCompletedSessions(poolKey: string): number {
 }
 
 /**
- * Record one answer. `skill` is the scenario category (or "rules"). Returns
- * the running correct-answer streak so the caller can show it immediately.
+ * Record one answer. `skill` is the scenario category (or "rules") — kept
+ * granular in localStorage. `gameKey` is the PARENT game the DB progress rolls
+ * up to ("rules"/"backup"/"position"); it defaults to `skill` for callers like
+ * the rules quiz where the two coincide. Position and backup pass their game so
+ * the family view shows "Position practice 8/12", not raw category slugs like
+ * "cover"/"relay". Returns the running correct-answer streak.
  */
-export function recordSkillAttempt(skill: string, correct: boolean): number {
+export function recordSkillAttempt(
+  skill: string,
+  correct: boolean,
+  gameKey: string = skill,
+): number {
   const p = getSessionProgress();
   const rec = p.skills[skill] ?? { correct: 0, total: 0 };
   rec.total += 1;
@@ -155,6 +227,7 @@ export function recordSkillAttempt(skill: string, correct: boolean): number {
   p.answerStreak = correct ? p.answerStreak + 1 : 0;
   p.bestAnswerStreak = Math.max(p.bestAnswerStreak, p.answerStreak);
   saveSessionProgress(p);
+  syncProgress(gameKey, correct);
   return p.answerStreak;
 }
 

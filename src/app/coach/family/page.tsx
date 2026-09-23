@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import { setGameProgressPlayer } from "@/lib/gameStorage";
 type Game = { id: string; date: string; opponent: string; status: string };
 type Stats = {
   gamesPlayed: number;
@@ -12,10 +13,18 @@ type Stats = {
   triples: number;
   average: string;
 } | null;
+type GameProgress = {
+  game_key: string;
+  correct: number;
+  total: number;
+  streak: number | null;
+  best_streak: number | null;
+};
 type Data = {
   games: Game[];
   upcoming: Game[];
   stats: Stats;
+  gameProgress: GameProgress[];
   practice: {
     id: string;
     player_id: string;
@@ -26,6 +35,16 @@ type Data = {
   linkedPlayers: { id: string; teamId: string; displayName: string }[];
   selectedPlayerId: string | null;
 };
+// Friendly labels for the learning-game keys stored in game_progress.
+const GAME_LABELS: Record<string, string> = {
+  rules: "Rules",
+  backup: "Backup positions",
+  position: "Position practice",
+  daily: "Play of the day",
+};
+function gameLabel(key: string): string {
+  return GAME_LABELS[key] ?? key.replace(/[-_]/g, " ");
+}
 // Decision 5 (PRACTICE-ASSIGNMENT-AND-DRILLS.md): the last kid a parent
 // switched to is remembered per device (localStorage, not a cookie/account
 // setting) so a shared family device doesn't push one parent's selection
@@ -102,6 +121,10 @@ export default function Family() {
   function switchKid(playerId: string | null) {
     setError("");
     setResult({});
+    // Keep the /games progress context in lockstep with the family selection,
+    // so learning-game progress can never be attributed to the previously
+    // selected kid on a shared device. Cleared on "All players".
+    setGameProgressPlayer(playerId);
     if (session)
       try {
         const key = switcherKey(session.userId, session.orgId);
@@ -231,6 +254,36 @@ export default function Family() {
                 ) : (
                   <p>Stats will appear here after their first recorded game.</p>
                 )}
+              </>
+            )}
+
+            {selectedPlayer && (
+              <>
+                <h2>Learning games</h2>
+                {data && data.gameProgress.length > 0 ? (
+                  <dl className="nf-stat-line">
+                    {data.gameProgress.map((gp) => (
+                      <div key={gp.game_key}>
+                        <dt>{gameLabel(gp.game_key)}</dt>
+                        <dd>
+                          {gp.game_key === "daily"
+                            ? `${gp.streak ?? 0}🔥`
+                            : `${gp.correct}/${gp.total}`}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <p>
+                    No learning-game progress yet — tap below to start playing.
+                  </p>
+                )}
+                <Link
+                  href={`/games?player=${encodeURIComponent(selectedPlayer.id)}`}
+                  className="nf-play-games-link"
+                >
+                  Play learning games as {selectedPlayer.displayName} →
+                </Link>
               </>
             )}
 

@@ -145,7 +145,7 @@ export default function BackupGame({
     setTappedZone(zone);
     setTapState(correct ? "correct" : "wrong");
     recordAttempt(s.targetZone as PositionKey, correct);
-    recordSkillAttempt(s.category, correct);
+    recordSkillAttempt(s.category, correct, "backup");
 
     if (correct) {
       scoreRef.current += 1;

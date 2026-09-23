@@ -123,7 +123,7 @@ export default function PositionGame({
     setTappedZone(zone);
     setTapState(correct ? "correct" : "wrong");
     recordAttempt(position, correct);
-    recordSkillAttempt(s.category, correct);
+    recordSkillAttempt(s.category, correct, "position");
     if (correct) setCorrectCount(c => c + 1);
   };
 

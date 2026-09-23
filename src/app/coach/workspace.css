@@ -1495,3 +1495,21 @@
   font-weight: 900;
   color: var(--nf-green);
 }
+
+/* Family view — "Play learning games as [Kid]" CTA (Phase 3). Scoped under
+   .nf-card to beat the global `.nf-card a:not(.nf-button)` green-text rule
+   (caught in browser verify — text was green-on-green, invisible). */
+.nf-card a.nf-play-games-link {
+  display: inline-block;
+  margin: 14px 0 4px;
+  padding: 12px 20px;
+  background: var(--nf-green);
+  color: white;
+  font-weight: 800;
+  font-size: 15px;
+  border-radius: 12px;
+}
+.nf-card a.nf-play-games-link:hover {
+  filter: brightness(0.95);
+  text-decoration: none;
+}

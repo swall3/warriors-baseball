@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     const teams = selected ? [selected.teamId] : parentTeams;
     const playerIds = selected ? [selected.id] : (s.playerIds ?? []);
     const db = accessDb();
-    const [games, practice, players, events] = await Promise.all([
+    const [games, practice, players, events, gameProgress] = await Promise.all([
       db
         .from("live_games")
         .select("id,team_id,state")
@@ -59,8 +59,22 @@ export async function GET(request: Request) {
             .eq("batter_player_id", selected.id)
             .limit(2000)
         : Promise.resolve({ data: [], error: null }),
+      // Learning-game progress (Phase 3) — per selected kid, from game_progress.
+      selected
+        ? db
+            .from("game_progress")
+            .select("game_key,correct,total,streak,best_streak")
+            .eq("org_id", s.orgId)
+            .eq("player_id", selected.id)
+        : Promise.resolve({ data: [], error: null }),
     ]);
-    if (games.error || practice.error || players.error || events.error)
+    if (
+      games.error ||
+      practice.error ||
+      players.error ||
+      events.error ||
+      gameProgress.error
+    )
       throw new LiveError("Family updates unavailable.", 503);
 
     // Simple, honest 9U batting line — no invented sabermetrics. AB counts
@@ -99,6 +113,7 @@ export async function GET(request: Request) {
       games: gameList,
       upcoming,
       stats,
+      gameProgress: gameProgress.data ?? [],
       practice: practice.data,
       players: players.data,
       // Full roster of linked kids (with team) for the switcher, plus which
