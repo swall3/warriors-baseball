@@ -138,10 +138,8 @@ export function validateDefense(
     );
 }
 export function validateConfig(c: Config) {
-  requireRule(
-    c && text(c.teamId) && text(c.teamName) && text(c.opponent),
-    "Choose a team and opponent.",
-  );
+  requireRule(c && text(c.teamId) && text(c.teamName), "Choose a team.");
+  requireRule(text(c.opponent), "Enter an opponent.");
   requireRule(
     text(c.date) &&
       /^\d{4}-\d{2}-\d{2}$/.test(c.date) &&
