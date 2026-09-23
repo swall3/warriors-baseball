@@ -1287,6 +1287,13 @@
 .iw-join-qr { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 8px 0 16px; }
 .iw-join-qr img { border: 1px solid #dce4df; border-radius: 8px; }
 .iw-join-qr a { font-weight: 800; }
+.iw-join-management .iw-join-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 12px;
+  row-gap: 12px;
+  margin-top: 16px;
+}
 .nf-account-form input:focus-visible {
   outline: 2px solid var(--nf-green);
   outline-offset: 2px;
