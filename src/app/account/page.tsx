@@ -5,7 +5,14 @@ import "../coach/coach.css";
 import "../coach/workspace.css";
 type State = {
   user: { email: string } | null;
-  organizations: { id: string; name: string }[];
+  organizations: {
+    id: string;
+    name: string;
+    role: "owner" | "manager" | "member";
+    canManageTeam: boolean;
+    hasFamily: boolean;
+  }[];
+  selected?: string | null;
 };
 export default function Account() {
   const [data, setData] = useState<State | null>(null),
@@ -179,11 +186,31 @@ export default function Account() {
                     address.
                   </p>
                 )}
-                <h2>Manage</h2>
-                <nav className="nf-account-manage">
-                  <Link href="/coach/billing">Team billing</Link>
-                  <Link href="/coach/access">People &amp; access</Link>
-                </nav>
+                {(() => {
+                  const organization = data.organizations.find(
+                    (org) => org.id === data.selected,
+                  );
+                  if (!organization) return null;
+                  const canManageOrganization =
+                    organization.role === "owner" || organization.role === "manager";
+                  return (
+                    <>
+                      <h2>Go to {organization.name}</h2>
+                      <nav className="nf-account-manage" aria-label="Organization pages">
+                        {(canManageOrganization || organization.canManageTeam || !organization.hasFamily) && (
+                          <Link href="/coach/today">Team workspace</Link>
+                        )}
+                        {organization.hasFamily && <Link href="/coach/family">Family view</Link>}
+                        {(canManageOrganization || organization.canManageTeam) && (
+                          <Link href="/coach/access">People &amp; access</Link>
+                        )}
+                        {organization.role === "owner" && (
+                          <Link href="/coach/billing">Organization billing</Link>
+                        )}
+                      </nav>
+                    </>
+                  );
+                })()}
                 <button
                   className="nf-account-signout"
                   disabled={busy}

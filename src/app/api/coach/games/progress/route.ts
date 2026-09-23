@@ -34,58 +34,39 @@ export async function GET(request: Request) {
   }
 }
 
-// Body: { gameKey, correct: boolean, sessionComplete?: boolean,
-//         daily?: { streak, best } }. Increments the aggregate atomically via
-// an upsert-then-increment; the row is small and per-kid so contention is a
-// non-issue at this scale.
+// Body: { attemptId, gameKey, correct, daily?: { streak, best } }.
+// The database locks this player's aggregate and ignores repeat request IDs.
 export async function POST(request: Request) {
   try {
-    const s = await sessionFor(request);
+    const s = await sessionFor(request, true);
     if (!s.userId) throw new LiveError("Sign in with your email.", 403);
     const player = requirePlayer(request, s.playerIds ?? []);
     const body = await request.json();
-    const gameKey =
-      typeof body.gameKey === "string" ? body.gameKey.slice(0, 64) : "";
-    if (!gameKey) throw new LiveError("Missing game.", 400);
+    const gameKey = body.gameKey;
+    if (typeof gameKey !== "string" || !/^[a-z0-9_-]{1,64}$/.test(gameKey))
+      throw new LiveError("Invalid game.", 400);
+    if (typeof body.attemptId !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.attemptId) ||
+        typeof body.correct !== "boolean")
+      throw new LiveError("Invalid answer.", 400);
+    const daily = body.daily;
+    if (daily !== undefined &&
+        (typeof daily !== "object" || daily === null ||
+         !Number.isInteger(daily.streak) || daily.streak < 0 || daily.streak > 3650 ||
+         !Number.isInteger(daily.best) || daily.best < 0 || daily.best > 3650))
+      throw new LiveError("Invalid streak.", 400);
     const db = accessDb();
-
-    // Read current, compute next, write. RLS + service-role, single kid row.
-    const current = await db
-      .from("game_progress")
-      .select("correct,total,streak,best_streak")
-      .eq("org_id", s.orgId)
-      .eq("player_id", player)
-      .eq("game_key", gameKey)
-      .maybeSingle();
-    if (current.error) throw new LiveError("Progress unavailable.", 503);
-
-    const prev = current.data ?? {
-      correct: 0,
-      total: 0,
-      streak: null,
-      best_streak: null,
-    };
-    const next = {
-      org_id: s.orgId,
-      player_id: player,
-      game_key: gameKey,
-      correct: prev.correct + (body.correct === true ? 1 : 0),
-      total: prev.total + 1,
-      streak:
-        body.daily && typeof body.daily.streak === "number"
-          ? body.daily.streak
-          : (prev.streak ?? null),
-      best_streak:
-        body.daily && typeof body.daily.best === "number"
-          ? Math.max(body.daily.best, prev.best_streak ?? 0)
-          : (prev.best_streak ?? null),
-      updated_at: new Date().toISOString(),
-    };
-    const up = await db
-      .from("game_progress")
-      .upsert(next, { onConflict: "org_id,player_id,game_key" });
-    if (up.error) throw new LiveError("Could not save progress.", 503);
-    return reply({ ok: true });
+    const result = await db.rpc("record_game_progress", {
+      p_org: s.orgId,
+      p_player: player,
+      p_key: gameKey,
+      p_attempt: body.attemptId,
+      p_correct: body.correct,
+      p_streak: daily?.streak ?? null,
+      p_best: daily?.best ?? null,
+    });
+    if (result.error) throw new LiveError("Could not save progress.", 503);
+    return reply({ ok: true, recorded: result.data });
   } catch (e) {
     return failure(e);
   }

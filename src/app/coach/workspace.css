@@ -185,6 +185,30 @@
   display: grid;
   gap: 12px;
 }
+.nf-game-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.nf-game-toolbar label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #41594c;
+  font-size: 13px;
+  font-weight: 700;
+}
+.nf-workspace button.nf-game-more {
+  width: 100%;
+  margin-top: 14px;
+  background: white;
+  color: var(--nf-green);
+  border: 1px solid #bac9bd;
+}
+@media (max-width: 600px) {
+  .nf-game-toolbar { grid-template-columns: 1fr; }
+}
 .nf-game-row {
   display: flex;
   align-items: center;
@@ -438,6 +462,9 @@
   flex-wrap: wrap;
   gap: 10px 18px;
   margin-top: 12px;
+}
+.nf-workspace details:not([open]) > :not(summary) {
+  display: none;
 }
 .nf-legacy-actions a {
   display: inline-flex;

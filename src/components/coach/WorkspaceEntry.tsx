@@ -10,6 +10,7 @@ export default function WorkspaceEntry() {
       "/coach/team",
       "/coach/live",
       "/coach/training",
+      "/coach/practice",
       "/coach/insights",
       "/coach/dashboard",
       "/coach/stats",
