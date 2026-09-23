@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.inningwise.app",
+        "sha256_cert_fingerprints": ["F9:D8:96:9D:85:AB:1A:21:6B:D7:F3:63:A9:C0:FC:BA:C7:33:6D:C3:27:10:5F:45:5E:DD:E9:39:1B:4B:0E:62"]
+      }
+    }]

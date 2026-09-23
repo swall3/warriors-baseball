@@ -36,3 +36,11 @@ data/
 # The database stores only a salted SHA-256; the plaintext exists here and in
 # the customer's hands, and must never reach a commit.
 *-CREDENTIALS.txt
+
+# Mobile pilot binaries and signing material stay outside Git.
+mobile/dist/
+mobile/ios/
+mobile/android/.gradle/
+mobile/android/**/build/
+mobile/android/local.properties
+mobile/**/*.keystore
