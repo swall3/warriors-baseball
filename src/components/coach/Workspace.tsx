@@ -118,10 +118,11 @@ export function Workspace({
           <Link href="/coach/team">Manage team</Link>
           <Link href="/coach/live/new">Prepare game</Link>
           <Link href="/coach/practice">Drill library</Link>
+          <Link href="/coach/training">Player assignments</Link>
           {(!catalog?.personalAccount || catalog?.canManageOrganization) && (
             <Link href="/coach/import">Import games</Link>
           )}
-          <Link href="/games">Public training games</Link>
+          <Link href="/games">Learning games</Link>
           {catalog?.familyAccess && (
             <Link href="/coach/family">Family view</Link>
           )}

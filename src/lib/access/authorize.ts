@@ -29,6 +29,10 @@ export async function authorizeRequest(s: CoachSession, request: Request) {
   };
   if (path === "/api/coach/catalog" && read) return;
   if (path === "/api/coach/family" && read) return;
+  // The endpoint itself checks the requested player against the signed-in
+  // parent's linked player IDs before reading or recording any progress.
+  if (path === "/api/coach/games/progress" &&
+      (read || request.method === "POST")) return;
   if (/^\/api\/coach\/training\/[^/]+$/.test(path) && !read) {
     const assignment = await lookup(
       "training_assignments",

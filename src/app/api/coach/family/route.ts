@@ -19,7 +19,7 @@ export async function GET(request: Request) {
       throw new LiveError("Choose one of your linked players.", 403);
     const selected = requested
       ? linkedPlayers.find((p) => p.id === requested)
-      : undefined;
+      : linkedPlayers.length === 1 ? linkedPlayers[0] : undefined;
     const parentTeams = Object.entries(s.teamRoles ?? {})
       .filter(([, r]) => r === "parent")
       .map(([id]) => id);

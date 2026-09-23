@@ -12,13 +12,17 @@ export default function GameDaySteps({
   const match = path.match(/^\/coach\/live\/([^/]+)/);
   const gameId = match && match[1] !== "new" ? match[1] : null;
   const stage =
-    gameStatus === "ready"
+    ["/coach/team", "/coach/access", "/coach/billing"].some((route) =>
+      path.startsWith(route),
+    )
+      ? null
+      : gameStatus === "ready"
       ? "Prepare"
       : gameStatus === "final"
         ? "Review"
         : path.includes("/insights") || ["/coach/dashboard", "/coach/stats", "/coach/intel", "/coach/import"].includes(path)
           ? "Review"
-          : path === "/coach/training"
+          : path === "/coach/training" || path.startsWith("/coach/practice")
             ? "Practice"
             : path === "/coach/live/new"
               ? "Prepare"
@@ -40,7 +44,7 @@ export default function GameDaySteps({
       gameId ? `/coach/live/${gameId}/insights` : "/coach/insights",
       "See what happened",
     ],
-    ["Practice", "/coach/training", "Build the next skill"],
+    ["Practice", canPrepare ? "/coach/practice" : "/coach/training", "Build the next skill"],
   ];
   return (
     <nav className="nf-steps" aria-label="Game-day steps">

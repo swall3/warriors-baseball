@@ -53,7 +53,7 @@ function syncProgress(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameKey, correct, daily }),
+        body: JSON.stringify({ attemptId: crypto.randomUUID(), gameKey, correct, daily }),
         keepalive: true,
       },
     ).catch(() => {});

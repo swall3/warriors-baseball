@@ -9,6 +9,9 @@ export default function Insights() {
   const [error, setError] = useState("");
   const [loading,setLoading]=useState(true);
   const [version, setVersion] = useState(0);
+  const [query, setQuery] = useState("");
+  const [source, setSource] = useState<"all" | "shared" | "imported">("all");
+  const [showAll, setShowAll] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -27,6 +30,11 @@ export default function Insights() {
       }).finally(()=>{if(!controller.signal.aborted)setLoading(false);});
     return () => controller.abort();
   }, [version]);
+  const filteredGames = games.filter((game) =>
+    (source === "all" || game.source === source) &&
+    `${game.label} ${game.date}`.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+  const visibleGames = showAll ? filteredGames : filteredGames.slice(0, 8);
   return (
     <Workspace catalog={catalog} active="Insights">
       <section className="nf-intro">
@@ -41,8 +49,28 @@ export default function Insights() {
       {error && (
         <LoadError error={error} retry={() => setVersion((v) => v + 1)} />
       )}
+      {games.length > 0 && (
+        <div className="nf-game-toolbar">
+          <label>
+            Find a game
+            <input type="search" value={query} placeholder="Opponent or date"
+              onChange={(event) => { setQuery(event.target.value); setShowAll(false); }} />
+          </label>
+          <label>
+            Show
+            <select value={source} onChange={(event) => {
+              setSource(event.target.value as "all" | "shared" | "imported");
+              setShowAll(false);
+            }}>
+              <option value="all">All games</option>
+              <option value="shared">Shared games</option>
+              <option value="imported">Imported games</option>
+            </select>
+          </label>
+        </div>
+      )}
       <div className="nf-game-list">
-        {games.map((g) => (
+        {visibleGames.map((g) => (
           <Link className="nf-game-row" key={g.id} href={g.href}>
             <span className={`nf-status nf-${g.status}`}>
               {g.source === "shared" ? g.status : "imported"}
@@ -58,6 +86,14 @@ export default function Insights() {
           </Link>
         ))}
       </div>
+      {!loading && games.length > 0 && !filteredGames.length && (
+        <p className="nf-muted">No games match that search.</p>
+      )}
+      {filteredGames.length > 8 && (
+        <button className="nf-game-more" onClick={() => setShowAll((value) => !value)}>
+          {showAll ? "Show fewer games" : `Show ${filteredGames.length - 8} more games`}
+        </button>
+      )}
       {loading && <p role="status">Loading game reviews…</p>}
       {!loading && !error && !games.length && (
         <p className="nf-card">No saved games available yet.</p>

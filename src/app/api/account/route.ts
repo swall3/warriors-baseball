@@ -34,18 +34,29 @@ export async function GET() {
     .select("org_id,role")
     .eq("user_id", user.id);
   if (members.error) return json({ error: "Unable to load memberships." }, 503);
-  const orgs = await db
-    .from("organizations")
-    .select("id,name")
-    .in(
-      "id",
-      members.data.map((m) => m.org_id),
-    )
-    .eq("active", true);
-  if (orgs.error) return json({ error: "Unable to load organizations." }, 503);
+  if (!members.data.length)
+    return json({
+      user: { id: user.id, email: user.email },
+      organizations: [],
+      selected: null,
+    });
+  const [orgs, teams] = await Promise.all([
+    db.from("organizations").select("id,name")
+      .in("id", members.data.map((m) => m.org_id)).eq("active", true),
+    db.from("team_members").select("org_id,role").eq("user_id", user.id),
+  ]);
+  if (orgs.error || teams.error)
+    return json({ error: "Unable to load organizations." }, 503);
   return json({
     user: { id: user.id, email: user.email },
-    organizations: orgs.data,
+    organizations: orgs.data.map((org) => ({
+      ...org,
+      role: members.data.find((member) => member.org_id === org.id)?.role,
+      canManageTeam: teams.data.some((team) => team.org_id === org.id &&
+        ["head_coach", "assistant_coach"].includes(team.role)),
+      hasFamily: teams.data.some((team) => team.org_id === org.id &&
+        team.role === "parent"),
+    })),
     selected: jar.get(ORG_COOKIE)?.value,
   });
 }

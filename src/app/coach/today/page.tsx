@@ -9,6 +9,7 @@ export default function Today() {
   const [gameError, setGameError] = useState("");
   const [loaded, setLoaded] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [showAllGames, setShowAllGames] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/coach/live", { cache: "no-store", signal: controller.signal })
@@ -27,6 +28,11 @@ export default function Today() {
   const current =
     games.find((g) => g.status === "live") ??
     games.find((g) => g.status === "ready");
+  const activeGames = games.filter((g) => g.status !== "final");
+  const finishedGames = games.filter((g) => g.status === "final");
+  const visibleGames = showAllGames
+    ? [...activeGames, ...finishedGames]
+    : [...activeGames, ...finishedGames.slice(0, 6)];
   return (
     <Workspace catalog={catalog} active="Today">
       <section className="nf-intro">
@@ -100,7 +106,7 @@ export default function Today() {
         <span>Open assigned practice and player progress →</span>
       </Link>
       <section id="games" className="nf-section">
-        <h2>Shared games</h2>
+        <h2>Shared games{loaded ? ` (${games.length})` : ""}</h2>
         {current && catalog && catalog.role !== "viewer" && (
           <p>
             <Link className="nf-button nf-secondary" href="/coach/live/new">
@@ -115,7 +121,7 @@ export default function Today() {
           </p>
         )}
         <div className="nf-game-list">
-          {games.map((g) => (
+          {visibleGames.map((g) => (
             <Link
               className="nf-game-row"
               href={
@@ -141,6 +147,11 @@ export default function Today() {
             </Link>
           ))}
         </div>
+        {finishedGames.length > 6 && (
+          <button className="nf-game-more" onClick={() => setShowAllGames((value) => !value)}>
+            {showAllGames ? "Show fewer games" : `Show ${finishedGames.length - 6} more finished games`}
+          </button>
+        )}
       </section>
     </Workspace>
   );
