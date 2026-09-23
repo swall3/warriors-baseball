@@ -94,7 +94,7 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players, mode =
   return <section className="iw-join-management">
     <h2>{mode === "parents" ? "Invite parents" : "Self-service joining"}</h2>
     <p>{mode === "parents"
-      ? "Share one link or QR code with your families. Parents enter their own email and request their children; you match each request to the roster before access opens."
+      ? "Match each family's request to a player on your roster before access opens."
       : "Parents and coaches enter their own email. No access is granted until you review the request."}</p>
     {error && <p className="nf-notice" role="alert">{error}</p>}
     {message && <p className="nf-notice" role="status">{message}</p>}
