@@ -40,6 +40,9 @@ data/
 # Mobile pilot binaries and signing material stay outside Git.
 mobile/dist/
 mobile/ios/
+mobile/ios-app/*.xcodeproj/
+mobile/ios-app/build/
+mobile/ios-app/DerivedData/
 mobile/android/.gradle/
 mobile/android/**/build/
 mobile/android/local.properties
