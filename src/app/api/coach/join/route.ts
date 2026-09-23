@@ -14,6 +14,14 @@ export async function GET(request: Request) {
       .map(([id]) => id);
     if (!admin && !coachTeams.length) throw new LiveError("Coach access required.", 403);
     const db = accessDb();
+    if (new URL(request.url).searchParams.get("summary") === "1") {
+      let query = db.from("join_requests").select("id", { count: "exact", head: true })
+        .eq("org_id", s.orgId).eq("status", "pending");
+      if (!admin) query = query.eq("kind", "parent").in("team_id", coachTeams);
+      const { count, error } = await query;
+      if (error) throw new LiveError("Unable to load review count.", 503);
+      return reply({ pendingCount: count ?? 0 });
+    }
     const [links, requests] = await Promise.all([
       db.from("join_links").select("token,team_id,kind,expires_at,created_at")
         .eq("org_id", s.orgId).is("revoked_at", null)
