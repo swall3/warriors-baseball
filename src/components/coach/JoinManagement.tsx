@@ -43,6 +43,11 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players, mode =
     setData(d);
   }
   useEffect(() => { void load().catch((e) => setError(e.message)); }, []);
+  useEffect(() => {
+    if (data && location.hash === "#join-requests") {
+      document.getElementById("join-requests")?.scrollIntoView();
+    }
+  }, [data]);
   async function act(body: Record<string, unknown>) {
     setBusy(true); setError(""); setMessage("");
     try {
@@ -52,6 +57,9 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players, mode =
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       await load();
+      if (body.action === "approve" || body.action === "reject") {
+        window.dispatchEvent(new Event("iw:reviews-changed"));
+      }
       setMessage(body.action === "create_link" ? "New link ready to share. The previous link is off."
         : body.action === "revoke_link" ? "Join link turned off." : "Request reviewed.");
     } catch (e) { setError(e instanceof Error ? e.message : "Please retry."); }
@@ -66,7 +74,7 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players, mode =
   const coachLink = data?.links.find((l) => l.kind === "coach");
   const pending = (data?.requests ?? []).filter((r) =>
     mode === "parents" ? r.kind === "parent" && r.team_id === teamId
-      : r.kind === "coach" ? admin : r.team_id === teamId);
+      : true);
   const linkCard = (kind: "parent" | "coach", link?: LinkRow) => (
     <div className="iw-member" style={{ display: "block" }}>
       <strong>{kind === "parent" ? "Parent join link" : "Organization coach join link"}</strong>
@@ -101,7 +109,9 @@ export function JoinManagement({ teamId, admin, canCoach, teams, players, mode =
     {!data && !error && <p>Loading join links…</p>}
     {data && canCoach && teamId && linkCard("parent", parentLink)}
     {data && mode === "all" && admin && linkCard("coach", coachLink)}
-    {data && <h3>{mode === "parents" ? "Parent requests" : "Pending join requests"}</h3>}
+    {data && <h3 id={mode === "all" ? "join-requests" : undefined}>
+      {mode === "parents" ? "Parent requests" : "Pending join requests"}
+    </h3>}
     {data && !pending.length && <p>{mode === "parents" ? "No parent requests waiting for approval." : "No requests waiting for approval."}</p>}
     {pending.map((r) => {
       const person = data?.users.find((u) => u.id === r.user_id)?.email ?? "Verified account";

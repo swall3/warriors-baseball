@@ -1327,6 +1327,47 @@
   font-size: 12px;
   color: #5a6961;
 }
+.nf-review-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 6px 8px;
+  border: 1.5px solid #cdd5cd;
+  border-radius: 10px;
+  color: #1b4d3e;
+  white-space: nowrap;
+}
+.nf-review-alert:hover { border-color: #1b4d3e; }
+.nf-review-alert.is-pending { background: #fff3e8; border-color: #e8611a; }
+.nf-review-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  color: white;
+  background: #b84512;
+  font-size: 12px;
+  font-weight: 800;
+}
+.nf-review-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 22px 0;
+  padding: 16px 20px;
+  border: 1px solid #e8ba8e;
+  border-radius: 12px;
+  background: #fff3e8;
+  color: #542a16;
+}
+.nf-review-banner span { font-weight: 800; white-space: nowrap; }
 .nf-account-link {
   font-size: 13px;
   font-weight: 800;
@@ -1340,6 +1381,15 @@
 .nf-account-link:hover {
   border-color: #101720;
   color: var(--nf-green);
+}
+@media (max-width: 480px) {
+  .nf-top { padding: 0 12px; gap: 8px; }
+  .nf-wordmark { font-size: 18px; letter-spacing: 1px; white-space: nowrap; }
+  .nf-wordmark span { font-size: 28px; margin-left: 4px; }
+  .nf-top-right { gap: 8px; }
+  .nf-review-alert { min-width: 36px; min-height: 36px; padding: 5px; }
+  .nf-account-link { padding: 8px 10px; }
+  .nf-review-banner { align-items: flex-start; flex-direction: column; }
 }
 .nf-account-manage {
   display: flex;

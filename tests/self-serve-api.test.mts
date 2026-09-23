@@ -22,7 +22,7 @@ const cleanup = () => sql(`
   delete from teams where org_id in (select id from organizations where name='API Signup Club');
   delete from organizations where name='API Signup Club';
   delete from join_requests where org_id='access-api' and user_id in ('${ids.newparent}','${ids.newcoach}');
-  delete from join_links where org_id='access-api' and created_by='${ids.owner}';
+  delete from join_links where org_id='access-api' and created_by in ('${ids.owner}','${ids.newcoach}');
   delete from org_members where org_id='access-api' and user_id in ('${ids.newparent}','${ids.newcoach}');
 `);
 const checked = async (r: Response, status = 200) => {
@@ -52,6 +52,8 @@ test("shared parent and coach links require verified signup and approval", async
     await checked(await call("newparent", "/api/onboarding", {
       action: "request", token: parentLink.token, childName: "Linked Child",
     }));
+    assert.equal((await checked(await call("owner", "/api/coach/join?summary=1"))).pendingCount, 1);
+    await checked(await call("newparent", "/api/coach/join?summary=1"), 401);
     const before = await checked(await call("newparent", "/api/account"));
     assert.equal(before.organizations.length, 0);
     const parentQueue = await checked(await call("owner", "/api/coach/join"));
@@ -63,6 +65,7 @@ test("shared parent and coach links require verified signup and approval", async
     await checked(await call("owner", "/api/coach/join", {
       action: "approve", requestId: parentRequest.id, playerId: "access-api-child",
     }));
+    assert.equal((await checked(await call("owner", "/api/coach/join?summary=1"))).pendingCount, 0);
     const after = await checked(await call("newparent", "/api/account"));
     assert.equal(after.organizations[0].hasFamily, true);
     const family = await checked(await call("newparent", "/api/coach/family"));
@@ -77,12 +80,28 @@ test("shared parent and coach links require verified signup and approval", async
     await checked(await call("newcoach", "/api/onboarding", {
       action: "request", token: coachLink.token, note: "I coach 10U",
     }));
+    assert.equal((await checked(await call("owner", "/api/coach/join?summary=1"))).pendingCount, 1);
     const coachQueue = await checked(await call("owner", "/api/coach/join"));
     const coachRequest = coachQueue.requests.find((r: any) => r.kind === "coach" && r.user_id === ids.newcoach);
     assert.ok(coachRequest);
     await checked(await call("owner", "/api/coach/join", {
       action: "approve", requestId: coachRequest.id, teamId: "access-api-b", role: "assistant_coach",
     }));
+    assert.equal((await checked(await call("newcoach", "/api/coach/join?summary=1"))).pendingCount, 0);
+    const assistantQueue = await checked(await call("newcoach", "/api/coach/join"));
+    assert.equal(assistantQueue.requests.length, 0);
+    await checked(await call("newcoach", "/api/coach/join", {
+      action: "create_link", kind: "parent", teamId: "access-api-a",
+    }), 409);
+    const assistantLink = await checked(await call("newcoach", "/api/coach/join", {
+      action: "create_link", kind: "parent", teamId: "access-api-b",
+    }));
+    assert.match(assistantLink.token, /^[A-Za-z0-9_-]{43}$/);
+    await checked(await call("newparent", "/api/onboarding", {
+      action: "request", token: parentLink.token, childName: "Second Child",
+    }));
+    assert.equal((await checked(await call("owner", "/api/coach/join?summary=1"))).pendingCount, 1);
+    assert.equal((await checked(await call("newcoach", "/api/coach/join?summary=1"))).pendingCount, 0);
     const catalog = await checked(await call("newcoach", "/api/coach/catalog"));
     assert.deepEqual(catalog.teams.map((t: any) => t.id), ["access-api-b"]);
 

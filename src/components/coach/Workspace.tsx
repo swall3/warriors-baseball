@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import GameDaySteps from "./GameDaySteps";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 export type Catalog = {
@@ -45,6 +46,42 @@ export function useCatalog() {
   }, [attempt]);
   return { catalog, error, retry: () => setAttempt((x) => x + 1) };
 }
+function usePendingReviews(enabled: boolean, orgId?: string) {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!enabled) return;
+    setCount(null);
+    let active = true;
+    let latest = 0;
+    const refresh = async () => {
+      const request = ++latest;
+      try {
+        const response = await fetch("/api/coach/join?summary=1", { cache: "no-store" });
+        if (!response.ok) throw new Error("Unable to load reviews.");
+        const data = await response.json();
+        if (active && request === latest)
+          setCount(typeof data.pendingCount === "number" ? data.pendingCount : null);
+      } catch {
+        if (active && request === latest) setCount(null);
+      }
+    };
+    const onFocus = () => void refresh();
+    const onVisible = () => { if (document.visibilityState === "visible") void refresh(); };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 60_000);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("iw:reviews-changed", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("iw:reviews-changed", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [enabled, orgId]);
+  return count;
+}
 export function Workspace({
   catalog,
   children,
@@ -60,6 +97,10 @@ export function Workspace({
   compact?: boolean;
   gameStatus?: string;
 }) {
+  const pathname = usePathname();
+  const canReview = !!catalog?.personalAccount &&
+    (!!catalog.canManageOrganization || catalog.role !== "viewer");
+  const reviewCount = usePendingReviews(canReview, catalog?.organization.id);
   const color = catalog?.organization.branding?.colors?.primary;
   const style = {
     "--nf-team": color && /^#[0-9a-f]{6}$/i.test(color) ? color : "#0f2044",
@@ -75,6 +116,20 @@ export function Workspace({
         </Link>
         <div className="nf-top-right">
           <span>Game day &amp; player development</span>
+          {canReview && <Link href="/coach/access#join-requests"
+            className={`nf-review-alert${reviewCount !== null && reviewCount > 0 ? " is-pending" : ""}`}
+            aria-label={reviewCount !== null && reviewCount > 0
+              ? `${reviewCount} ${reviewCount === 1 ? "request needs" : "requests need"} review`
+              : "Review requests"}
+            title="Review requests">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+              <path d="M10 21h4" />
+            </svg>
+            {reviewCount !== null && reviewCount > 0 &&
+              <span className="nf-review-count" aria-hidden="true">{reviewCount}</span>}
+          </Link>}
           <Link href="/account" className="nf-account-link">
             Account
           </Link>
@@ -112,6 +167,12 @@ export function Workspace({
             canPrepare={catalog?.role !== "viewer"}
             gameStatus={gameStatus}
           />
+        )}
+        {!compact && pathname === "/coach/today" && reviewCount !== null && reviewCount > 0 && (
+          <Link href="/coach/access#join-requests" className="nf-review-banner">
+            <strong>{reviewCount} {reviewCount === 1 ? "request needs" : "requests need"} your review</strong>
+            <span>Review now →</span>
+          </Link>
         )}
         {children}
         <footer className="nf-footer">

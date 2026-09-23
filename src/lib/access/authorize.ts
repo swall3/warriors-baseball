@@ -61,6 +61,7 @@ export async function authorizeRequest(s: CoachSession, request: Request) {
   }
   if (isFamilyOnly(s)) denied();
   if (path === "/api/coach/access") return; // RPC performs role and target checks under a lock.
+  if (path === "/api/coach/join") return; // Route scopes reads; RPC authorizes each mutation.
   if (
     [
       "/api/coach/live",
