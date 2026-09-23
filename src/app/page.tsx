@@ -53,6 +53,7 @@ export default function AppHome() {
             </span>
           </Link>
         </section>
+        <p className="nf-home-start"><Link href="/account?intent=create">New coach? Create your organization →</Link></p>
         <footer>
           On your phone. In the dugout. Wherever the game takes you.
         </footer>

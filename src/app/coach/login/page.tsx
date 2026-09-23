@@ -77,6 +77,9 @@ function LoginForm() {
         >
           Sign in with email →
         </Link>
+        <Link href="/account?intent=create" className="mt-3 block text-sm font-semibold underline">
+          New coach? Create an organization
+        </Link>
         <form onSubmit={submit} className="mt-8 space-y-4">
           <input
             type="password"

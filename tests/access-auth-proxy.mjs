@@ -1,6 +1,6 @@
 // Disposable, loopback-only test auth service. Never used by deployed code.
 import http from 'node:http';
-const ids={owner:'bbbbbbbb-0000-4000-8000-000000000001',coach:'bbbbbbbb-0000-4000-8000-000000000002',parent:'bbbbbbbb-0000-4000-8000-000000000003',other:'bbbbbbbb-0000-4000-8000-000000000004'};
+const ids={owner:'bbbbbbbb-0000-4000-8000-000000000001',coach:'bbbbbbbb-0000-4000-8000-000000000002',parent:'bbbbbbbb-0000-4000-8000-000000000003',other:'bbbbbbbb-0000-4000-8000-000000000004',newcoach:'cccccccc-0000-4000-8000-000000000001',newparent:'cccccccc-0000-4000-8000-000000000002'};
 const user=(name)=>({id:ids[name],email:`${name}@access.example.test`,email_confirmed_at:new Date().toISOString(),is_anonymous:false,aud:'authenticated',role:'authenticated',created_at:new Date().toISOString(),app_metadata:{},user_metadata:{}});
 http.createServer(async(req,res)=>{
   if(req.url.startsWith('/rest/v1')){
