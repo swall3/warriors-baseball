@@ -47,13 +47,20 @@ select
      where table_schema='public' and table_name='practice_plans'
        and column_name in ('source_game_id','recommendation_context'))
                                                           as new_cols_present_count; -- expect 0
---    4b. FK targets have PK/unique on (org_id,id).
-select conrelid::regclass as tbl, conname, contype
+--    4b. FK targets have PK/unique on (org_id,id). Print the column list via
+--    pg_get_constraintdef so we can confirm the exact (org_id,id) shape the
+--    composite FK in custom_practice_drills depends on.
+select conrelid::regclass as tbl, conname, contype,
+       pg_get_constraintdef(oid) as def
 from pg_constraint
 where conrelid in ('public.live_games'::regclass, 'public.teams'::regclass)
   and contype in ('p','u')
   and conkey is not null
 order by tbl, conname;
+--    4b2. practice_plans must have org_id (the composite FK/alter references it).
+select column_name, data_type from information_schema.columns
+where table_schema='public' and table_name='practice_plans'
+  and column_name='org_id';
 --    4c. organizations(id) PK exists (drill FK target).
 select conname, contype from pg_constraint
 where conrelid='public.organizations'::regclass and contype='p';
