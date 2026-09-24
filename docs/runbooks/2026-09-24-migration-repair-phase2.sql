@@ -7,18 +7,27 @@
 -- Owner-run. One transaction: guards first, so ANY failed precondition raises
 -- and rolls back the whole thing.
 --
--- This file does exactly three things, nothing else:
+-- This file does exactly two things, nothing else:
 --   1. Apply custom_practice_drills (20260922193000) — genuinely NOT applied;
 --      its absence breaks practice-plan CREATE + the custom-drills UI in prod.
 --   2. Record-only history row for game_progress   (20260922200000) — table
 --      already EXISTS live (plain CREATE, no IF NOT EXISTS -> never re-run DDL).
---   3. Record-only history row for practice_plans   (20260922180001) — table
---      already EXISTS live, guarded below.
+--
+-- practice_plans (20260922180001) is ALSO unrecorded-but-live, but recording it
+-- safely needs a content match (name match != content match), which Phase 1b
+-- section 2 proves. It is therefore recorded in Phase 3 alongside the 6
+-- unknown-status migrations — NOT here. This file only guards that
+-- practice_plans.org_id exists (a precondition of the custom_practice_drills
+-- ALTER); it does not verify the whole practice_plans shape.
 --
 -- The 6 other unrecorded timestamped migrations and the 15 legacy 001..015
 -- files are OUT OF SCOPE here (history-only Phase 3, after Phase 1b proves
 -- each is live). DO NOT run `supabase db push` / `migration up` against prod:
 -- it would re-run every unrecorded CREATE TABLE, incl. game_progress.
+--
+-- RUN AS A SINGLE execute_sql CALL. If run statement-by-statement, each stmt
+-- gets a fresh session, `begin;` applies to nothing, and a failed guard can
+-- leave partial DDL committed. One call, whole file.
 -- ============================================================================
 
 begin;
@@ -120,22 +129,20 @@ values ('20260922193000', 'custom_practice_drills');
 insert into supabase_migrations.schema_migrations (version, name)
 values ('20260922200000', 'game_progress');
 
---   (3) practice_plans — record-only (table already live, guarded above).
-insert into supabase_migrations.schema_migrations (version, name)
-values ('20260922180001', 'practice_plans');
+commit;
 
--- ---- Read-only verification (still inside the txn; results returned pre-commit).
+-- ---- Read-only verification, AFTER commit (autocommit). A multi-statement
+--      endpoint returns only the LAST statement's rows, so the history-rows
+--      select is last and is what comes back as proof.
 select 'custom_practice_drills exists' as check,
-       to_regclass('public.custom_practice_drills')::text as result;
+       to_regclass('public.custom_practice_drills')::text as result; -- expect non-null
 select 'practice_plans new cols' as check,
        (select count(*) from information_schema.columns
         where table_schema='public' and table_name='practice_plans'
           and column_name in ('source_game_id','recommendation_context')) as result; -- expect 2
 select version, name from supabase_migrations.schema_migrations
-where version in ('20260922193000','20260922200000','20260922180001')
-order by version;
-
-commit;
+where version in ('20260922193000','20260922200000')
+order by version; -- expect exactly these 2 rows
 
 -- ============================================================================
 -- END PHASE 2. After commit, smoke-test in prod: create a custom drill

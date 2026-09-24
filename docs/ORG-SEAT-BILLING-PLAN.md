@@ -8,12 +8,12 @@ PRs. Product spec: `SEATS-AND-GAME-ACCESS.md`. Current foundation: `TEAM-BILLING
 
 | Concern | Location | Shape |
 |---|---|---|
-| Billing row | `public.team_billing`, one per `(org_id, team_id)` | `supabase/migrations/20260922114805_team_billing.sql` |
+| Billing row | `public.team_billing`, one per `(org_id, team_id)` | `supabase/migrations/20260922120148_team_billing.sql` |
 | Lease RPC | `acquire_billing_lease(uuid,uuid)` — 3 min, updates `team_billing` | same file |
 | Orchestration | `checkoutForOwner`, `portal`, `reconcile`, `lease`, `save`, `rowFor`, `billingScope`, `assertCanStartGame` | `src/lib/billing/server.ts` |
 | Pure policy | `teamAccess`, `billingMode`, `validInterval`, `trialDays` | `src/lib/billing/policy.ts` |
 | Webhook | dedupe → customer lookup → `lease` → `reconcile` | `src/app/api/billing/webhook/route.ts` |
-| Team creation | `manage_team_access` RPC, `create_team` branch (line 91-97) — inserts a `team_billing` row | `supabase/migrations/20260922135427_organization_team_access.sql` |
+| Team creation | `manage_team_access` RPC, `create_team` branch (line 91-97) — inserts a `team_billing` row | `supabase/migrations/20260922142727_organization_team_access.sql` |
 | Route policy | `authorizeRequest` | `src/lib/access/authorize.ts` |
 
 **Two couplings the spec does not mention and that dominate sequencing:**
