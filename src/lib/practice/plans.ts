@@ -1,7 +1,7 @@
 // Custom team practice plans (Decision 2, MVP scope item 3). Preloaded
 // drills/templates stay in code (drills.ts, templates.ts); only
 // coach-authored plans persist here, in practice_plans
-// (supabase/migrations/20260922180000_practice_plans.sql).
+// (supabase/migrations/20260922180001_practice_plans.sql).
 //
 // Follows the same server-only-persistence shape as
 // src/lib/coach/live/training-store.ts: a CoachSession-scoped query, org_id
