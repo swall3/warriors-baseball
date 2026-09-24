@@ -1,6 +1,7 @@
 import { sessionFor, reply, failure } from "@/lib/coach/live/http";
 import { accessDb } from "@/lib/access/identity";
 import { LiveError } from "@/lib/coach/live/store";
+import { BACKUP_SCENARIOS } from "@/lib/gameData";
 // Decision 5 (PRACTICE-ASSIGNMENT-AND-DRILLS.md): a parent can have more than
 // one linked player, possibly on different teams (the same org — a different
 // org means a different session entirely, selected via /account). `player`
@@ -112,7 +113,16 @@ export async function GET(request: Request) {
       upcoming,
       stats,
       gameProgress: gameProgress.data ?? [],
-      practice: practice.data,
+      // Resolve display text server-side so the parent UI renders the prompt
+      // without importing the answer pool into the browser bundle.
+      practice: (practice.data ?? []).map((p) => {
+        const scenario = BACKUP_SCENARIOS.find((s) => s.id === p.scenario_id);
+        return {
+          ...p,
+          scenario_label: scenario?.label ?? null,
+          scenario_question: scenario?.question ?? null,
+        };
+      }),
       players: players.data,
       // Full roster of linked kids (with team) for the switcher, plus which
       // one (if any) this response was scoped to.

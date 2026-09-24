@@ -6,8 +6,9 @@ import PracticeSession from "@/components/coach/PracticeSession";
 import Link from "next/link";
 import PracticeAssignment from "@/components/coach/PracticeAssignment";
 import { Diamond, FIELD_POS } from "@/components/Diamond";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
-import type { PositionPracticeBundle } from "@/lib/practice/bundles";
+import { SCENARIO_CATALOG_BY_ID } from "@/lib/scenarioCatalog";
+import type { FieldZone } from "@/lib/scenarioTypes";
+import type { PositionPracticeBundleSummary } from "@/lib/practice/bundleSummaries";
 type Assignment = {
   id: string;
   player_id: string;
@@ -19,6 +20,10 @@ type Assignment = {
   correct: number;
   bundle_assignment_id: string | null;
   bundle_position: number | null;
+  // Server-resolved display text (assignments() enriches these). scenario_label
+  // is client-safe; scenario_question is a coach-only prompt (never public).
+  scenario_label?: string | null;
+  scenario_question?: string | null;
 };
 type BundleAssignment = {
   id: string;
@@ -31,7 +36,7 @@ type BundleAssignment = {
   scenarios_completed: number;
   total_attempts: number;
   total_correct: number;
-  bundle: PositionPracticeBundle | null;
+  bundle: PositionPracticeBundleSummary | null;
 };
 export default function Training() {
   const { catalog, error: catalogError, retry } = useCatalog();
@@ -51,6 +56,7 @@ export default function Training() {
   const [feedback, setFeedback] = useState<{
     correct: boolean;
     explanation: string;
+    targetZone?: FieldZone | null;
   } | null>(null);
   const [pending, setPending] = useState<{ id: string; answer: string } | null>(
     null,
@@ -105,7 +111,12 @@ export default function Training() {
       setBusy(false);
     }
   }
-  const scenario = BACKUP_SCENARIOS.find((s) => s.id === active?.scenario_id);
+  // Client-safe scenario metadata (runners/ballZone/label). The answer fields
+  // (question/targetZone/explanation) come from the server: the prompt from the
+  // enriched assignment row, the answer position + explanation from grading.
+  const scenario = active
+    ? SCENARIO_CATALOG_BY_ID[active.scenario_id]
+    : undefined;
   const activeBundle = active?.bundle_assignment_id
     ? bundleRows.find((b) => b.id === active.bundle_assignment_id)
     : undefined;
@@ -132,13 +143,15 @@ export default function Training() {
             {name.toUpperCase()}’S PRACTICE
           </p>
           <h1 ref={lessonHeading} tabIndex={-1}>
-            {feedback?.correct ? "You’ve got it!" : scenario.question}
+            {feedback?.correct
+              ? "You’ve got it!"
+              : (active.scenario_question ?? scenario.label)}
           </h1>
           {activeBundle?.bundle && (
             <p className="nf-eyebrow">
               {activeBundle.bundle.label} · rep{" "}
               {(active.bundle_position ?? 0) + 1} of{" "}
-              {activeBundle.bundle.scenarioIds.length}
+              {activeBundle.scenario_count}
             </p>
           )}
           {active.note && (
@@ -149,7 +162,9 @@ export default function Training() {
               <Diamond
                 runners={scenario.runners}
                 ballZone={scenario.ballZone}
-                targetZone={feedback?.correct ? scenario.targetZone : undefined}
+                targetZone={
+                  feedback?.correct ? (feedback.targetZone ?? undefined) : undefined
+                }
                 tappedZone={answer}
                 tapState={
                   feedback ? (feedback.correct ? "correct" : "wrong") : null
@@ -382,7 +397,8 @@ export default function Training() {
                 {a.correct > 0 ? "COMPLETED" : "ASSIGNED PRACTICE"}
               </p>
               <h3>
-                {BACKUP_SCENARIOS.find((s) => s.id === a.scenario_id)?.label ??
+                {a.scenario_label ??
+                  SCENARIO_CATALOG_BY_ID[a.scenario_id]?.label ??
                   "Practice unavailable"}
               </h3>
               {a.note && <p>{a.note}</p>}

@@ -157,3 +157,98 @@ test("no two scenarios ask the identical question", () => {
     seen.set(key, s.id);
   }
 });
+
+// ── Answer-isolation guards (leak fix) ────────────────────────────────────
+// The client-safe catalog must never let a browser recover answer fields.
+import {
+  SCENARIO_CATALOG,
+  SCENARIO_CATALOG_BY_ID,
+  BUNDLE_SUMMARIES,
+} from "../src/lib/scenarioCatalog.ts";
+import { POSITION_PRACTICE_BUNDLE_SUMMARIES } from "../src/lib/practice/bundleSummaries.ts";
+
+const ANSWER_KEYS = ["question", "targetZone", "explanation"];
+
+test("generated catalog stays in sync with the pool's safe fields", () => {
+  assert.equal(
+    SCENARIO_CATALOG.length,
+    BACKUP_SCENARIOS.length,
+    "catalog is stale — run scripts/gen-scenario-catalog.mjs",
+  );
+  for (const s of BACKUP_SCENARIOS) {
+    const c = SCENARIO_CATALOG_BY_ID[s.id];
+    assert.ok(c, `catalog missing ${s.id} — regenerate the catalog`);
+    assert.equal(c.label, s.label);
+    assert.equal(c.category, s.category);
+    assert.equal(c.ballZone, s.ballZone);
+    assert.deepEqual(c.runners, s.runners);
+  }
+});
+
+test("no client-safe scenario object carries an answer field", () => {
+  for (const c of SCENARIO_CATALOG)
+    for (const k of ANSWER_KEYS)
+      assert.ok(!(k in c), `catalog entry ${c.id} leaks answer field ${k}`);
+});
+
+test("client bundle summaries expose no scenarioId lists", () => {
+  for (const b of POSITION_PRACTICE_BUNDLE_SUMMARIES) {
+    assert.ok(!("scenarioIds" in b), `${b.id} leaks scenarioIds`);
+    assert.equal(typeof b.scenarioCount, "number");
+  }
+});
+
+test("targetZone cannot be recovered from client-only data", () => {
+  // An attacker holds SCENARIO_CATALOG (has ballZone) + BUNDLE_SUMMARIES
+  // (counts only). Without per-scenario membership, no targetZone is derivable.
+  for (const [, summary] of Object.entries(BUNDLE_SUMMARIES)) {
+    assert.ok(!("scenarioIds" in summary));
+    assert.ok(!("ids" in summary));
+  }
+  // Nothing in the client catalog references targetZone.
+  const serialized = JSON.stringify({ SCENARIO_CATALOG, BUNDLE_SUMMARIES });
+  for (const s of BACKUP_SCENARIOS)
+    assert.ok(
+      !serialized.includes(s.explanation) && !serialized.includes(s.question),
+      `client data contains answer text for ${s.id}`,
+    );
+});
+
+// ── Server↔client bundle parity ───────────────────────────────────────────
+// The generator (client summaries) and bundles.ts (server membership) derive
+// the same rule independently. Assert they never drift, or the picker's rep
+// counts would disagree with what the server assigns.
+import { POSITION_PRACTICE_BUNDLES } from "../src/lib/practice/bundles.ts";
+
+test("client bundle summaries match server bundle membership", () => {
+  const summaryById = Object.fromEntries(
+    POSITION_PRACTICE_BUNDLE_SUMMARIES.map((b) => [b.id, b]),
+  );
+  assert.equal(
+    POSITION_PRACTICE_BUNDLE_SUMMARIES.length,
+    POSITION_PRACTICE_BUNDLES.length,
+    "bundle count drift — regenerate the catalog",
+  );
+  for (const server of POSITION_PRACTICE_BUNDLES) {
+    const client = summaryById[server.id];
+    assert.ok(client, `client summary missing ${server.id}`);
+    assert.equal(
+      client.scenarioCount,
+      server.scenarioIds.length,
+      `${server.id} count drift`,
+    );
+    assert.deepEqual(client.categoryCounts, server.categoryCounts);
+    assert.equal(client.position, server.position);
+  }
+});
+
+test("catalog sync also covers ballReachesTarget", () => {
+  for (const s of BACKUP_SCENARIOS) {
+    const c = SCENARIO_CATALOG_BY_ID[s.id];
+    assert.equal(
+      c.ballReachesTarget ?? undefined,
+      s.ballReachesTarget ?? undefined,
+      `${s.id} ballReachesTarget drift`,
+    );
+  }
+});

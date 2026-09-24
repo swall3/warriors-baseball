@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import InstallPrompt from "@/components/InstallPrompt";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
 import { setGameProgressPlayer } from "@/lib/gameStorage";
 type Game = { id: string; date: string; opponent: string; status: string };
 type Stats = {
@@ -31,6 +30,9 @@ type Data = {
     player_id: string;
     scenario_id: string;
     note: string;
+    // Server-resolved display text (no answer pool in the client bundle).
+    scenario_label?: string | null;
+    scenario_question?: string | null;
   }[];
   players: { id: string; display_name: string }[];
   linkedPlayers: { id: string; teamId: string; displayName: string }[];
@@ -312,9 +314,6 @@ export default function Family() {
 
             <h2>Assigned practice</h2>
             {data?.practice.map((a) => {
-              const scenario = BACKUP_SCENARIOS.find(
-                (s) => s.id === a.scenario_id,
-              );
               return (
                 <article className="nf-card nf-section" key={a.id}>
                   <h3>
@@ -324,8 +323,8 @@ export default function Family() {
                     }
                   </h3>
                   <p>{a.note}</p>
-                  <p>{scenario?.label}</p>
-                  <p>{scenario?.question}</p>
+                  <p>{a.scenario_label}</p>
+                  <p>{a.scenario_question}</p>
                   <div className="iw-position-answers">
                     {["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"].map(
                       (p) => (

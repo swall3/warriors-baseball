@@ -1,3 +1,17 @@
+// NOTE: this module holds the ANSWER pool (BACKUP_SCENARIOS with question,
+// targetZone, explanation). Only import it from server code (route handlers,
+// server components, server-side lib). Client components must import the
+// answer-free projection from "@/lib/scenarioCatalog" + "@/lib/scenarioTypes"
+// instead, so paid answers never ship in a browser bundle. See
+// docs/BACKEND-VERIFICATION.md (scenario answer isolation).
+import type { ScenarioCatalogEntry, FieldZone } from "./scenarioTypes.ts";
+
+// Re-export the client-safe types/constants so existing imports of these names
+// from "@/lib/gameData" keep working. New client code should import them from
+// "@/lib/scenarioTypes" directly.
+export type { ScenarioCategory, FieldZone, ScenarioCatalogEntry } from "./scenarioTypes.ts";
+export { SCENARIO_CATEGORIES, CATEGORY_LABELS } from "./scenarioTypes.ts";
+
 export type RulesQuestion = {
   id: string;
   question: string;
@@ -21,39 +35,16 @@ export type RulesQuestion = {
 // The backup/miss_recovery line is deliberate: "RF backs up first on every
 // throw over there" is a habit you build before the mistake; "the throw went
 // into right field — now what?" is a different rep, and kids need both.
-export type ScenarioCategory = 'cover' | 'backup' | 'relay' | 'miss_recovery';
+// (ScenarioCategory / SCENARIO_CATEGORIES / CATEGORY_LABELS now live in
+//  ./scenarioTypes and are re-exported above.)
 
-export const SCENARIO_CATEGORIES: ScenarioCategory[] = [
-  'cover',
-  'backup',
-  'relay',
-  'miss_recovery',
-];
-
-export const CATEGORY_LABELS: Record<ScenarioCategory, string> = {
-  cover: 'Who covers',
-  backup: 'Who backs up',
-  relay: 'Who to throw to',
-  miss_recovery: 'When we miss',
-};
-
-export type BackupScenario = {
-  id: string;
-  label: string;
-  category: ScenarioCategory;
-  runners: { first: boolean; second: boolean; third: boolean };
-  // ballZone = where the ball is / where the action originates
-  ballZone: 'LF' | 'CF' | 'RF' | 'P' | '1B' | '2B' | 'SS' | '3B' | 'C';
+// A full scenario = the client-safe catalog fields PLUS the answer fields
+// (question, targetZone, explanation). Keep answer fields ONLY here.
+export type BackupScenario = ScenarioCatalogEntry & {
   question: string;
-  // targetZone = the position circle the player should tap
-  targetZone: 'LF' | 'CF' | 'RF' | 'P' | '1B' | '2B' | 'SS' | '3B' | 'C';
+  // targetZone = the position circle the player should tap (the answer)
+  targetZone: FieldZone;
   explanation: string;
-  // Does the ball actually travel from ballZone to targetZone (a real throw/relay
-  // the target receives), or is targetZone a pure backup/standby/mental-check role
-  // that never touches the ball in this depicted moment? Defaults to true (relay
-  // shown as a second ball hop after the answer reveal). Set false for backup-only
-  // positions so we don't animate a throw that never happens.
-  ballReachesTarget?: boolean;
 };
 
 // ─── RULES QUIZ ─────────────────────────────────────────────────────────────
