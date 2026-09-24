@@ -47,6 +47,23 @@ html, body {
   color: #111;
 }
 
+/* Safe-area insets, applied once at the root for every surface.
+   The root layout sets viewportFit:"cover", so content extends into the
+   notch, the rounded corners and the home-indicator strip on iOS. Before
+   this, the only compensation lived in coach.css scoped to .dugout-theme
+   (and gated behind `display-mode: standalone`), which meant the public
+   site and /games had none — the play-of-the-day copy rendered underneath
+   Safari's floating bottom toolbar.
+   Deliberately NOT gated behind a display-mode query: env() resolves to 0px
+   wherever there is no inset, so this is inert on desktop and in
+   non-cover browsers, and there is no second place to keep in sync. */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .font-display {
   font-family: 'Anton', Impact, sans-serif;
   font-weight: 400;

@@ -235,16 +235,12 @@
   }
 }
 
-/* Standalone (installed PWA) uses viewportFit:cover — keep content clear of the
-   notch, status bar, and home indicator instead of sliding under them. */
-@media (display-mode: standalone) {
-  .dugout-theme {
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
+/* Safe-area insets used to be applied here, on .dugout-theme, behind a
+   `@media (display-mode: standalone)` query. They now live once on `body` in
+   globals.css, ungated, so that every surface gets them rather than only the
+   coach shell in the installed PWA. Keeping a copy here would double the
+   padding on coach screens, so this block is intentionally gone rather than
+   merely disabled — see the note in globals.css. */
 
 /* REMOVED in the light-theme pass: ~200 lines of dark-surface chrome that this
    file defined and nothing referenced — .glass, .stat-card, .btn-primary,
