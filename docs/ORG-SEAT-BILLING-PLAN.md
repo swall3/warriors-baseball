@@ -308,7 +308,7 @@ only — opponent teams never count (filter already applied in
 
 ### 3.2 Creation chokepoint — `manage_team_access`, `create_team` branch
 
-(migration 20260922135427, lines 91-97.) The function already takes
+(migration 20260922142727, lines 91-97.) The function already takes
 `select ... from public.organizations where id=p_org and active for update`
 before every branch — the seat check under that existing row lock is race-free
 with no new locking. `access/route.ts:138-145` surfaces only `P0001` messages,
