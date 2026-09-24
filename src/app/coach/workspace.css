@@ -1213,6 +1213,22 @@
   max-height: 90vh;
   overflow: auto;
 }
+/* The confirm dialog's buttons are bare siblings of the <h2> and <p> in a
+   block container, and `.nf-workspace button` above makes every button
+   `display: inline-flex`. As INLINE boxes they flow on a text line, and a
+   wrapped inline box is positioned against the line box — whose height comes
+   from line-height (~24px), not from the button's own `min-height: 48px`. So
+   on a narrow screen, once "Keep current access" fills the row and "Confirm
+   change" wraps to a second line, the 48px button overflows its 24px line and
+   lands on top of the button above it.
+   Block-level flex gives each button its own line at its real height. Scoped
+   to buttons inside .iw-confirm so the inline-flex default still applies to
+   button rows elsewhere (e.g. .iw-member-actions) that rely on it. */
+.iw-confirm button {
+  display: flex;
+  width: 100%;
+  margin-top: 12px;
+}
 .iw-position-answers {
   display: flex;
   flex-wrap: wrap;
