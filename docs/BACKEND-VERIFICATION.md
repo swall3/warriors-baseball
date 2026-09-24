@@ -67,3 +67,28 @@ This is a route-wide functional/security review, not a penetration-test certific
 6. Backup restore/disaster recovery, external email delivery (not implemented), and long-duration real-device offline testing were not performed. Authenticated production UI testing requires the user's current passcode; authenticated mutation tests ran only locally.
 
 Reference: [Supabase RLS guidance](https://supabase.com/docs/guides/database/postgres/row-level-security), [Next.js upgrade guidance](https://nextjs.org/docs/app/guides/upgrading/version-16).
+
+## Scenario answer isolation
+
+The player-development scenario pool (`BACKUP_SCENARIOS` in `src/lib/gameData.ts`)
+is paid content: its `question`, `targetZone` and `explanation` are the answers.
+Those must never ship in a browser bundle.
+
+- **Server-only:** `src/lib/gameData.ts` (the answer pool) and
+  `src/lib/practice/bundles.ts` (needs `targetZone` to build bundles). Import
+  these only from route handlers, server components, server-side lib, or tests.
+- **Client-safe:** `src/lib/scenarioCatalog.ts` (generated — non-answer
+  projection `SCENARIO_CATALOG` + per-position `BUNDLE_SUMMARIES` counts only,
+  no scenarioId lists), `src/lib/scenarioTypes.ts`, and
+  `src/lib/practice/bundleSummaries.ts` / `bundleMeta.ts`. Client components
+  import from these.
+- **Why no id lists client-side:** bundle membership is `{ballZone, targetZone}`
+  and the catalog exposes `ballZone`, so shipping per-scenario id lists would let
+  a client recover every `targetZone`. Summaries expose counts only.
+- Views that need an answer get it from the server: grading returns `targetZone`
+  on a correct answer; `assignments()` / the family API enrich rows with
+  `scenario_label` + `scenario_question`.
+- **Regeneration:** `npm run prebuild` (fires on `npm run build`, so on Vercel)
+  runs `scripts/gen-scenario-catalog.mjs`. `tests/scenario-catalog.test.mjs`
+  fails if the catalog is stale, if any client object carries an answer field or
+  scenarioIds, or if server/client bundle counts drift.

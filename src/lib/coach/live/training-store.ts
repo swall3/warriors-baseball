@@ -18,7 +18,17 @@ export async function assignments(session: CoachSession) {
     );
   const ids = coachTeamIds(session);
   const rows = ids === null ? (data ?? []) : await filterAllowed(session, ids, data ?? []);
-  return rows;
+  // Resolve display text server-side so clients render the prompt/label without
+  // importing the answer pool. scenario_question can hint the answer, so it is
+  // only sent to these authenticated coach/parent rows (never a public bundle).
+  return rows.map((r) => {
+    const scenario = BACKUP_SCENARIOS.find((s) => s.id === r.scenario_id);
+    return {
+      ...r,
+      scenario_label: scenario?.label ?? null,
+      scenario_question: scenario?.question ?? null,
+    };
+  });
 }
 // Coach-facing rollup of assigned position-practice bundles (Decision 1).
 // Individual scenario progress underneath is unchanged (see assignments()).
@@ -37,10 +47,25 @@ export async function bundleAssignments(session: CoachSession) {
   if (error) return [];
   const ids = coachTeamIds(session);
   const rows = ids === null ? (data ?? []) : await filterAllowed(session, ids, data ?? []);
-  return rows.map((b) => ({
-    ...b,
-    bundle: getPositionPracticeBundle(b.bundle_id) ?? null,
-  }));
+  return rows.map((b) => {
+    const bundle = getPositionPracticeBundle(b.bundle_id);
+    // Send only the client-safe summary (no scenarioIds — those would let a
+    // client recover targetZone via ballZone). Scenario count already lives on
+    // the row as scenario_count.
+    return {
+      ...b,
+      bundle: bundle
+        ? {
+            id: bundle.id,
+            position: bundle.position,
+            label: bundle.label,
+            skillFocus: bundle.skillFocus,
+            scenarioCount: bundle.scenarioIds.length,
+            categoryCounts: bundle.categoryCounts,
+          }
+        : null,
+    };
+  });
 }
 async function filterAllowed<T extends { player_id: string }>(
   session: CoachSession,
@@ -225,6 +250,9 @@ export async function recordAttempt(
     explanation: correct
       ? scenario.explanation
       : "Think about who is in position to help. Try another spot.",
+    // Reveal the answer position only once the coach has answered correctly, so
+    // the client never needs the answer pool to render the solved Diamond.
+    targetZone: correct ? scenario.targetZone : null,
     duplicate: !!saveError,
   };
 }

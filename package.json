@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prebuild": "node scripts/gen-scenario-catalog.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.0",

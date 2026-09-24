@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { BACKUP_SCENARIOS } from "@/lib/gameData";
+import { SCENARIO_CATALOG_BY_ID } from "@/lib/scenarioCatalog";
 import {
   QUIZ_SESSION_SIZE,
   chunkIntoSessions,
@@ -17,6 +17,10 @@ export type PracticeRow = {
   correct: number;
   bundle_assignment_id: string | null;
   bundle_position: number | null;
+  // Server-resolved display text (assignments() enriches these). Optional so
+  // rows from other paths still type-check.
+  scenario_label?: string | null;
+  scenario_question?: string | null;
 };
 type Run = {
   ids: string[];
@@ -99,7 +103,7 @@ export default function PracticeSession({
     (r) =>
       r.player_id === playerId &&
       players.some((p) => p.id === r.player_id) &&
-      BACKUP_SCENARIOS.some((s) => s.id === r.scenario_id),
+      !!SCENARIO_CATALOG_BY_ID[r.scenario_id],
   );
   const groupFirstIndex = new Map<string, number>();
   eligible.forEach((r, index) => {
@@ -129,7 +133,17 @@ export default function PracticeSession({
   const sessionCountTotal = sessions.length;
   const upNext = sessions[0] ?? [];
   const current = rows.find((r) => r.id === run?.ids[run.index]);
-  const scenario = BACKUP_SCENARIOS.find((s) => s.id === current?.scenario_id);
+  // Display text comes from the server-enriched row (label/question) so no
+  // answer pool is bundled; fall back to the client-safe catalog for the label.
+  const scenario = current
+    ? {
+        label:
+          current.scenario_label ??
+          SCENARIO_CATALOG_BY_ID[current.scenario_id]?.label ??
+          null,
+        question: current.scenario_question ?? null,
+      }
+    : undefined;
   const seconds = run
     ? Math.max(
         0,

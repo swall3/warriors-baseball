@@ -12,7 +12,7 @@ import {
   type EquipmentItem,
   type ScenarioCategory,
 } from "@/lib/practice/drills";
-import type { FieldPosition } from "@/lib/practice/bundles";
+import type { FieldZone as FieldPosition } from "@/lib/scenarioTypes";
 
 const POSITIONS: FieldPosition[] = ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
 const SITUATIONS: { value: ScenarioCategory; label: string }[] = [

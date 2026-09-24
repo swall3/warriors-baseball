@@ -1,15 +1,12 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { SCENARIO_CATALOG } from "@/lib/scenarioCatalog";
+import { CATEGORY_LABELS, SCENARIO_CATEGORIES } from "@/lib/scenarioTypes";
 import {
-  BACKUP_SCENARIOS,
-  CATEGORY_LABELS,
-  SCENARIO_CATEGORIES,
-} from "@/lib/gameData";
-import {
-  POSITION_PRACTICE_BUNDLES,
-  bundleForZone,
-} from "@/lib/practice/bundles";
+  POSITION_PRACTICE_BUNDLE_SUMMARIES as POSITION_PRACTICE_BUNDLES,
+  bundleSummaryForZone as bundleForZone,
+} from "@/lib/practice/bundleSummaries";
 import { QUIZ_SESSION_SIZE } from "@/lib/practice/sessions";
 import type { Player } from "@/lib/coach/live/model";
 export default function PracticeAssignment({
@@ -29,7 +26,7 @@ export default function PracticeAssignment({
   );
   const [advanced, setAdvanced] = useState(false);
   const [scenario, setScenario] = useState(
-    BACKUP_SCENARIOS.find((s) => s.ballZone === zone)?.id ?? "b1",
+    SCENARIO_CATALOG.find((s) => s.ballZone === zone)?.id ?? "b1",
   );
   const [note, setNote] = useState("");
   const [message, setMessage] = useState("");
@@ -85,7 +82,7 @@ export default function PracticeAssignment({
             >
               {POSITION_PRACTICE_BUNDLES.map((b) => (
                 <option value={b.id} key={b.id}>
-                  {b.label} ({b.scenarioIds.length} reps)
+                  {b.label} ({b.scenarioCount} reps)
                 </option>
               ))}
             </select>
@@ -98,7 +95,7 @@ export default function PracticeAssignment({
               value={scenario}
               onChange={(e) => setScenario(e.target.value)}
             >
-              {BACKUP_SCENARIOS.map((s) => (
+              {SCENARIO_CATALOG.map((s) => (
                 <option value={s.id} key={s.id}>
                   {s.label}
                 </option>
